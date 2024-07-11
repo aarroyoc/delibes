@@ -1,0 +1,75 @@
+<p>Hoy os traigo un framework web con el que últimamente estoy jugando bastante. Se llama htmx y a diferencia de otros frameworks como React o Vue, aquí no escribiremos JavaScript. Escribiremos más HTML siguiendo la filosofía original del hipertexto. ¿Intrigado? Sigue leyendo.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/htmx.jpg" width="400">
+</div>
+
+<h2>¿Qué es el hipertexto?</h2>
+<p>Se define hipertexto como una estructura no jerárquica, no secuencial donde nodos se enlazan entre sí a través de enlaces. La web es el ejemplo más claro de hipertexto. Podemos saltar de una página a otra haciendo click en enlaces. Pero en realidad las webs modernas no son documentos 100% atómicos. La mayoría tienen varios componentes. Estos componentes en el desarrollo web tradicional no son nodos dentro de la red de hipertexto. ¿Y si sí lo fueran? Es decir, que las diferentes componentes de una web fuesen un nodo dentro del hipertexto. Si esto lo mezclamos con imágenes y el vídeo (que ya siguen este esquema) entramos de lleno dentro del mundo de la hipermedia.</p>
+<p>En el mundo de la hipermedia las APIs no devuelven XML o JSON, sino devuelven HTML que a su vez devuelven más acciones dentro de la aplicación. Un poco como <a href="https://en.wikipedia.org/wiki/HATEOAS">HATEOAS</a> pero donde el humano es el que decide. <a href="https://htmx.org">htmx</a> sigue esta filosofía. De este modo vamos a poder escribir grandes aplicaciones web de forma declarativa dentro del propio HTML. Un enfoque totalmente diferente a React o Angular.</p>
+<h2>Primeros pasos con htmx</h2>
+<p>La clave de htmx es poder generar peticiones HTTP desde más sitios. El resultado de esas peticiones, serán en muchos casos documentos HTML parciales, que podemos luego mostrar donde queramos.</p>
+<p>Para instalar htmx, lo primero es importar la librería:</p>
+<pre><code class="language-html">
+&lt;script src="https://unpkg.com/htmx.org@1.6.1"&gt;&lt;/script&gt;
+</code></pre>
+<p>Para definir el verbo de la petición, añadimos los atributos hx-get, hx-post, hx-put, hx-delete u hx-patch con valor la URL a donde se debe dirigir la petición. Si no indicamos nada más, se asignará el trigger más natural dependiendo del elemento. El trigger es aquella acción que hace que se dispare la petición. Podemos sobreescribirlo con el atributo hx-trigger. Un ejemplo:</p>
+<pre><code class="language-html">
+   &lt;div hx-post="/mouse_entered" hx-trigger="mouseenter"&gt;
+      [Here Mouse, Mouse!]
+   &lt;/div&gt;
+</code></pre>
+<p>Este código hará una llamada POST a /mouse_entered cuando el ratón pase por encima. La respuesta se mostrará en el propio div.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/htmx2.jpg" width="500">
+</div>
+<p>Los triggers a su vez pueden llevar modificadores como limitar a solo una vez la acción, dejar un retraso entre peticiones mínimo, solo hacer la petición si ha habido cambios, etc...</p>
+<h2>Más cosas que hay que saber sobre htmx</h2>
+<p>Por defecto htmx escribe la respuesta de la petición dentro del propio elemento. Eso se puede modificar con el atributo hx-target que toma selectores CSS. Además, por defecto se hace un swap de tipo "innerHTML", es decir, se escribe en el interior del HTML. Pero puede hacerse de más formas: outerHTML, afterbegin, beforebegin,...</p>
+<p>htmx además admite añadir contenido a las peticiones HTTP, mediante los atributos hx-include y hx-params.</p>
+<p>Además de todo esto, htmx se integra con CSS y podemos tener animaciones para los elementos nuevos y spinners de carga de forma muy sencilla.</p>
+<p>Un detalle a tener en cuenta es que htmx se va heredando a los elementos hijos. Es decir, si tenemos un atributo htmx en alguna etiqueta, lo más probable es que a los elementos dentro de esa etiqueta también les aplique.</p>
+<p>Por último, mencionar que htmx se puede extender mediante JavaScript y mediante HyperScript, un lenguaje del mismo creador de htmx, con la idea de ser muy sencillo de usar justo para estos casos.</p>
+<p><a href="https://htmx.org/docs/">La documentación es bastante clara y se puede buscar con facilidad.</a></p>
+<h2>ActiveSearch en htmx</h2>
+<p>Un ejemplo más avanzado para ver htmx es una tabla sobre la que podemos realizar búsquedas. Las búsquedas se realizan en el servidor, que devuelve solo las filas que cumplen las condiciones.</p>
+<pre><code class="language-html">
+&lt;h3&gt; 
+  Search Contacts 
+  &lt;span class="htmx-indicator"&gt;
+    &lt;img src="/img/bars.svg"/&gt; Searching... 
+   &lt;/span&gt; 
+&lt;/h3&gt;
+&lt;input class="form-control" type="text" 
+       name="search" placeholder="Begin Typing To Search Users..." 
+       hx-post="/search" 
+       hx-trigger="keyup changed delay:500ms" 
+       hx-target="#search-results" 
+       hx-indicator=".htmx-indicator"&gt;
+
+&lt;table class="table"&gt;
+    &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;First Name&lt;/th&gt;
+      &lt;th&gt;Last Name&lt;/th&gt;
+      &lt;th&gt;Email&lt;/th&gt;
+    &lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody id="search-results"&gt;
+    &lt;/tbody&gt;
+&lt;/table&gt;
+
+</code></pre>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/htmx3.png">
+</div>
+<p>En la foto se ve que ocurre al introducir Venus en la caja de búsqueda. Se realiza una petición POST a /search. Esta envía un payload de tipo application/x-www-form-urlencoded con search="Venus". La petición se lanza cuando dejamos de presionar una tecla en el teclado, el valor ha cambiado y se espera medio segundo antes de enviarla. La respuesta se mostrará en el tbody con ID search-results. Además, mientras carga, se mostrará el GIF de búsqueda que lleva la clase htmx-indicator.</p>
+<p>Como véis, de forma muy sencilla podemos tener esa interactividad de las SPA. Adicionalmente esto es muy fácil de implementar en el backend con frameworks minimalistas ya que realmente no usa ninguna tecnología especialmente novedosa por detrás.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/htmx4.png">
+</div>
+<p>Existe muchísimas cosas que se pueden hacer con htmx y un poco de CSS. Podemos cargar diálogos modales así.</p>
+<h2>Conclusión final</h2>
+<p>Hemos visto que htmx es tremendamente sencillo pero nos permite realizar muchas cosas para las que la gente usa hoy en día frameworks complejos. Sin embargo, tiene algunas pegas. Este modelo requiere de más coordinación entre el backend y el frontend, ya que ahora no hay API, sino HTML directamente.</p>
+<p>Además, en sitios donde la API sea necesaria por otros motivos (aplicaciones móviles) puede significar duplicar parte del trabajo en backend. En cualquier caso, para proyectos pequeños me parece la mejor opción. Además funciona con mucha facilidad con casi cualquier framework web de backend que puedes encontrarte. Y el tema de la autenticación queda completamente manejada por el backend y las cookies de siempre.</p>
+<p>¿Vosotros qué pensáis de este framework?</p>
+

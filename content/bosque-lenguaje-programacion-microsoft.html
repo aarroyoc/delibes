@@ -1,0 +1,109 @@
+<p>Hace unos pocos d&iacute;as Microsoft Research, la parte de investigaci&oacute;n de Microsoft, public&oacute; <a href="https://github.com/Microsoft/BosqueLanguage">Bosque</a>, un nuevo lenguaje de programaci&oacute;n. El lenguaje sigue en fase experimental y el compilador es un poco patatero (est&aacute; hecho en TypeScript y necesita Node.js para funcionar). Pero eso es lo de menos, porque son detalles. Lo importante son las ideas que aporta.</p>
+<h2>La filosof&iacute;a de Bosque</h2>
+<p>Como muchos otros lenguajes, Bosque nace de unas ideas que pretende seguir. La filosof&iacute;a detr&aacute;s de Bosque es la siguiente:</p>
+<blockquote>
+<blockquote>
+<p><span class="x-hidden-focus" style="color: #24292e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; font-size: 16px; font-style: normal; font-weight: 400; letter-spacing: normal; text-align: start; text-indent: 0px; text-transform: none; background-color: #ffffff; float: none;">El lenguaje de programaci&oacute;n Bosque ha sido dise&ntilde;ado para escribir c&oacute;digo que es simple, obvio y f&aacute;cil de razonar con &eacute;l tanto para humanos como para m&aacute;quinas. Las caracter&iacute;sticas claves del dise&ntilde;o proporcionan formas de evitar la complejidad accidental en el proceso de desarrollo. El objetivo es mejorar la productividad de los desarrolladores, mejorar la calidad del software y habilitar una nueva clase de compiladores y herramientas de desarrollo.</span></p>
+</blockquote>
+</blockquote>
+<p>En su descripci&oacute;n adem&aacute;s nos informa que toma conceptos de ML (el padre de Haskell) y JavaScript, adem&aacute;s el autor, Mark Marron, tambi&eacute;n ha admitido que hay algunas cosas de P que le gustan.</p>
+<h2>Hola Mundo en Bosque</h2>
+<p>Actualmente el compilador est&aacute; en fase experimental, si quieres probarlo estas son los comandos necesarios para hacerlo funcionar en Linux (Node.js tiene que estar instalado)</p>
+<pre><code>
+git clone https://github.com/Microsoft/BosqueLanguage
+cd BosqueLanguage/ref_impl
+npm install
+npm run-script build
+npm test
+node bin/test/app_runner.js FICHERO_BOSQUE
+</code></pre>
+<p>Y un hola mundo tiene la siguiente pinta.</p>
+<pre><code>
+namespace NSMain;
+
+entrypoint function main(): String {
+	return "Hola Mundo";
+}</code></pre>
+<p>Y el resultado es el siguiente:</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="http://files.adrianistan.eu/BosqueHolaMundo.png" alt="" /></p>
+<p>A primera vista ya parece un poco raro ya que hemos devuelto directamente un string en la funci&oacute;n main. En Bosque no hay efectos colaterales, lo que tambi&eacute;n implica que no puede haber (de momento) entrada y salida m&aacute;s all&aacute; de las propias funciones de punto de entrada. En Bosque el punto de entrada es arbitrario, pero de momento la mayor&iacute;a de ejemplos usan la funci&oacute;n main dentro de NSMain.</p>
+<h2>Variables inmutables</h2>
+<p>En Bosque todas las variables son inmutables. Eso quiere decir que no es posible modificar su contenido una vez han sido asignadas:</p>
+<pre><code>
+namespace NSMain;
+
+function add(x: Int, y: Int): Int {
+	return x+y;
+}
+
+entrypoint function main(): Int {
+	var result = add(7,12);
+	return result;
+}
+</code></pre>
+<p>No obstante, es posible usar az&uacute;car sint&aacute;ctico y tener variables "mutables" con var!, la gracia es que debido a otros dise&ntilde;os de Bosque que veremos m&aacute;s adelante, no altera el resultado global.</p>
+<h2>Par&aacute;metros por referencia</h2>
+<p>Tambi&eacute;n es posible modificar ciertos par&aacute;metros por referencia directamente de forma segura, aseguranda la ausencia de efectos colaterales. Esto permite una programaci&oacute;n m&aacute;s c&oacute;moda.</p>
+<h2>Tipado de Strings</h2>
+<p>Los dise&ntilde;adores de Bosque saben que el tipo String es muy vers&aacute;til y se usa para muchas cosas, pero para el compilador sigue siendo String. &iquest;Por qu&eacute; no tipar estos strings? En un ejemplo sacado de la documentaci&oacute;n, se usa Zipcode como un tipo de String. Los zipcodes solo pueden pasar a string y un string no puede pasar directamente a Zipcode si no es verificado antes. As&iacute; evitamos mezclar Zipcodes y Emails (por ejemplo), que en otros lenguajes ser&iacute;an ambos Strings.</p>
+<pre><code>
+function foo(zip: String[Zipcode], name: String) {...}
+
+var zc: String[Zipcode] = ...;
+var user: String = ...;
+
+foo(user, zc) //Type error String not convertible to String[Zipcode]
+foo(zc, user) //ok
+</code></pre>
+<h2>Invocaciones flexibles</h2>
+<p>Aqu&iacute; de forma parecida a Python, Bosque permite gran flexibilidad a la hora de pasar argumentos.</p>
+<pre><code>
+function nsum(d: Int, ...args: List[Int]): Int {
+    return args.sum(default=d);
+}
+
+function np(p1: Int, p2: Int): {x: Int, y: Int} {
+    return @{x=p1, y=p2};
+}
+
+//calls with explicit arguments
+var x = nsum(0, 1, 2, 3); //returns 6
+
+var a = np(1, 2);         //returns @{x=1, y=2}
+var b = np(p2=2, 1);      //also returns @{x=1, y=2}
+
+//calls with spread arguments
+var t = @[1, 2, 3];
+var p = nsum(0, ...t);    //returns 6 -- same as explicit call
+
+var r = @{p1=1, p2=2};
+var q = np(...r);         //returns @{x=1, y=2} -- same as explicit call
+</code></pre>
+<h2>Operaciones de golpe</h2>
+<p>Bosque permite hacer modificaciones sobre una estructura o tupla de golpe, en una sola l&iacute;nea, indicando todos los campos que se modifican y su operaci&oacute;n. Esto puede ser muy interesante si permite generar instrucciones SIMD autom&aacute;ticamente y aprovechar de una vez toda esa potencia subyacente que tienen los procesadores actuales.</p>
+<h2>Manejo de nones</h2>
+<p>En Bosque existe el valor especial none similar al NULL o undefined de otros lenguajes. Bosque tiene un tratamiento especial para este tipo de valores que permite que sea m&aacute;s c&oacute;modo trabajar con ellos. La verdad es que esto me ha sorprendido ya que la tendencia actual es a reducir los NULL. Aunque claro, si se permiten solamente en situaciones controladas por el compilador podr&iacute;a ser muy interesante, ya que ser&iacute;a m&aacute;s simple y sencillo que las alternativas que existen en Haskell y Rust.</p>
+<h2>Procesamiento iterativo</h2>
+<p>Bosque no tiene bucles. No al menos nada comparable al WHILE y al FOR. Otro trabajo de investigaci&oacute;n de Microsoft (<a href="https://www.microsoft.com/en-us/research/uploads/prod/2018/10/LoopIdioms.pdf">Mining Semantic Loop Idioms</a>) afirm&oacute; que en la gran mayor&iacute;a de casos todos los bucles pertenecen a unos casos concretos de bucle. Es por ello, y con el objetivo de hacer la programaci&oacute;n m&aacute;s predecible, que no existen los bucles como tal. Otra vez, un ejemplo desde la documentaci&oacute;n</p>
+<pre><code>
+var v: List[Int?] = List@{1, 2, none, 4};
+
+//Chained - List@{1, 4, 16}
+v-&gt;filter(fn(x) =&gt; x != none)-&gt;map[Int](fn(x) =&gt; x*x)
+
+//Piped none filter - List@{1, 4, 16}
+v |&gt; filter(fn(x) =&gt; x != none) |&gt; map[Int](fn(x) =&gt; x*x)
+
+//Piped with noneable filter - List@{1, 4, 16}
+v |??&gt; map[Int](fn(x) =&gt; x*x)
+
+//Piped with none to result - List@{1, 4, none, 16}
+v |?&gt; map[Int](fn(x) =&gt; x*x)
+</code></pre>
+<h2>Recursi&oacute;n</h2>
+<p>En la mayor&iacute;a de lenguajes funcionales se suelen suplir algunas de las carencias habituales (bucles, variables inmutables, etc) con complejas jerarqu&iacute;as de recursi&oacute;n. Estos sistemas funcionan pero no son muy claros. Bosque quiere romper con este esquema permitiendo solo llamadas recursivas a funciones que expl&iacute;citamente lo marquen.</p>
+<h2>Igualdad</h2>
+<p>Las comprobaciones de igualdad siempre est&aacute;n definidas por el tipo. Nunca se comprueba la referencia, evitando as&iacute; uno de los tipos de fallos m&aacute;s comunes en lenguajes OOP.</p>
+<p>Y muchas otras cosas. El objetivo final es que cada programa Bosque tenga un &uacute;nico y bien definido resultado, y cada funci&oacute;n lo mismo. De este modo ser&aacute; m&aacute;s f&aacute;cil encontrar y razonar sobre los fallos, obteniendo software de mejor calidad en menos tiempo.</p>
+<p>Habr&aacute; que ver como evoluciona Bosque, que ahora mismo est&aacute; muy verde y sujeto a muchos cambios. Puede ser una interesante alternativa en el futuro o un simple experimento de Microsoft Research que no vaya a m&aacute;s (o cuyos resultados se apliquen a C# por ejemplo). Vosotros, &iquest;qu&eacute; opin&aacute;is?</p>
+<p>&nbsp;</p>

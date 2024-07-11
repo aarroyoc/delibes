@@ -1,0 +1,96 @@
+<p>Que levante la mano qui&eacute;n no ha o&iacute;do hablar de <strong>sed</strong>. Una herramienta presente en cualquier sistema UNIX, se trata de un editor de texto en modo streaming. Aunque sed es una herramienta muy potente, con <a href="https://catonmat.net/proof-that-sed-is-turing-complete">un lenguaje de programaci&oacute;n propio que es Turing completo</a>, la mayor cantidad de usos son sustituir o extraer datos usando expresiones regulares y los comandos&nbsp;<strong>s</strong> y&nbsp;<strong>p</strong> de sed. jq es sed para el siglo XXI porque trabaja de forma nativa con JSON, es decir, trabaja con objetos, no con texto plano.</p>
+<h2>El caso del texto plano</h2>
+<p>Tradicionalmente en UNIX se han tomado varias decisiones de dise&ntilde;o, que a falta de otros sistemas m&aacute;s populares, se han tomado como acertadas. Una de ellas es el concepto de texto plano. En UNIX el formato por defecto de cualquier cosa ha sido texto plano. Texto plano entendido como que no se tiene en cuenta el formato o la estructura del fichero. Las herramientas del sistema han sido dise&ntilde;adas para trabajar con &eacute;l (grep, sed, cut, ...). Esto hace muy dif&iacute;cil acceder a partes concretas de un archivo. Ciertas herramientas como AWK soportan formatos estructurados como CSV, de forma bastante c&oacute;moda, pero CSV sigue siendo un formato con limitaciones.</p>
+<p>Existen sistemas que han tomado esto de otra forma, por ejemplo PowerShell. La shell de Microsoft usa objetos como elemento b&aacute;sico de comunicaci&oacute;n, soportando atributos y arrays y desterrando las operaciones de texto plano a un segundo plano (ba dum tss).</p>
+<p>El texto plano no es malo, y muchas veces es lo mejor. Consume pocos recursos, es simple de entender, pero muchas veces necesitamos una estructura por detr&aacute;s que nos ayude a manipular los datos. En mi opini&oacute;n deber&iacute;a haber m&aacute;s documentos estructurados (que luego pueden contener atributos con text plano claro) por defecto.</p>
+<h3>jq, la esencia de sed para JSON</h3>
+<p>Si hablamos de formatos para documentos, quiz&aacute; el m&aacute;s popular sea JSON. JSON es simple y efectivo, poco verboso, soporta booleanos, n&uacute;meros, cadenas de texto plano, objetos y arrays. JSON casualmente usa ficheros de texto plano para guardarse, pero es un error usar grep, sed y AWK para buscar en estos ficheros. Al hacerlo estamos ignorando por completo la estructura del documento y esto puede hacer todo m&aacute;s complejo, dar resultados err&oacute;neos, etc</p>
+<p>jq, aplica las ideas de estas herramientas cl&aacute;sicas de UNIX al sistema de documentos de JSON. Lo puedes instalar en Debian/Ubuntu f&aacute;cilmente:</p>
+<pre><code>
+sudo apt install jq
+</code></pre>
+<p>El hola mundo de jq ser&iacute;a aplicar el selector ., para seleccionar todo el documento JSON.</p>
+<p>Para todos los ejemplos voy a usar el siguiente fichero JSON, totalmente inventado:</p>
+<pre><code class="language-javascript">
+{
+    "cars" : [
+        {
+            "name": "Renault 21",
+            "company": "Renault",
+            "year" : 1980
+        },
+        {
+            "name": "Citr&ouml;en C-Zero",
+            "company": "Citr&ouml;en",
+            "year": 2009
+        },
+        {
+            "name": "Opel Monza",
+            "company": "Opel",
+            "year": 1978
+        },
+        {
+            "name": "Pegaso Z-102",
+            "company": "Pegaso",
+            "year": 1951
+        }
+    ],
+    "drivers" : [
+        {
+            "name" : "James Hunt",
+            "birthplace" : "United Kingdom"
+        },
+        {
+            "name" : "Niki Lauda",
+            "birthplace" : "Austria"
+        },
+        {
+            "name" : "Jim Clark",
+            "birthplace": "United Kingdom"
+        },
+        {
+            "name" : "Juan Manuel Fangio",
+            "birthplace": "Argentina"
+        },
+        {
+            "name" : "Fernando Alonso",
+            "birthplace": "Spain"
+        }
+    ]
+}
+<br /><img src="https://files.adrianistan.eu/JqDot.png" alt="" /></code></pre>
+<h2>Acceso a datos</h2>
+<p>Para acceder a los datos usamos una sintaxis similar a la de JavaScript. Accedemos mediante punto a los atributos y con corchetes a los arrays. Si queremos indicar que un campo es opcional, usamos ?. Por ejemplo, si queremos acceder solamente a los coches:</p>
+<p><img src="https://files.adrianistan.eu/JqCars.png" alt="" /></p>
+<p>Un concepto b&aacute;sico de jq son los&nbsp;<strong>pipes</strong>, de forma similar a Bash, podemos pasar la salida de un comando a otro. Sin embargo, los pipes de jq no transmiten texto plano, sino documentos JSON. Veamos un ejemplo, para acceder al campo year podemos realizarlo de forma compuesta usando pipes. En primer lugar seleccionar&iacute;amos el subdocumento del coche y en el siguiente paso acceder&iacute;amos al elemento year del subdocumento.</p>
+<p><img src="https://files.adrianistan.eu/JqPipe.png" alt="" /></p>
+<p>Otro concepto muy potente de jq es el poder realizar&nbsp;<strong>map</strong> sobre cada elemento del array. De esta forma, todo lo que indiquemos a continuaci&oacute;n se realizar&aacute; para todos los documentos del array. Estos arrays tambi&eacute;n soportan&nbsp;<strong>slicing</strong>, por lo que podemos decir que el map se realice solo desde el elemento X al elemento Y de la forma [X:Y].</p>
+<p><img src="https://files.adrianistan.eu/JqArray.png" alt="" /></p>
+<p>Si adem&aacute;s queremos que la salida sea un array v&aacute;lido de JSON, encerramos la expresi&oacute;n entre corchetes.</p>
+<h2>B&uacute;squedas con regex</h2>
+<p>Ya hemos visto como acceder a los elementos. Vamos ahora a ver como realizar b&uacute;squedas por regex. El comando&nbsp;<strong>test</strong> nos permite ejecutar una comprobaci&oacute;n dada una expresi&oacute;n regular y devuelve true o false.</p>
+<p><img src="https://files.adrianistan.eu/JqTest.png" alt="" /></p>
+<p>Sin embargo, esto no es muy &uacute;til, ya que la mayor&iacute;a de las veces no vamos a querer un listado de true y falses. <strong>select</strong> es un comando que filtra los subdocumentos que recibe dependiendo de su expresi&oacute;n en el interior es true o false. Combin&aacute;ndolos podemos filtrar la salida seg&uacute;n la b&uacute;squeda.</p>
+<p><img src="https://files.adrianistan.eu/JqSelectTest.png" alt="" /></p>
+<p>Aplicando las reglas de los pipes podemos realizar la b&uacute;squeda solo en un campo pero obtener el subdocumento completo. Por ejemplo, aqu&iacute; obtenemos un listado de pilotos que han nacido en Reino Unido.</p>
+<p><img src="https://files.adrianistan.eu/JqAdvancedSelect.png" alt="" /></p>
+<h2>Generando documentos</h2>
+<p>Hasta ahora hemos visto como acceder, buscar y filtrar informaci&oacute;n del documento. Pero jq permite tambi&eacute;n generar documentos JSON nuevos de salida. Para ello, hay que usar las llaves y escribir la estructura de nuestro documento.</p>
+<p><img src="https://files.adrianistan.eu/JqBuild.png" alt="" /></p>
+<p>Aqu&iacute; en este ejemplo, hemos decidido quedarnos con los coches y eliminar el campo de company del JSON. Usamos map, pipes y todo entre corchetes, para obtener un array de salida. Evidentemente, como los campos de entrada y salida se llaman igual, esto se puede simplificar.</p>
+<p><img src="https://files.adrianistan.eu/JqShortBuild.png" alt="" /></p>
+<p>A jq tambi&eacute;n le podemos pasar variables externas desde fuera con el argumento --arg. Si usamos el argumento -n podemos generar documentos JSON desde cero.</p>
+<p><img src="https://files.adrianistan.eu/JqExternVariables.png" alt="" /></p>
+<p>Las <strong>variables</strong> se referencian por su nombre siempre precedidas del s&iacute;mbolo del d&oacute;lar (como en Bash). Se pueden crear variables usando&nbsp;<strong>as $variable</strong>.</p>
+<h2>Funciones y operadores aritm&eacute;ticos</h2>
+<p>jq contiene un buen pu&ntilde;ado de funciones y operadores aritm&eacute;ticos. Por ejemplo, podemos usar la resta para calcular en vez del a&ntilde;o de fabricaci&oacute;n del coche, su edad actual (suponiendo que vivimos en 2019).</p>
+<p><img src="https://files.adrianistan.eu/JqAge.png" alt="" /></p>
+<p>Existen funciones muy interesantes, algunas de ellas son&nbsp;<strong>length</strong> (longitud de una cadena de texto o de un array), <strong>has </strong>(comprobar si existe una propiedad),&nbsp;<strong>in</strong> (la funci&oacute;n inversa de has),&nbsp;<strong>map</strong> (aplicar una funci&oacute;n a todos los elementos y devolver el nuevo array),&nbsp;<strong>del</strong> (elimina un subdocumento),&nbsp;<strong>add</strong> (a&ntilde;ade todos los elementos entre s&iacute;),&nbsp;<strong>any</strong>,&nbsp;<strong>all</strong> (comprueban si una condici&oacute;n se cumple en alg&uacute;n elemento o en todos),&nbsp;<strong>flatten</strong> (simplifica los arrays, aplan&aacute;ndolos),&nbsp;<strong>sort</strong>,&nbsp;<strong>sort_by</strong> (para ordenar),&nbsp;<strong>group_by</strong> (para agrupar en base a un campo),&nbsp;<strong>unique</strong> (elimina los elementos duplicados),&nbsp;<strong>while</strong> (aplica una operaci&oacute;n hasta que se deje de cumplir la condici&oacute;n),&nbsp;<strong>join</strong> (al estilo SQL) y muchos m&aacute;s.&nbsp;</p>
+<p>En jq adem&aacute;s existen operadores condicionales (<strong>if-then-else, and</strong>, <strong>or</strong> y&nbsp;<strong>not</strong>) y&nbsp;<strong>try-catch</strong> para detectar errores. No obstante, en la mayor&iacute;a de las ocasiones no los vas a usar y es mucho m&aacute;s legible usar los elementos presentados anteriormente.</p>
+<p>En general, si tienes un buen dominio de la<strong> programaci&oacute;n funcional</strong>, jq te parecer&aacute; bastante intuitivo, ya que las similaridades son evidentes.</p>
+<h2>Asignaciones</h2>
+<p>Una cosa muy interesante que tiene jq es poder editar los archivos directamente, sin tener que generar uno nuevo, a trav&eacute;s de las asignaciones. La asignaci&oacute;n b&aacute;sica es&nbsp;<strong>|=</strong> que permite modificar un documento con una versi&oacute;n nueva. Por ejemplo, si queremos editar la compa&ntilde;&iacute;a del coche, &uacute;nicamente cuando es Opel, podemos recurrir a una combinaci&oacute;n de if-then-else con |=.</p>
+<p><img src="https://files.adrianistan.eu/JqAssign.png" alt="" /></p>
+<p>Como vemos, el fichero de salida es id&eacute;ntico al original pero modificando Opel por Vauxhall.&nbsp;</p>
+<h2>Conclusiones</h2>
+<p>jq es una herramienta muy potente, pensada para trabajar con documentos JSON en un flujo de trabajo similar al de Bash y Sed pero con nociones de la estructura del archivo. jq se puede usar en cualquier sistema pr&aacute;cticamente y es muy potente, como pod&eacute;is haber visto. Espero que os haya picado el gusanillo y a partir de ahora lo empec&eacute;is a utilizar. Muy interesante es su combinaci&oacute;n con&nbsp;<strong>curl</strong> para poder trabajar con APIs web desde la terminal.</p>

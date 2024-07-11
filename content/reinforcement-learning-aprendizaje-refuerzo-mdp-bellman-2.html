@@ -1,0 +1,53 @@
+<p>En el anterior <a href="">post</a> vimos una introducción a algunos conceptos del aprendizaje por refuerzo. Una cosa que se vio, es que los problemas se pueden modelar como MDP. En este post veremos como se hace, ya que nos permitirá visualizar mejor qué es lo que ocurre dentro de un problema de RL y nos da una base matemática para encontrar soluciones.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MDP2.png">
+</div>
+
+<h2>¿Qué es un MDP?</h2>
+<p>Un <a href="https://en.wikipedia.org/wiki/Markov_decision_process">MDP (Markov Decission Process)</a> es un entorno donde todos los estados son Markov que define las transiciones entre estos, recompensas, ... Los estados Markov como ya vimos, son autoexplicativos, y no necesitamos saber por qué estados ha pasado antes porque el propio hecho de estar en ese estado ya contiene esa información.</p>
+<p>Para definir un MDP debemos definir los siguientes elementos:</p>
+<ul>
+<li>Un cojunto finito de estados (S)</li>
+<li>Un conjunto finito de acciones (A)</li>
+<li>Una matriz de transición de estados. Dado un estado actual y una acción, nos dirá la probabilidad de ir a cada uno de los otros estados.</li>
+<li>Una función de recompensa que toma el estado actual y la acción actual.</li>
+<li>Gamma, el factor de descuento, entre 0 y 1.</li>
+</ul>
+<p>Podemos representar un MDP de forma gráfica tal que así. Este MDP nos servirá de ejemplo</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MDP2.png">
+</div>
+<p>El MDP tiene 5 estados (uno de ellos final). En algunos estados podemos tomar varias acciones, en algunos solo una. Además algunas acciones nos llevan de forma directa a otro estado, mientras que en otras hay una probabilidad de ir a un estado u a otro. Cada acción lleva asociada una recompensa. El objetivo es ir de S1 a S5 con la mayor recompensa posible.</p>
+<p>Definimos como retorno, <i>G<sub>t</sub></i>, a la suma de las recompensas descontadas desde el instante de tiempo t. ¿Descontadas? Quiere decir, que cada vez valgan menos, en base al valor gamma. El valor gamma sirve para controlar entre la recompensa inmediata y la recompensa futura. Un valor de gamma igual a cero hace que el agente sea miope y analice más allá del primer paso. Un valor de gamma igual a uno hace que el agente tenga en cuenta todo sin priorizar por tiempo. En general, el mejor valor no será ninguno de los dos extremos (0 o 1) sino un valor intermedio.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/GRL.png">
+</div>
+<p>Una vez tengamos un MDP, podemos asignarle una política. La política nos dice para cada estado, qué acción hay que tomar, con una cierta probabilidad. Cada ejecución de la política sobre el MDP se le llama episodio.</p>
+<p>Con un MDP y una política podemos definir su función valor V, para un estado s. Se define como la media de los retornos desde el estado actual.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/VFunction.png">
+</div>
+<p>También podemos definir la función Q, se define como la media de los retornos desde el estado actual tomando la acción a.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/QFunction.png"
+</div>
+<h2>Ecuación de Bellman</h2>
+<p>La forma anterior que hemos visto de expresar la función valor es matemáticamente correcta pero poco práctica. Realizando unas transformaciones podemos convertirla en la ecuación de Bellman.</p>
+
+<p>De forma matricial:</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/BellmanRL.png">
+</div>
+
+<p>De forma individual:</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/BellmanRLIndividual.png">
+</div>
+
+<p>La ecuación de Bellman es interesante, porque es resoluble, aunque algorítmicamente no es muy interesante. En la práctica solo podemos resolver pequeños MDP. Pero es la base paa
+
+<p>Calculemos los valores de la función valor para algunos estados del MDP de la imagen (asumiremos gamma = 1 y una política 100% aleatoria). El más sencillo es S5. Como la única posibilidad es tomar A6, que nos devuelve a S5 y tiene recompensa 0, <i>v(S5) = 0</i>. Para S4, es también sencillo, ya sabiendo como funciona S5. En este caso solo hay una opción que es tomar A5. Entonces <i>v(S4) = -1 + 1*v(S5) = -1</i>. Ahora pensemos la función valor de S3. Sería <i>v(S3) = 0,5*(-1 + 1*v(S5)) + 0,5*(-1 + 1*v(S4)) = -0,5 - 1 = -1,5</i> y así sucesivamente.</p>
+<p>Se define una función valor óptima para aquella que consigue el valor más elevado, sobre todas las políticas existentes. Al obtener una función valor óptima resolvemos el MDP y sabemos el rendimiento óptimo que podemos lograr.</p>
+
+<p>Resolver este problema no es fácil y no existe una solución genérica. Existen diferentes métodos iterativos que tratan de encontrar esa política que consiga la función valor óptima. Algunos de ellos son: Value Iteration, Policy Iteration, Q-learning y SARSA. Y los veremos en el siguiente post.</p>

@@ -1,0 +1,209 @@
+<p>A principios de año tuvimos la triste noticia de la muerte de Niklaus Wirth, uno de los pioneros de la programación tal y como la conocemos. Wirth participó en muchas discusiones y debates que darían forma al mundo de la informática actual. Si bien no forma parte de la primera generación de informáticos (quizá eso sería más apropiado de Turing, Church o Von Neumman), sí lo es de la primera generación donde la informática empieza a ser algo independiente y separado de otras disciplinas.</p>
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/PascalAppleHeader.png">
+</div>
+
+<p>De entre todas las cosas en las que Wirth trabajó, la más conocida de todas es seguramente Pascal. Un lenguaje de programación, derivado de ALGOL, con modificaciones que Wirth no había conseguido introducir en el estándar. Pascal fue diseñado inicialmente como un lenguaje didáctico, pero pronto consiguió hacerse un hueco en la programación más profesional. En concreto, Turbo Pascal fue uno de los entornos de programación más populares en MS-DOS. Y en el mundo Machintosh también Pascal fue uno de los lenguajes más usados para desarrollar aplicaciones.</p>
+
+<p>Hoy en día, Pascal ya no es ni de lejos tan popular como llegó a ser. La popularización de la OOP, y el paso de MS-DOS a Windows no le sentó bien, a pesar de que existe Object Pascal y Delphi. El mundo UNIX tampoco había sido muy fan de Pascal (eran más de C). Tampoco Wirth creía que fuese el lenguaje definitivo, y siguió diseñando lenguajes como Modula-2 u Oberon, que son sucesores de Pascal que nunca lograron la popularidad del primigenio.</p>
+
+<p>Por eso, vamos a recordar (o en mi caso, aprender de cero) como se programa en Pascal. Pascal, un lenguaje cuya virtud es ser un lenguaje imperativo que trata de ser simple y a la vez, eficaz y seguro (con un tipado bastante interesante para la época).</p>
+
+<h2>Fibonacci en Pascal</h2>
+<p>Vamos a comenzar con un pequeño programa de la sucesión de Fibonacci en Pascal. Es muy sencillo, pero ya nos sirve para identificar algunas cosas. En primer lugar, un programa Pascal empieza con una definición de programa y el nombre de este. A continuación van opcionalmente unas secciones, donde declaramos constantes, tipos, variables, etc... En Pascal es obligatorio declarar las variables que vamos a usar antes de empezar el código. No existe función main, sino que simplemente tras esta sección iniciamos con BEGIN y acabamos con END. (nótese el punto al final). Las variables se asignan con :=. Pascal no distingue mayúsculas de minúsculas y. Podemos crear más bloques con begin/end. Los statements se separan entre líneas con ; (por eso las últimas líneas no llevan).</p>
+
+<pre><code>
+PROGRAM Fibonacci;
+CONST
+   N = 12;
+VAR
+   A, B, C : integer;
+   Fib	   : integer;
+BEGIN
+   A := 1;
+   B := 1;
+   writeln(A);
+   writeln(B);
+   for fib := 3 to N do
+      begin
+	 C := A + B;
+	 A := B;
+	 B := C;
+	 writeln(C)
+      end
+END.
+</code></pre>
+<p>Este programa podemos guardarlo en un fichero <code>fib.pas</code> y usar el compilador FreePascal para generar un ejecutable. Pascal fue diseñado para ser muy rápido de compilar, y FreePascal lo es.</p>
+<pre><code>
+$ fpc fib.pas
+Free Pascal Compiler version 3.2.2 [2023/10/16] for x86_64
+Copyright (c) 1993-2021 by Florian Klaempfl and others
+Target OS: Linux for x86-64
+Compiling fib.pas
+Linking fib
+19 lines compiled, 0.1 sec
+$ ./fib
+1
+1
+2
+3
+5
+8
+13
+21
+34
+55
+89
+144
+</code></pre>
+<h2>Estructuras de control, funciones y procedimientos</h2>
+<p>Pascal es un lenguaje imperativo, sin más paradigmas, pero dentro de estos, es un lenguaje estructurado, es decir, usar estructuras de control y funciones en vez de GOTO (saltar a una línea del programa). Hoy en día que un lenguaje sea estructurado nos parece evidente, pero en aquella época no lo era tanto. Hay que tener en cuenta que las CPUs no tienen esa estructuración, se trata de una abstracción que introduce el lenguaje y que luego el compilador tiene que traducir a saltos tipo GOTO, que es lo que hace la CPU. Realmente Pascal soporta el GOTO, el propio Wirth dijo que no era algo de lo que estuviese muy orgulloso pero en aquella época era todavía demasiado rompedor hacer un lenguaje sin GOTO.</p>
+<p>Ya hemos visto la primera estructura de control, el bucle FOR. Este se usa cuando el bucle tendrá un número determinado de iteraciones. Se introduce una variable contador que va creciendo (to) o decreciendo (downto) hasta un valor.</p>
+<pre><code>
+for I := 0 to N do
+for I := 0 downto N do
+</code></pre>
+<p>Seguidamente va un statement, si queremos introducir varios statements deberemos usar begin/end.</p>
+<p>La siguiente estructura es el IF, un condicional. Si se da la condición se ejecuta lo que va a continuación del THEN. Opcionalmente puede haber un ELSE que se ejecuta cuando no se cumple la condición.</p>
+<p>El bucle WHILE evalúa una condición al comienzo de cada iteración para saber si debe continuar.</p>
+<p>El bucle REPEAT UNTIL evalúa una condición al final de cada iteración para saber si debe continuar. Curiosamente el bucle REPEAT UNTIL no necesita que escribamos begin/end en el cuerpo del bucle.</p>
+<p>Disponemos de un CASE OF para evaluar muchos IF seguidos, o para dentro de un dato de tipo RECORD, discernir entre variantes (<a href="https://blog.adrianistan.eu/tipos-suma-typescript-rust">¡tipos suma!</a>)</p>
+<p>>Por último disponemos de procedimientos y funciones. La diferencia es que las funciones devuelven un valor (tendremos que asignar al nombre de la función el valor que queramos que devuelva) y los procedimientos no. Por lo demás, podemos pasar las variables como VAR o no. Si las pasamos como VAR, el argumento se pasará por referencia, por lo que podremos hacer una modificación de la variable que afecte de forma externa a la función.</p>
+<p>Mucha cháchara, hagamos algo interesante. Vamos a implementar la solución del problema del <a href="https://adventofcode.com/2020/day/1">Advent of Code 2020 día 1</a>. Para ello he decidido usar varias cosas como ficheros, arrays, funciones, procedimientos y varios tipos de bucle. En realidad puede hacerse muy sencillo pero la idea es que se vean varias cosas a la vez.</p>
+<pre><code>
+PROGRAM day1;
+CONST
+   FileName = 'input.dat';
+   FileSize = 200;
+   Puzzle   = 2020;
+VAR
+   Nums	     : array [0..FileSize] of integer;
+   Prod	     : longint;
+
+PROCEDURE ReadFile();
+VAR
+   F	  : TextFile;
+   I, Num : integer;
+BEGIN
+   Assign(F, FileName);
+   Reset(F);
+   I := 0;
+   WHILE NOT Eof(F) DO
+      BEGIN
+	 ReadLn(F, Num);
+	 Nums[I] := Num;
+	 I := I + 1
+      END
+END;
+
+FUNCTION FindProd(Puzzle : integer): longint;
+VAR
+   I, J, Sum : integer;
+BEGIN
+   I := 0;
+   J := 0;
+   REPEAT
+      REPEAT
+	 Sum := Nums[I] + Nums[J];
+	 FindProd := Nums[I] * Nums[J];
+	 J := J + 1
+      UNTIL (Sum = Puzzle) OR (J = FileSize - 1);
+      J := 0;
+      I := I + 1
+   UNTIL Sum = Puzzle;
+END;
+
+BEGIN
+   ReadFile();
+   Prod := FindProd(Puzzle);
+   WriteLn(Prod)
+END.
+</code></pre>
+<h2>Tipos</h2>
+<p>Uno de los aspectos más interesantes de Pascal es que es un lenguaje relativamente expresivo para crear tipos personalizados.</p>
+<pre><code>
+PROGRAM types;
+TYPE
+   DaysOfWeek	  = (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday);
+   DaysOfWorkWeek =  Monday..Friday;
+VAR
+   Day : DaysOfWorkWeek;
+BEGIN
+   Day := Friday;
+   WriteLn(Day)
+END.
+</code></pre>
+<p>Podemos crear el tipo DaysOfWeek con 7 miembros y luego un subtipo que es un subrango del anterior.</p>
+<p>Los array, de tamaño estático, se definen mediante rangos también, y por ello es posible en Pascal tanto que los arrays empiecen en 0 como en 1 (como en otro número).</p>
+<p>Aparte de arrays, Pascal también incluye sets, con sintaxis muy similar.</p>
+<pre><code>
+PROGRAM types;
+TYPE
+   DaysOfWeek	  = (Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday);
+   DaysOfWorkWeek = Monday..Friday;
+   Salary	  = array[DaysOfWorkWeek] of integer;
+VAR
+   Day	     : DaysOfWorkWeek;
+   ManSalary : Salary;
+BEGIN
+   for Day := Monday to Friday do
+      ManSalary[Day] := 50;
+END.
+</code></pre>
+<p>Pascal soporta los record, un tipo compuesto de otros tipos, identificador por un nombre. Podemos acceder a cada campo del record mediante un punto o usando WITH.</p>
+<pre><code>
+PROGRAM types;
+TYPE
+   Contact =  record
+		 Name	 : string;
+		 Age	 : integer;
+		 City	 : string;
+	      end;
+VAR
+   ContactA : Contact;
+BEGIN
+   WITH ContactA DO
+      BEGIN
+	 Name := 'Adrián';
+	 Age := 25;
+	 City := 'Valladolid'
+      END;
+   WriteLn(ContactA.City)
+END.
+</code></pre>
+<p>Los records soportan variantes, lo que los convierte en tipos suma. Es decir, en base a una variable, el record tendrá unos campos u otros. Veamos este ejemplo:</p>
+<pre><code>
+PROGRAM types;
+TYPE
+   IpAddressType = (IPv4, IPv6);
+   IpAddress	 = record
+		      case Version : IpAddressType of
+			IPv4 : (A,B,C,D : integer);
+			IPv6 : (Address : string);
+		      end;
+VAR
+   IPs : array[0..1] of IpAddress;
+   I   : integer;
+BEGIN
+   IPs[0].Version := IPv6;
+   IPs[0].Address := '::1';
+   IPs[1].Version := IPv4;
+   IPs[1].A := 127;
+   IPs[1].B := 0;
+   IPs[1].C := 0;
+   IPs[1].D := 1;
+
+   FOR I := 0 TO 1 DO
+      CASE IPs[I].Version OF
+	IPv4 : WriteLn(IPs[I].A);
+	IPv6 : WriteLn(IPs[I].Address);
+        ELSE WriteLn('Other IP version')
+      END
+END.
+</code></pre>
+<p>Con este pequeño artículo espero que hayáis podido conocer o recordar algo sobre Pascal, el lenguaje de programación diseñado por Niklaus Wirth.</p>
+<p>Dejo por aquí un famoso póster que explica, de forma bonita, toda la sintaxis de Apple Pascal. <a href="https://vintagecomputer.ca/the-history-of-apples-pascal-syntax-poster-1979-80/">Más información aquí</a></p>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/PascalPoster.png">
+</div>

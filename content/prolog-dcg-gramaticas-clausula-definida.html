@@ -1,0 +1,77 @@
+<blockquote>
+<p><em>Hoy, 14 de enero, es el <a href="http://www.logica-universalis.org/wld2">WORLD LOGIC DAY</a>. Para celebrarlo, una entrada que ten&iacute;a ya escrita sobre nuestro lenguaje de programaci&oacute;n l&oacute;gico preferido: Prolog.</em></p>
+</blockquote>
+<p>Una de las caracterśiticas m&aacute;s potentes de <a href="../../introduccion-a-prolog-tutorial-en-espanol">Prolog</a> es su potencia para la manipulaci&oacute;n simb&oacute;lica. Uno de los primeros usos que se le dio fue la definici&oacute;n de gram&aacute;ticas a trav&eacute;s de cl&aacute;usulas. Estas definiciones constan de una sintaxis especial, aunque no es m&aacute;s que az&uacute;car sint&aacute;ctico sobre el lenguaje basado en predicados y t&eacute;rminos de siempre. Aqu&iacute; veremos la potencia de estas gram&aacute;ticas dentro de Prolog y los usos que se les puede llegar a dar, desde simplemente validar "listas" a construir compiladores de lenguajes de programaci&oacute;n.</p>
+<p>Pero vamos a ir poco a poco desgranando todo esto.</p>
+<h2>Gram&aacute;ticas</h2>
+<p>En esencia un DCG es simple: es un conjunto de reglas que describen un tipo concreto de lista. Estas "reglas" en ciencias de la computaci&oacute;n tienen un nombre especial: gram&aacute;ticas. Las gram&aacute;ticas nos permiten generar lenguajes, entendiendo lenguajes como cualquier conjunto de s&iacute;mbolos, uno detr&aacute;s de otro (o sea, el espa&ntilde;ol, Python o una imagen digital). Las gram&aacute;ticas se dividen en varias categor&iacute;as, seg&uacute;n los lenguajes que son capaces de generar. Esta diferenciaci&oacute;n viene de <a href="https://es.wikipedia.org/wiki/Noam_Chomsky">Noam Chomsky</a>, que a parte de fil&oacute;sofo y activista, se le considera el padre de las gram&aacute;ticas.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/ChomskyHierarchy.png" alt="" width="300" />Las gram&aacute;ticas regulares son las que generan lenguajes regulares. Los lenguajes regulares son aquellos que podemos analizar mediante expresiones regulares. Las expresiones regulares o Regex no dejan de ser una manera de definir gram&aacute;ticas regulares. Los DCG de Prolog nos permiten llegar a las gram&aacute;ticas dependientes de contexto, el &uacute;ltimo paso antes de llegar a las recursivamente enumerables que son pr&aacute;cticamente intratables. Sin embargo, para no complicarlo mucho, vamos a hacer los ejemplos de este post con gram&aacute;ticas independientes de contexto. Otros programas capaces de llegar a este punto son el famoso programa de Unix Yacc (en GNU es <a href="https://www.gnu.org/software/bison/">Bison</a>) y el famoso <a href="https://www.antlr.org/">ANTLR</a>. Adem&aacute;s, pr&aacute;cticamente todos los lenguajes de programaci&oacute;n est&aacute;n definidos por gram&aacute;ticas independientes de contexto.</p>
+<p>Una gram&aacute;tica muy simple ser&iacute;a por ejemplo, podr&iacute;a definir un lenguaje que es una cadena de x. Mientras el "c&oacute;digo" sea una sucesi&oacute;n de x, es parte del lenguaje, pero cualquier otra cosa es un error. Conceptualmente lo podr&iacute;amos definir as&iacute;, siendo S una variable y x un t&eacute;rmino:</p>
+<pre><code>
+S -&gt; .
+S -&gt; xS
+</code></pre>
+<p>Donde . significa "nada" o "cadena vac&iacute;a". La gram&aacute;tica se define de forma recursiva. Dado una cadena de entrada S, se puede descomponer seg&uacute;n la primera regla en cadena vac&iacute;a o en un caracter x m&aacute;s S otra vez. Pongamos un ejemplo:</p>
+<p>xx forma parte del lenguaje porque S = xx, podemos descomponerlo seg&uacute;n la segunda regla en x(S=x). Hemos aceptado de este modo el primer caracter y nos sigue quedando una parte por analizar. Como ha aparecido una S nueva, volvemos a aplicar la segunda regla y obtenemos xx(S=). No hemos acabado, nos sigue quedando una S, pero al aplicar la primera regla ya nos quedamos sin variables y la gram&aacute;tica ha aceptado la cadena. Por tanto xx forma parte del lenguaje.</p>
+<p>Esto se puede complicar mucho, he aqu&iacute; una gram&aacute;tica algo m&aacute;s compleja:</p>
+<pre><code>
+Frase -&gt; SujetoVerbo
+Sujeto -&gt; DeterminanteNombre
+Determinante -&gt; el
+Nombre -&gt; gato
+Nombre -&gt; perro
+Verbo -&gt; ladra
+Verbo -&gt; maulla
+</code></pre>
+<p>No es dif&iacute;cil comprobar que frases como "elgatoladra" o "elperromaulla" son v&aacute;lidas, pero "lavacaladra" no.</p>
+<h2>Vuelta a Prolog</h2>
+<p>Volvamos a Prolog con nuestro lenguaje X. La gram&aacute;tica la podemos expresar con las DCG de esta forma:</p>
+<pre><code>
+program --&gt; [].
+program --&gt; [x], program.
+</code></pre>
+<p>Podemos usar el predicado&nbsp;<strong>phrase</strong> para comprobar si una cadena pertenece al lenguaje X:</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/PrologPhrase.png" alt="" /></p>
+<p>As&iacute; xxxx forma parte del lenguaje y xxyx no forma parte. Prolog tiene la caracter&iacute;stica, de que si sobre algo no puede esclarecer si es cierto o falso, buscar&aacute; la forma de&nbsp;<strong>satisfacer</strong> las condiciones. Podemos usar esto para ir generando todos los lenguajes posibles.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/PrologXLang.png" alt="" /></p>
+<h2>Parseando programas</h2>
+<p>Podemos usar las capacidades de Prolog para a&ntilde;adir variables que nos permitan realizar un parseo y obtener as&iacute; una estructura de &aacute;rbol del documento.</p>
+<p>Para este ejemplo, primero vamos a definir un lenguaje de calculadora, que permita de momento solamente sumar.</p>
+<pre><code>
+program --&gt; expr, oper, expr.
+expr --&gt; ['('], expr, oper, expr, [')'].
+expr --&gt; [N], {number(N)}.
+oper --&gt; [+].
+</code></pre>
+<p>La sintaxis con llaves nos permite llamar a predicados auxiliares para construir una variable. Esta gram&aacute;tica admite expresiones de este tipo: 45 + ((70+45)+56).</p>
+<p>Ahora para parsear, a&ntilde;adimos variables a las DCG para ir guardando un &aacute;rbol AST.</p>
+<pre><code>
+program(node(O, E1, E2)) --&gt; expr(E1), oper(O), expr(E2).
+expr(node(O, E1, E2)) --&gt; ['('], expr(E1), oper(O), expr(E2), [')'].
+expr(node(number, N)) --&gt; [N], {number(N)}.
+oper(+) --&gt; [+].
+</code></pre>
+<p>Y vemos el resultado de parsear diferentes expresiones</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/PrologAST.png" alt="" /></p>
+<p>Y ahora realizar un compilador/int&eacute;rprete para este lenguaje es trivial.</p>
+<pre><code>
+program(node(O, E1, E2)) --&gt; expr(E1), oper(O), expr(E2).
+expr(node(O, E1, E2)) --&gt; ['('], expr(E1), oper(O), expr(E2), [')'].
+expr(node(number, N)) --&gt; [N], {number(N)}.
+oper(+) --&gt; [+].
+
+execute(node(number, Out), Out).
+execute(node(+, E1, E2), Out) :-
+    execute(E1, OutE1),
+    execute(E2, OutE2),
+    Out is OutE1 + OutE2.
+
+execute(Program) :-
+    phrase(program(Tree), Program),
+    execute(Tree, Out),
+    format(Out).
+</code></pre>
+<p>&iexcl;Y funciona correctamente!</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/PrologSumLang.png" alt="" /></p>
+<p>A&ntilde;adir el resto de operaciones (resta, multiplicaci&oacute;n, divisi&oacute;n) queda en manos del lector. Por supuesto, para ejecutar los programas todav&iacute;a tenemos que pasar una cadena de elementos, que en terminolog&iacute;a de lenguajes se llaman <strong>tokens</strong>, pero eso se podr&iacute;a hacer con otra gram&aacute;tica DCG o de otra forma dependiendo del lenguaje (en el mundo Unix cl&aacute;sico se suele hacer con Lex, cuya versi&oacute;n en Linux suele ser <a href="https://github.com/westes/flex">Flex</a>).</p>
+<p>Como conclusi&oacute;n, hemos visto que la manipulaci&oacute;n de s&iacute;mbolos de Prolog es potente y nos permite describir de forma corta y elegante, as&iacute; como realizar un parseado de forma sencilla tambi&eacute;n.</p>

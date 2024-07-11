@@ -1,0 +1,220 @@
+<p>Existen muchos tipos de algoritmos. Hoy vamos a hablar de un tipo de algoritmo no demasiado conocido, los <strong>algoritmos gen&eacute;ticos</strong>, que son de la familia de los <strong>algoritmos evolutivos</strong>. Adem&aacute;s veremos su aplicaci&oacute;n pr&aacute;ctica en el <strong>vectorizado de im&aacute;genes</strong> con un programa que he realizado en <a href="https://blog.adrianistan.eu/rust-101-tutorial-rust-espanol/">Rust</a>.</p>
+<h2>&iquest;Qu&eacute; es un algoritmo gen&eacute;tico?</h2>
+<p>Un <a href="https://es.wikipedia.org/wiki/Algoritmo_gen%C3%A9tico">algoritmo gen&eacute;tico</a> es un algoritmo inspirado en el mecanismo de la naturaleza de la evoluci&oacute;n biol&oacute;gica, descrita por Darwin all&aacute; por 1859 en el libro <em>El Origen de las Especies</em>. La idea es tener un conjunto de individuos (posibles soluciones). Estos individuos son evaluados para ver qu&eacute; tan buenos son. Quedarnos con los mejores y proceder a la creaci&oacute;n de nuevos individuos como resultados de la recombinaci&oacute;n gen&eacute;tica de dos individuos (como en la reproducci&oacute;n sexual). Posteriormente a&ntilde;adir alguna mutaci&oacute;n gen&eacute;tica para explorar nuevas posibilidades ligeramente diferentes. Proceder de nuevo a la selecci&oacute;n natural hasta que tengamos individuos lo suficientemente buenos para nosotros.</p>
+<p>Normalmente no son los algoritmos m&aacute;s eficientes ni tienen por qu&eacute; dar un resultado &oacute;ptimo, pero pueden servir para dar aproximaciones bastante buenas al resultado &oacute;ptimo. Existen estrategias para mejorar los algoritmos gen&eacute;ticos como la gesti&oacute;n de la antig&uuml;edad de los individuos, para evitar m&aacute;ximos locales; la conservaci&oacute;n de individuos con mal desempe&ntilde;o, para conservar mayor variedad gen&eacute;tica; ...</p>
+<p>Como veremos m&aacute;s adelante, uno de los elementos m&aacute;s importante de estos algoritmos es la funci&oacute;n de evaluaci&oacute;n, que muchas veces es m&aacute;s complicada de programar de lo que parece.</p>
+<figure class="wp-block-image"><img class="wp-image-1675" src="https://files.adrianistan.eu/AlgGenetico.png" alt="" /></figure>
+<h2>Un caso pr&aacute;ctico: vectorizado de im&aacute;genes</h2>
+<p>Para ver como estos conceptos te&oacute;ricos funcionan en la pr&aacute;ctica, vamos a hacer un programa que vectorice im&aacute;genes. &iquest;Esto qu&eacute; es? Digamos que hay dos tipos de im&aacute;genes en inform&aacute;tica. Por un lado tenemos las im&aacute;genes que almacenan los colores en p&iacute;xeles (<strong>rasterizadas</strong>) y por otro lado aquellas que almacenan la imagen como f&oacute;rmulas matem&aacute;ticas, que se aplican cuando se quiere ver la imagen (<strong>vectoriales</strong>). Los formatos m&aacute;s comunes de im&aacute;genes rasterizadas son JPEG, PNG, GIF y WEBP. Los formatos m&aacute;s comunes de im&aacute;genes vectoriales son SVG y AI.</p>
+<figure class="wp-block-image"><img class="wp-image-1682" src="https://files.adrianistan.eu/Rasterizadas.png" alt="" />
+<figcaption>A las im&aacute;genes rasterizadas no se les puede hacer zoom hasta el infinito, se ven borrosas</figcaption>
+</figure>
+<figure class="wp-block-image"><img class="wp-image-1683" src="https://files.adrianistan.eu/Vectorizadas.png" alt="" />
+<figcaption>A las im&aacute;genes vectoriales se les puede hacer zoom infinito, no pierden calidad</figcaption>
+</figure>
+<p>Pasar de una imagen vectorial a una rasterizada es trivial, pero el proceso inverso no lo es, y es justo donde vamos a aplicar el algoritmo gen&eacute;tico.</p>
+<p>En nuestro caso, vamos a tomar siluetas, negras sobre fondo blanco y tratar de vectorizarlas con<strong> curvas de B&eacute;zier</strong>.</p>
+<p>&nbsp;</p>
+<figure class="wp-block-image"><img class="wp-image-1676" src="https://files.adrianistan.eu/MendelVectorizer.png" alt="" />
+<figcaption>Ejemplo de ejecuci&oacute;n en la versi&oacute;n final de Mendel Vectorizer. La curva azul es la imagen vectorial generada.</figcaption>
+</figure>
+<h2>Curvas de B&eacute;zier</h2>
+<p>En los a&ntilde;os 60, <a href="https://es.wikipedia.org/wiki/Pierre_B%C3%A9zier">Pierre B&eacute;zier</a>, que trabajaba para Renault, dise&ntilde;&oacute; un tipo de curva para el dise&ntilde;o asistido por ordenador (CAD). Estas son las conocidas como curvas de B&eacute;zier. Nuestro algoritmo tratar&aacute; de encontrar la curva de B&eacute;zier m&aacute;s similar a la curva de la imagen rasterizada. Para ello necesitamos un punto de inicio, un punto final y dos puntos de control.</p>
+<figure class="wp-block-image"><img class="wp-image-1681" src="https://files.adrianistan.eu/RealCubicBezier.gif" alt="" />
+<figcaption>Curva c&uacute;bica de B&eacute;zier</figcaption>
+</figure>
+<p>En nuestro algoritmo, las curvas ser&aacute;n los individuos, y las coordenadas de los puntos de control ser&aacute;n los genes (habr&aacute; 4 genes por tanto).</p>
+<p>Este es el c&oacute;digo que he usado para definir las curvas de B&eacute;zier en Rust.</p>
+<pre class="wp-block-code"><code class="language-rust">#[derive(Copy, Clone)]
+pub struct Point {
+    pub x: f64,
+    pub y: f64,
+}
+impl Point {
+    pub fn distance(&amp;self, other: &amp;Point) -&gt; f64 {
+        ((self.x - other.x).powf(2.0) + (self.y - other.y).powf(2.0)).sqrt()
+    }
+    pub fn middle(&amp;self, other: &amp;Point) -&gt; Point {
+        Point {
+            x: (self.x + other.x) / 2.0,
+            y: (self.y + other.y) / 2.0,
+        }
+    }
+}
+#[derive(Clone)]
+pub struct Bezier {
+    pub start: Point,
+    pub control1: Point,
+    pub control2: Point,
+    pub end: Point,
+}
+impl&lt;'a&gt; Bezier {
+    pub fn iter(&amp;self) -&gt; BezierIter {
+        BezierIter {
+            bezier: self,
+            position: 0.0,
+        }
+    }
+}
+pub struct BezierIter&lt;'a&gt; {
+    bezier: &amp;'a Bezier,
+    position: f64,
+}
+impl&lt;'a&gt; Iterator for BezierIter&lt;'a&gt; {
+    type Item = Point;
+    fn next(&amp;mut self) -&gt; Option {
+        if self.position &gt; 1.0 {
+            return None;
+        }
+        let x = self.bezier.start.x * (1.0 - self.position).powf(3.0)
+            + 3.0 * self.bezier.control1.x * self.position * (1.0 - self.position).powf(2.0)
+            + 3.0 * self.bezier.control2.x * self.position.powf(2.0) * (1.0 - self.position)
+            + self.bezier.end.x * self.position.powf(3.0);
+        let y = self.bezier.start.y * (1.0 - self.position).powf(3.0)
+            + 3.0 * self.bezier.control1.y * self.position * (1.0 - self.position).powf(2.0)
+            + 3.0 * self.bezier.control2.y * self.position.powf(2.0) * (1.0 - self.position)
+            + self.bezier.end.y * self.position.powf(3.0);
+        self.position += 0.01;
+        Some(Point { x, y })
+    }}
+</code></pre>
+<h2>Encontrar puntos iniciales</h2>
+<p>El primer paso de nuestro algoritmo es buscar los puntos iniciales (y finales) de las curvas. En definitiva esto es un problema de b&uacute;squeda de esquinas.</p>
+<figure class="wp-block-image"><img class="wp-image-1677" src="https://files.adrianistan.eu/fast9.png" alt="" />
+<figcaption>Ejemplo de aplicaci&oacute;n de FAST9 a una imagen</figcaption>
+</figure>
+<p>Existen varios algoritmos de b&uacute;squeda de esquinas: Harris, FAST9, FAST12, ... No obstante, no tuve muy buenos resultados en las im&aacute;genes con las que trabajaba. As&iacute; que esta parte del algoritmo se la dejo al humano. El humano se encargar&aacute; de poner los puntos, en orden, que tiene que tratar de unir el algoritmo con curvas de B&eacute;zier.</p>
+<h2>Funci&oacute;n de evaluaci&oacute;n</h2>
+<p>Muchas veces la funci&oacute;n de evaluaci&oacute;n es el punto m&aacute;s delicado de estos algoritmos. En este caso la idea fundamental es identificar si la curva de B&eacute;zier est&aacute; encima de la curva original. Para ello tomamos 100 puntos equidistantes de la curva de B&eacute;zier (con la ecuaci&oacute;n param&eacute;trica de la curva es muy sencillo).</p>
+<p>[latex]\mathbf{B}(t)=\mathbf{P}_0(1-t)^3+3\mathbf{P}_1t(1-t)^2+3\mathbf{P}_2t^2(1-t)+\mathbf{P}_3t^3 \mbox{ , } t \in [0,1].[/latex]</p>
+<p>Estos puntos se comparan con la imagen real, si ah&iacute; en la imagen original hab&iacute;a una l&iacute;nea no pasa nada, si no, se resta 100. De este modo se penaliza gravemente salirse de la curva. Esto se hace as&iacute; ya que la otra opci&oacute;n evidente (bonificar el estar sobre en la l&iacute;nea) podr&iacute;a dar lugar a resultados inesperados.</p>
+<figure class="wp-block-image"><img class="wp-image-1678" src="https://files.adrianistan.eu/Evaluacion.png" alt="" />
+<figcaption>Ejemplificaci&oacute;n de la funci&oacute;n de evaluaci&oacute;n. Los puntos amarillos est&aacute;n dentro de la l&iacute;nea. Los puntos verdes est&aacute;n fuera de la l&iacute;nea, penalizando a la curva en su "adaptaci&oacute;n al medio".</figcaption>
+</figure>
+<p>Pongamos como ejemplo una funci&oacute;n de evaluaci&oacute;n que bonifique por estar sobre la l&iacute;nea y no penalice por salirse de esta. Una l&iacute;nea bien adaptada a estas condiciones podr&iacute;a recorrerse toda la imagen, cruzando todas las l&iacute;neas posibles, generando un garabato totalmente in&uacute;til pero muy bueno seg&uacute;n esta funci&oacute;n. Por ello, nuestra funci&oacute;n de evaluaci&oacute;n se basa en penalizar las salidas de la l&iacute;nea.</p>
+<p>La funci&oacute;n de evaluaci&oacute;n presentada no es perfecta, ya que puede pasar de largo el punto final y dar la vuelta. Esta curva es m&aacute;s larga que la &oacute;ptima, pero al estar completamente dentro de la l&iacute;nea negra original, la funci&oacute;n de evaluaci&oacute;n no la puede clasificar como peor que otras alternativas. Para solventar este problema una idea es que la longitud de la curva tenga una implicaci&oacute;n en la funci&oacute;n. No obstante, el c&aacute;lculo de la longitud de una curva de Bezier es demasiado complejo y no lo he codificado. Tambi&eacute;n podr&iacute;a aproximarse a trav&eacute;s de segmentos rectos entre los 100 puntos calculados anteriormente.</p>
+<figure class="wp-block-image"><img class="wp-image-1679" src="https://files.adrianistan.eu/NoDeseable.png" alt="" />
+<figcaption>Ejemplo de curva con puntuaci&oacute;n m&aacute;xima pero no &oacute;ptima desde el punto de vista humano</figcaption>
+</figure>
+<pre class="wp-block-code"><code class="language-rust">pub fn evaluate(image: &amp;GrayImage, line: &amp;Bezier) -&gt; f64 {
+    let mut eval = 0.0;
+    for point in line.iter() {
+        let x = point.x as u32;
+        let y = point.y as u32;
+        if image.in_bounds(x, y) {
+            let pixel = image.get_pixel(x, y);
+            if pixel.data[0] &lt; 200 {
+                eval += 1.0;
+            } else {
+                eval -= 100.0;
+            }
+        } else {
+            eval -= 100.0;
+        }
+    }
+    eval
+}</code></pre>
+<h2>Selecci&oacute;n natural</h2>
+<p>La funci&oacute;n de selecci&oacute;n natural deja &uacute;nicamente las 500 mejores curvas, de acuerdo a la funci&oacute;n de evaluaci&oacute;n, es decir, las mejor adaptadas de momento. Para la ordenaci&oacute;n, Rust usa un algoritmo denominado Timsort, con coste O(nlogn). Sin embargo, en todo el algoritmo trabajamos con poblciones finitas, por lo que puede asimilarse a una constante, con coste O(1).&nbsp;</p>
+<pre class="wp-block-code"><code class="language-rust">pub fn natural_selection(image: &amp;GrayImage, mut population: Vec) -&gt; Vec {
+    population.sort_by(|a, b| {
+        let a = evaluate(&amp;image, &amp;a);
+        let b = evaluate(&amp;image, &amp;b);
+        b.partial_cmp(&amp;a).unwrap()
+    });
+
+    population.into_iter().take(GOOD_ONES).collect()
+}</code></pre>
+<h2>Poblaci&oacute;n inicial</h2>
+<p>La poblaci&oacute;n inicial se forma con 1000 curvas generadas con par&aacute;metros totalmente aleatorios. Los valores de cada coordenada, eso s&iacute;, est&aacute;n comprendidos entre -d y d siendo d la distancia en l&iacute;nea recta entre los puntos de inicio y final.</p>
+<pre class="wp-block-code"><code class="language-rust">let mut population = Vec::new();
+        let mut rng = thread_rng();
+        let distancia = start.distance(&amp;end);
+        for _ in 0..1000 {
+            let xrand: f64 = rng.gen_range(-distancia, distancia);
+            let yrand: f64 = rng.gen_range(-distancia, distancia);
+            let mut control1 = start.middle(&amp;end);
+            control1.x += xrand;
+            control1.y += yrand;
+            let mut control2 = start.middle(&amp;end);
+            control2.x += xrand;
+            control2.y += yrand;
+            population.push(Bezier {
+                start,
+                end,
+                control1,
+                control2,
+            });
+        }</code></pre>
+<h2>Recombinado</h2>
+<p>El proceso de recombinaci&oacute;n permite mezclar los mejores espec&iacute;menes tratando de conseguir uno mejor. Este algoritmo gen&eacute;tico es de tipo RCGA (<a href="https://engineering.purdue.edu/~sudhoff/ee630/Lecture04.pdf">Real Coded Genetic Algorithm</a>) ya que los genes son n&uacute;meros reales, en contraposici&oacute;n a los t&iacute;picos genes binarios.Para estos algoritmos existen distintas variantes, aqu&iacute; se usa el sistema de blend. El sistema de blend implica que de entre los dos padres se toman los valores m&iacute;nimos y m&aacute;ximos para cada coordenada. Posteriormente se elige un nuevo valor de forma aleatoria con la condici&oacute;n de que est&eacute; dentro del rango de m&iacute;nimo y m&aacute;ximo definido anteriormente.</p>
+<pre class="wp-block-code"><code class="language-rust">            // CROSSOVER
+            // Blend o Linear (Blend) https://engineering.purdue.edu/~sudhoff/ee630/Lecture04.pdf
+            let mut i: usize = 0;
+            let mut babies = Vec::new();
+            while i &lt; GOOD_ONES {
+                let line1 = &amp;population[i];
+                let line2 = &amp;population[i + 1];
+
+                let min_x = line1.control1.x.min(line2.control1.x);
+                let max_x = line1.control1.x.max(line2.control1.x);
+                let min_y = line1.control1.y.min(line2.control1.y);
+                let max_y = line1.control1.y.max(line2.control1.y);
+                let control1 = Point {
+                    x: rng.gen_range(min_x, max_x),
+                    y: rng.gen_range(min_y, max_y),
+                };
+
+                let min_x = line1.control2.x.min(line2.control2.x);
+                let max_x = line1.control2.x.max(line2.control2.x);
+                let min_y = line1.control2.y.min(line2.control2.y);
+                let max_y = line1.control2.y.max(line2.control2.y);
+                let control2 = Point {
+                    x: rng.gen_range(min_x, max_x),
+                    y: rng.gen_range(min_y, max_y),
+                };
+
+                babies.push(Bezier {
+                    start,
+                    end,
+                    control1,
+                    control2,
+                });
+
+                i += 2;
+            }
+            population.append(&amp;mut babies);</code></pre>
+<h2>Mutaci&oacute;n</h2>
+<p>La fase de mutaci&oacute;n permite generar peque&ntilde;as variaciones aleatorias respecto a la poblaci&oacute;n. Afecta al 10% de la poblaci&oacute;n aunque solo afecta a una coordenada a la vez.</p>
+<p>Al ser un algoritmo RCGA, no vale simplemente con cambiar el valor de un bit. El enfoque utilizado en este algoritmo es el de una distribuci&oacute;n normal de cambios de media 0. La distribuci&oacute;n tiene la forma N(0,d/2). Esto implica que en la mayor&iacute;a de las ocasiones la variaci&oacute;n (tanto positiva como negativa) en la coordenada ser&aacute; bastante peque&ntilde;a.</p>
+<figure class="wp-block-image"><img class="wp-image-1195" src="https://files.adrianistan.eu/Normal.png" alt="" />
+<figcaption>Distribuci&oacute;n normal, aunque esta no es de media 0</figcaption>
+</figure>
+<pre class="wp-block-code"><code class="language-rust"> population = population
+                .into_iter()
+                .map(|mut line| {
+                    if rng.gen::() &lt; 0.10 {
+                        let normal = Normal::new(0.0, distancia / 2.0);
+                        let mutation_where: u32 = rng.gen_range(1, 5);
+                        // Solo muta un gen, respecto a una Normal
+                        match mutation_where {
+                            1 =&gt; line.control1.x += rng.sample(normal),
+                            2 =&gt; line.control1.y += rng.sample(normal),
+                            3 =&gt; line.control2.x += rng.sample(normal),
+                            4 =&gt; line.control2.y += rng.sample(normal),
+                            _ =&gt; (),
+                        }
+                    }
+                    line
+                })
+                .collect();</code></pre>
+<h2>El programa: Mendel Vectorizer</h2>
+<p>El programa definitivo, <strong><a href="https://github.com/aarroyoc/mendel-vectorizer">Mendel Vectorizer</a></strong>, disponible en GitHub, tiene m&aacute;s detalles. La interfaz gr&aacute;fica est&aacute; hecha usando <a href="https://gtk-rs.org/">GTK</a>, la interfaz de l&iacute;nea de comandos usa <a href="https://crates.io/crates/clap">Clap</a> y el algoritmo se ejecuta en paralelo usando paso de mensajes entre los hilos. El programa genera un fichero SVG resultado que puede ser abierto en programas como <a href="https://inkscape.org/es/">Inkscape</a> o Adobe Illustrator.</p>
+<figure class="wp-block-image"><img class="wp-image-1684" src="https://files.adrianistan.eu/InkscapeGA-1024x555.png" alt="" />
+<figcaption>El fichero generado por Mendel Vectorizer en Inkscape</figcaption>
+</figure>
+<p>Para usar Mendel Vectorizer en tu ordenador, sigue los siguientes pasos.</p>
+<p>Desc&aacute;rgate una copia del c&oacute;digo con Git. Compila con Rust (una edici&oacute;n que soporte la edici&oacute;n 2018, m&iacute;nimo la 1.31) y ejec&uacute;talo.</p>
+<pre class="wp-block-code"><code>git clone https://github.com/aarroyoc/mendel-vectorizercd mendel-vectorizercargo buildcargo run</code></pre>
+<p>Tambi&eacute;n pod&eacute;is descargaros la memoria en PDF del programa.</p>
+<div class="wp-block-file"><a href="https://files.adrianistan.eu/memoria.pdf">Descargar memoria de Mendel Vectorizer</a><a class="wp-block-file__button" href="https://files.adrianistan.eu/memoria.pdf" download="">Descargar</a></div>

@@ -1,0 +1,289 @@
+<p>Python es un lenguaje muy popular hoy en d&iacute;a. Aunque pueda no ser el mejor, su desempe&ntilde;o es bueno, con mucha documentaci&oacute;n, librer&iacute;as, es c&oacute;modo y f&aacute;cil de aprender. Python adem&aacute;s sigue la filosof&iacute;a de bater&iacute;as incluidas, es decir, de intentar llevar de serie casi todo lo que vayas a poder necesitar. En este art&iacute;culo vamos a ver algunas partes de Python no tan conocidas pero igualmente interesantes y &uacute;tiles.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/python-batteries-included.jpg" alt="" width="450" height="192" /></p>
+<h2>Frozensets y sets</h2>
+<p>Los sets y frozenset son estructuras de datos que replican el funcionamiento de los conjuntos de matem&aacute;ticas. Esto quiere decir que es un contenedor de elementos, donde cada elemento solo puede aparecer una vez y no hay orden establecido entre los elementos. Los sets/frozensets tienen varias operaciones: uni&oacute;n, intersecci&oacute;n, diferencia, diferencia sim&eacute;trica y se puede comprobar si un conjunto es disjunto, subconjunto o superconjunto respecto a otro. La diferencia fundamental entre entre set y frozenset es que frozenset es inmutable, lo cu&aacute;l puede ser mejor seg&uacute;n nuestro problema (mejor estilo de programaci&oacute;n y m&aacute;s rendimiento) pero es que adem&aacute;s es hasheable, lo que significa que podemos usarlo en sitios donde se requiera que exista un hash, como por ejemplo, las claves de un diccionario.</p>
+<pre><code class="language-python">
+a = set([27,53])
+b = frozenset([27,42])
+
+c = a | b # Uni&oacute;n
+d = a &amp; b # Intersecci&oacute;n
+e = a ^ b # Diferencia sim&eacute;trica
+f = a - b # Diferencia
+
+print(c)
+print(d)
+print(e)
+print(f)
+
+if 42 in b:
+    print("42 dentro de B")
+
+if a &gt;= b:
+    print("A es superconjunto y B es subconjunto")
+
+x = dict()
+x[b] = 43
+# x[a] = 43 dar&iacute;a error
+</code></pre>
+<p>Los sets adem&aacute;s soportan <em>set comprehensions:</em></p>
+<pre><code class="language-python">
+a = { x for x in range(1,10)}
+</code></pre>
+<p>&nbsp;</p>
+<h2>Statistics</h2>
+<p>Desde Python 3.4 existe un m&oacute;dulo llamado&nbsp;<a href="https://docs.python.org/3/library/statistics.html"><strong>statistics</strong></a> que nos trae operaciones b&aacute;sicas de estad&iacute;stica ya implementadas. Evidentemente si vamos a hacer un uso intensivo, es mejor recurrir a las funciones de NumPy/SciPy pero en muchas ocasiones no necesitamos tanta potencia y este m&oacute;dulo nos viene de perlas. El m&oacute;dulo implementa funciones de media aritm&eacute;tica, media arm&oacute;nica, mediana, moda, varianza poblacional y varianza muestral (con sus respectivas desviaciones). Todas las funciones admiten los tipos int, float, Decimal y Fraction.</p>
+<pre><code class="language-python">
+import statistics
+
+data = [1,2,2,2,3,3,4,5,8]
+
+a = statistics.mean(data)
+b = statistics.median(data)
+c = statistics.mode(data)
+d = statistics.pvariance(data)
+e = statistics.variance(data)
+
+print(a)
+print(b)
+print(c)
+print(d)
+print(e)
+</code></pre>
+<h2>Decimal y Fraction</h2>
+<p>Estos dos tipos sirven para representar n&uacute;meros, pero son diferentes entre s&iacute; y tambi&eacute;n a int y float. En primer lugar veamos por qu&eacute; son necesarios. En Python existe int para n&uacute;meros enteros y float para n&uacute;meros con parte decimal. Sin embargo, los float no son precisos. Los floats en Python son similares a los de C y usan el est&aacute;ndar IEEE 754. Esto est&aacute; bien porque el hardware funciona as&iacute; y es r&aacute;pido, pero es imposible hacer cuentas de forma precisa e incluso representar algunos n&uacute;meros es imposible. Para ello existen Decimal y Fraction que son dos maneras diferentes de conseguir precisi&oacute;n.</p>
+<p>Decimal usa una precisi&oacute;n arbitraria para representar el n&uacute;mero decimal como un n&uacute;mero entero (por defecto con 28 posiciones). Decimal est&aacute; especialmente recomendado para operaciones financieras, donde la precisi&oacute;n se conoce a priori. Fraction por otra parte usa el principio de que cualquier n&uacute;mero racional se puede representar con una divisi&oacute;n de n&uacute;meros enteros. Por tanto, almacena dos n&uacute;meros, un numerador y un denominador, y los mantiene separados. Al hacer operaciones, como en cualquier otra fracci&oacute;n, se operan los n&uacute;meros por separado, siempre manteniendo que tanto numerador como denominador sean enteros. De esta forma, y teniendo en cuenta que int tiene precisi&oacute;n arbitraria en Python, podemos representar con gran precisi&oacute;n todos los n&uacute;meros racionales. Ambos m&eacute;todos tienen el inconveniente de ser m&aacute;s lentos que float y gastar m&aacute;s memoria, pero son m&aacute;s precisos.</p>
+<p>En este ejemplo que pongo abajo, se hace tres veces la misma operaci&oacute;n: 0.1+0.2 que tiene que dar 0.3. Como ver&aacute;s si ejecutas el c&oacute;digo, solo las versiones hechas con Decimal y Fraction hacen la operaci&oacute;n bien, mientras que float falla.</p>
+<pre><code class="language-python">
+a = 0.1
+b = 0.2
+c = 0.3
+
+if a+b == c:
+    print("Float: operaci&oacute;n correcta")
+
+from decimal import Decimal
+
+pi = Decimal('3.14159')
+a = Decimal('0.1')
+b = Decimal('0.2')
+c = Decimal('0.3')
+
+if a+b == c:
+    print("Decimal: operaci&oacute;n correcta")
+
+from fractions import Fraction
+a = Fraction(1,10)
+b = Fraction(2,10)
+c = Fraction(3,10)
+
+if a+b == c:
+    print("Fracion: operaci&oacute;n correcta")
+</code></pre>
+<h2>F-Strings</h2>
+<p>Las <a href="https://www.python.org/dev/peps/pep-0498/">f-strings</a> fueron a&ntilde;adidas en Python 3.6 y son cadenas de texto que admiten formato de forma muy sencilla y flexible. Es la opci&oacute;n recomendada, sustituyendo al resto de otras formas de hacerlo (aunque siguen funcionando).</p>
+<pre><code class="language-python">
+usuario = "Godofredo"
+
+mensaje = f"El usuario {usuario} ha entrado al sistema"
+print(mensaje)
+</code></pre>
+<h2>Pathlib</h2>
+<p>En nuestro d&iacute;a a d&iacute;a es frecuenta trabajar con archivos en diferentes directorios. Pathlib (disponible desde Python 3.4) nos ayuda a manejar de forma sencilla rutas de forma multiplataforma. Pero aunque no necesitemos multiplataforma, las abtracciones de Pathlib son muy interesantes.</p>
+<pre><code class="language-python">
+from pathlib import Path
+
+root = Path('dev')
+print(root)
+# dev
+
+path = root / 'pcc'
+
+print(path.resolve())
+# /home/aarroyoc/dev/pcc
+</code></pre>
+<h2>Functools</h2>
+<p>El m&oacute;dulo <a href="https://docs.python.org/3.7/library/functools.html">functools</a> es de los m&aacute;s interesantes de Python, sobre todo si vienes de la programaci&oacute;n funcional, ya que nos permite manipular funciones. Quiero destacar tres funciones de este m&oacute;dulo: partial, lru_cache y reduce.</p>
+<p><strong>reduce </strong>nos permite reducir un iterable a un valor usando una funci&oacute;n. Es una operaci&oacute;n muy com&uacute;n en programaci&oacute;n funcional y a partir de Python 3 hay que usarla a trav&eacute;s de este modulo. Por ejemplo, podemos programar una funci&oacute;n <a href="https://es.wikipedia.org/wiki/Factorial">factorial</a> de la siguiente forma:</p>
+<pre><code class="language-python">
+from functools import reduce
+
+def factorial(n):
+    def multiply(a,b):
+        return a*b
+
+    return reduce(multiply,range(1,n+1))
+</code></pre>
+<p>Otra funci&oacute;n interesante es&nbsp;<strong>lru_cache</strong>, disponible a partir de Python 3.2, la cu&aacute;l es una cache LRU (Last Recently Used) ya construida para nuestro uso y disfrute. Si no lo sab&eacute;is, las cach&eacute;s LRU son un tipo de cach&eacute; con un tama&ntilde;o fijo donde el elemento que se elimina cuando falta espacio es el &uacute;ltimo en ser usado (es decir, le&iacute;do o a&ntilde;adido a la cach&eacute;). Las cach&eacute;s LRU se usan en muchos sitios (como en las propias CPUs. Adem&aacute;s, esta versi&oacute;n de Python dispone de tama&ntilde;o infinito si se lo configuramos, lo cu&aacute;l es muy interesante. La funci&oacute;n se usa como decorador y compara los argumentos de llamada para ver si la funci&oacute;n ya fue llamada con esos argumentos, y en ese caso devolver el valor calcualdo con anterioridad. Si no existe, lo calcula y lo almacena. Esto es lo que se llama <strong>memoizaci&oacute;n</strong>, una t&eacute;cnica muy usada en <a href="https://blog.adrianistan.eu/programacion-dinamica-el-problema-de-knapsack/">programaci&oacute;n din&aacute;mica</a>.</p>
+<pre><code class="language-python">
+@lru_cache(maxsize=None)
+def fib(n):
+    if n &lt; 2:
+        return n
+    return fib(n-1) + fib(n-2)
+</code></pre>
+<p>Usar lru_cache en funciones recursiva aumentar&aacute; el consumo de memoria, pero puede mejorar la velocidad significativamente si se llama muchas veces a una funci&oacute;n con los mismos argumentos.</p>
+<p>Por &uacute;ltimo,&nbsp;<strong>partial</strong> nos permite definir funciones parciales. &iquest;Asombroso eh? Si no has tocado programaci&oacute;n funcional seguramente te parezca que no tiene sentido. Para que nos entendamos, una funci&oacute;n parcial es una funci&oacute;n que ya tiene algunos argumentos rellenados, pero otros no. No estamos hablando de argumentos por defecto, porque eso se define sobre la propia funci&oacute;n, sino de una funci&oacute;n que es una especializaci&oacute;n de otra m&aacute;s gen&eacute;rica. Veamos un ejemplo, vamos a definir un nuevo print que no a&ntilde;ada un salto de l&iacute;nea al final:</p>
+<pre><code class="language-python">
+from functools import partial
+
+printx = partial(print,end='')
+
+printx("Hola amigos")
+print(" de Adrianist&aacute;n")
+</code></pre>
+<p>De este modo,&nbsp;<strong>printx</strong> se define como la funci&oacute;n parcial de print con el argumento end ya configurado a caracter vac&iacute;o en vez de '\n' que es que usa print por defecto.</p>
+<h2>Depuraci&oacute;n</h2>
+<p>Si quieres depurar c&oacute;digo Python, lo normal es usar <strong>pdb</strong>, el m&oacute;dulo con funciones de depuraci&oacute;n. Sin embargo, su uso se hac&iacute;a un poco farragoso, as&iacute; que desde Python 3.7 se puede usar&nbsp;<strong>breakpoint</strong>. Simplemente llama a breakpoint (no hay que importar nada) y el programa entrar&aacute; en modo depuraci&oacute;n.</p>
+<pre><code class="language-python">
+import statistics
+
+data = [1,2,2,2,3,3,4,5,8]
+
+a = statistics.mean(data)
+b = statistics.median(data)
+c = statistics.mode(data)
+breakpoint()
+d = statistics.pvariance(data)
+e = statistics.variance(data)
+
+print(a)
+print(b)
+print(c)
+print(d)
+print(e)
+</code></pre>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/BreakpointPython.png" alt="" width="724" height="363" /></p>
+<p>Otras funciones &uacute;tiles de depuraci&oacute;n son&nbsp;<strong>dir, vars, type </strong>y <strong>help</strong>. Dir muestra los atributos de un objeto o las variables locales, vars es similar pero m&aacute;s completa y dif&iacute;cil de leer. type devuelve el tipo de una variable y help muestra la documentaci&oacute;n asociada a una clase o funci&oacute;n.</p>
+<h2>Enums</h2>
+<p>En algunos lenguajes de programaci&oacute;n existe un tipo llamado enum o enumeration, que suele ser un tipo que admite &uacute;nicamente un conjunto finito de valores (normalmente peque&ntilde;o y mapeadas a un n&uacute;mero entero, pero con la seguridad del tipado extra). Python no dispon&iacute;a de esta funcionalidad (como muchos lenguajes de script) hasta Python 3.4, donde podemos crear clases que sean enumeraciones.</p>
+<pre><code class="language-python">
+from enum import Enum, auto
+
+class OperatingSystem(Enum):
+    LINUX = auto()
+    MACOSX = auto()
+    WINDOWSNT = auto()
+    HAIKU = auto()
+    SOLARIS = auto()
+
+print(OperatingSystem.HAIKU)
+</code></pre>
+<h2>Data classes</h2>
+<p>En la programaci&oacute;n orientada a objetos es habitual a veces encontrarnos con clases donde la mayor parte de las l&iacute;neas las perdemos en definir el constructor con datos, getters y setters. Las data classes, disponibles a partir de Python 3.7 nos permiten ahorrarnos todo este trabajo.</p>
+<pre><code class="language-python">
+from dataclasses import dataclass
+
+@dataclass
+class PC:
+    cpu: str
+    freq: int
+    price: int = 1000
+
+    def discount(self):
+        return self.price*0.8
+
+pc = PC("Intel Core i7",4000,2000)
+print(pc.discount())
+print(pc)
+</code></pre>
+<h2>Tipado</h2>
+<p>Al usar data classes te habr&aacute;s dado cuenta que hay que poner tipos. Esto se llama&nbsp;<strong>type hints</strong> y no son tipos como en otros lenguajes. Me explico. En Python existen tipos, pero no existe forma de forzar a que un argumento de una funci&oacute;n sea de un tipo o de otro. Los type hints no son m&aacute;s que indicaciones que Python sabe como ignorar, el int&eacute;rprete de Python no les hace caso. Son los IDEs, los linters como mypy y algunas librer&iacute;as como pydantic los que en todo caso realizan la verificaci&oacute;n de tipos. Los tipados tal y como se conocen ahora se a&ntilde;adieron en Python 3.5 y en el m&oacute;dulo <a href="https://docs.python.org/3/library/typing.html">typing</a> hay muchos tipos avanzados.</p>
+<pre><code class="language-python">
+from typing import Dict
+
+Options = Dict[str,str]
+
+def add_option(options: Options, key: str, content: str) -&gt; None:
+    options[key] = content
+
+a = dict()
+add_option(a,"b","c")
+</code></pre>
+<h2>Collections</h2>
+<p>El m&oacute;dulo <a href="https://docs.python.org/3.7/library/collections.html#collections.Counter">collections</a> tiene numerosas estructuras de datos m&aacute;s avanzadas para mayor comodidad o mejor rendimiento. Voy a comentar tres: defaultdict, Counter y deque.</p>
+<p><strong>defaultdict</strong> es una estructura de datos que particularmente encuentro muy interesante. Se trata de diccionarios con valor por defecto. Muy simple de entender y m&aacute;s &uacute;til de lo que parece. Por ejemplo, en una cuadr&iacute;cula bidimensional de todo ceros salvo unos pocos elementos que queremos que sean uno. Luego al analizar si se nos pregunta por una coordenada siempre podremos devolver el valor del diccionario (sin realizar ninguna comprobaci&oacute;n).</p>
+<pre><code class="language-python">
+from collections import defaultdict
+
+mapa = defaultdict(lambda: 0)
+mapa[(0,0)] += 1
+mapa[(15,67)] += 1
+</code></pre>
+<p><strong>Counter</strong> es un contador, simple y llanamente, pero extremadamente c&oacute;modo y sorprendentemente &uacute;til. Existen dos formas b&aacute;sicas de crear un contador, una es pasando un iterable y Counter se encargar&aacute; de ir contando todos los elementos y otra es pasar ya un diccionario de las cuentas hechas. Los contadores tienen operaciones especiales como la suma, la resta, la uni&oacute;n y la intersecci&oacute;n de contadores.</p>
+<pre><code class="language-python">
+from collections import Counter
+
+c = Counter("Rodrigo Diaz de Vivar")
+print(c)
+d = Counter({"d": 6, "i": 8})
+
+e = c + d
+
+print(e)
+</code></pre>
+<p>Por &uacute;ltimo,&nbsp;<strong>deque</strong> es una lista doblemente enlazada. Esto puede ser mucho m&aacute;s interesante que&nbsp;<strong>list</strong> para ciertas operaciones. List es un simple array, con acceso aleatorio muy r&aacute;pido, pero las modificaciones pueden ser lentas. En deque las modificaciones son r&aacute;pidas pero el acceso aleatorio es muy lento. Las operaciones son pr&aacute;cticamente las mismas que en list, as&iacute; que no voy a poner c&oacute;digo.</p>
+<h2>Itertools</h2>
+<p>El m&oacute;dulo itertools de Python es otro gran m&oacute;dulo lleno de funcionalidad interesante, en este caso para trabajar con iteradores, basado en los lenguajes APL, Haskell y SML.</p>
+<p>Lo primero a mencionar son los iteradores infinitos: <strong>count</strong>,&nbsp;<strong>cycle</strong> y&nbsp;<strong>repeat</strong>. Por ejemplo, cycle es un iterador que toma un iterador y cuando este se acaba lo vuelve a repetir, as&iacute; hasta el infinito.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/CyclePython.png" alt="" width="667" height="479" /></p>
+<p>Luego tenemos otras funciones como <strong>takewhile&nbsp;</strong>(genera un iterador a partir de otro iterador mientras se cumpla una condici&oacute;n), <strong>chain</strong> (que une iteradores), <strong>groupby</strong> (genera subiteradores seg&uacute;n un atributo de agrupamiento) y&nbsp;<strong>tee</strong> (que genera N subiteradores).</p>
+<pre><code class="language-python">
+from itertools import *
+
+a = range(1,100)
+b = takewhile(lambda x: x&lt;50,a)
+c = dropwhile(lambda x: x&lt;50,a)
+d = chain(b,c)
+e = sorted(d,key=lambda x: x%2 == 0)
+for k, g in groupby(e,key=lambda x: x%2==0):
+    print(k)
+    for x in g:
+        print(x,end=' ')
+    print("")
+</code></pre>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/IterToolPython.png" alt="" width="727" height="126" /></p>
+<p>Por &uacute;ltimo, el m&oacute;dulo tiene funciones muy &uacute;tiles de combinatoria como el producto cartesiano, las permutaciones, las combinaciones (con y sin repetici&oacute;n).</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="http://files.adrianistan.eu/CombPython.png" alt="" /></p>
+<h2>Zip, reversed y enumerate</h2>
+<p>La funci&oacute;n zip es un builtin, es decir, no hay que importar nada. La funci&oacute;n zip junta dos iteradores en uno y un iterador de tuplas. Zip tiene la longitud del iterador m&aacute;s corto, si necesitas que tome la longitud del m&aacute;s largo, la funci&oacute;n zip_longest de itertools hace justamente eso.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/ZipPython.png" alt="" width="360" height="329" /></p>
+<p>La funci&oacute;n reversed recorre el iterador en orden inverso y enumerate proporciona una tupla con el elemento y su posici&oacute;n en el iterador.</p>
+<h2>Any y all</h2>
+<p>Any y all son otros dos builtins de Python. Devuelven true cuando alg&uacute;n elemento del iterador cumple la condici&oacute;n (any) o todos la cumplen (all). Usando estas expresiones podemos comprobar que una palabra es palindr&oacute;mico de la siguiente forma:</p>
+<pre><code class="language-python">
+def palindromic(sequence):
+    return all(
+        n == m
+        for n, m in zip(sequence, reversed(sequence))
+    )
+print(palindromic("abba"))
+</code></pre>
+<h2>property</h2>
+<p>Cuando trabajamos con c&oacute;digo orientado a objeto en Python, es recomendable usar propiedades, en vez de funciones manuales de getters y setters.</p>
+<pre><code class="language-python">
+class P:
+
+    def __init__(self,x):
+        self.x = x
+
+    @property
+    def x(self):
+        return self.__x
+
+    @x.setter
+    def x(self, x):
+        if x &lt; 0:
+            self.__x = 0
+        elif x &gt; 1000:
+            self.__x = 1000
+        else:
+            self.__x = x
+</code></pre>
+<h2>staticmethod y classmethod</h2>
+<p>Estas funciones tambi&eacute;n son decoradores de funciones dentro de una clase. Su uso es similar es parecido. classmethod es para m&eacute;todos que pueden llamarse tanto de forma est&aacute;tica como con un objeto instanciado, un ejemplo t&iacute;pico son los m&eacute;todos factor&iacute;a. staticmethod sin embargo se refiere a m&eacute;todos est&aacute;ticos dentro de una clase, aunque en Python tampoco se usan demasiado.</p>
+<h2>isinstance e issubclass</h2>
+<p>Para acabar con las funciones propias de la orientaci&oacute;n a objetos, estas dos funciones nos permiten comprobar si un objeto es instancia de una clase y si una clase es subclase de otra.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/InstancePython.png" alt="" width="661" height="257" /></p>
+<h2>Conclusiones</h2>
+<p>Como veis, Python tiene muchas cosas interesantes. Espero que en esta lista haya al menos alguna cosa que no conoci&eacute;seis. Si adem&aacute;s conoces alguna otra cosa no tan conocida pero que consideras &uacute;til dentro de Python, puedes ponerla en los comentarios.</p>

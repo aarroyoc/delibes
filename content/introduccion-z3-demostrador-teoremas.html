@@ -1,0 +1,154 @@
+<p><a href="https://en.wikipedia.org/wiki/Z3_Theorem_Prover">Z3</a> es un demostrador de teoremas open source creado por Microsoft. Una herramienta muy útil para resolver ciertos problemas de alta complejidad algortítmica. Z3 en particular se enfoca en la resolución SMT. En este artículo veremos como podemos usarlo para resolver problemas sencillos y no tan sencillos. Se trata de otro lenguaje dentro del mundo de la programación lógica, como Prolog, pero bastante más específico.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Z3Sample.png" width="400">
+</div>
+
+<p>Z3 trabaja con proposiciones. ¿Qué son proposiciones? Son sentencias que pueden ser verdad o mentira. Si una sentencia no puede ser verdad o mentira (es una pregunta, es una falacia, etc) no podrá representarse en Z3.</p>
+<p>Para empezar vamos a declarar dos proposiciones, p y q, que existen en nuestro modelo.</p>
+<pre><code class="language-lisp">
+(declare-const p Bool)
+(declare-const q Bool)
+</code></pre>
+<p>Como veis, se usa una sintaxis basada en S-expresiones como Lisp. Veremos más adelante como esto no es obligatorio.</p>
+<p>Una vez tengamos definido la estructura de nuestro modelo, vamos a realizar afirmaciones sobre él. Por ejemplo, diremos que la proposición p es verdad mientras que de q no decimos nada. Por último, añadimos el paso check-sat, para que Z3 compruebe si está situación es factible (no entra en contradicciones).</p>
+<pre><code class="language-lisp">
+(declare-const p Bool)
+(declare-const q Bool)
+(assert p)
+(check-sat)
+</code></pre>
+<p>Ejecutamos el fichero con <code>z3 basic.z3</code> donde basic.z3 es el nombre del fichero y vemos que marca por pantalla la palabra <i>sat</i>. Esto significa que sí, es factible. Podemos añadir <code>(get-model)</code> para que Z3 nos ponga un ejemplo de modelo que satisfaga las proposiciones. En este caso, Z3 devuelve algo así:</p>
+<pre><code class="language-lisp">
+(
+  (define-fun p () Bool
+    true)
+  (define-fun q () Bool
+    false)
+)
+</code></pre>
+<p>Básicamente si p es verdadero (era una condición de partida) y q es falso no se cae en ninguna contradicción y se satisface todo. Bien, este era un ejemplo muy trivial. Vayamos a ejemplos más elaborados.</p>
+<h2>Demostrando teoremas por reducción al absurdo</h2>
+<p>Hemos visto que Z3 genera un modelo que es un ejemplo donde se cumplen las propiedades. ¿Cómo podemos demostrar algo entonces de forma general y no con ejemplos? Una forma es mediante <a href="https://es.wikipedia.org/wiki/Reductio_ad_absurdum">reducción al absurdo</a>. Es decir, vamos a pedir a Z3 que intente encontrar un ejemplo de lo contrario a lo que queremos demostrar, si no puede encontrarlo, como las proposiciones solo pueden verdaderas o falsas, lo contrario de lo contrario, es decir, lo que buscábamos originalmente, es verdad.</p>
+
+<pre><code class="language-lisp">
+(declare-const p Bool)
+(define-fun conjecture () Bool
+    (or p (not p))
+)
+(assert (not conjecture))
+(check-sat)
+</code></pre>
+<p>En este caso, intentamos probar que "P o NO P" siempre es verdad. Para ello negamos nuestra conjetura, es decir decimos que "P o NO P" es falso. Al ejecutarlo, Z3 nos devuelve <i>unsat</i>, es decir, no encuentra ejemplos. Por tanto se demuestra que lo contrario a lo que ha intentado demostrar, es cierto, es decir, "P o NO P" siempre es verdadero.</p>
+
+<h2>Variables numéricas y ecuaciones</h2>
+<p>Z3 no se limita a variables booleanas. También podemos hacer proposiciones con números y sus relaciones entre ellos. Por ejemplo, podemos proponer el siguiente problema a resolver:</p>
+<p>Encontrar el valor de X e Y, siendo ambos enteros, X > 2, Y < 10 y X + 2*Y == 7.</p> 
+<pre><code class="language-lisp">
+(declare-const x Int)
+(declare-const y Int)
+(assert (> x 2))
+(assert (< y 10))
+(assert (= (+ x (* 2 y)) 7))
+(check-sat)
+(get-model)
+</code></pre>
+<p>El resultado de Z3 es un modelo donde X = 7 e Y = 0, que efectivamente cumple todas las condiciones.</p>
+<h2>La librería de Python</h2>
+<p>La sintaxis, basada en S-expresiones puede volverse más confusa aquí pero esto tiene truco. La idea es que no programemos directamente en Z3, sino que generemos código Z3 de forma programática o que usemos alguna de las API que hay (existen para Python, Rust, C#, ...).</p>
+<p>A partir de ahora usaremos el paquete de Python (z3-solver). Esto nos permitirá usar una sintaxis más sencilla así como usar bucles y funciones para ir contruyendo las proposiciones. El ejemplo anterior ahora queda así:</p>
+<pre><code class="language-python">
+from z3 import *
+
+x = Int("x")
+y = Int("y")
+s = Solver()
+s.add(x > 2)
+s.add(y < 10)
+s.add(x + 2 * y == 7)
+print(s.check())
+model = s.model()
+print(f"x={model[x]}")
+print(f"y={model[y]}")
+</code></pre>
+<h2>Sudoku en Z3</h2>
+<p>Hace tiempo vimos una forma de <a href="https://blog.adrianistan.eu/sudoku-prolog">resolver el Sudoku en Prolog</a> (no muy eficiente). Este Sudoku se podría resolver mejor con clp(Z), algo de lo que ya <a href="https://blog.adrianistan.eu/soccerdoku-prolog-clpz">he hablado también en el blog con otro ejemplo</a>. Veamos como se resolvería el Sudoku con Z3.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Sudoku.jpeg" width="400">
+</div>
+<p>El primer paso es representar el sudoku incompleto. En este caso voy a usar 0 para representar los huecos. A continuación, creamos un Solver de Z3 y creamos una variable por cada hueco y una constante (una variable con valor asignado desde el principio) para las celdas que sí sabemos el valor. Estas variables las dejamos en un array del mismo tamaño que el original, pero ahora estará lleno de variables Z3.</p>
+<pre><code class="language-python">
+from z3 import *
+
+sudoku = [4,0,0,0,6,0,9,1,0,
+         2,0,0,0,0,7,0,5,0,
+         0,9,0,8,0,0,0,2,0,
+         0,0,1,6,0,9,0,0,2,
+         0,8,0,0,0,0,0,6,3,
+         0,7,0,0,4,0,0,0,0,
+         7,0,3,0,0,8,0,9,0,
+         0,0,0,0,3,0,4,0,5,
+         0,4,0,9,0,0,6,0,0]
+
+s = Solver()
+# generate vars
+sudoku_z3 = []
+for i,cell in enumerate(sudoku):
+    if cell == 0:
+        sudoku_z3.append(Int(f"sudoku_{i}"))
+    else:
+        sudoku_z3.append(IntVal(cell))
+</code></pre>
+<p>Ahora añadimos para cada variable, que el valor de cada celda está entre 1 y 9.</p>
+<pre><code class="language-python">
+# limits
+for var in sudoku_z3:
+    s.add(var >= 1)
+    s.add(var <= 9)
+</code></pre>
+<p>Ahora usamos Distinct para decir que en cada columna, en cada fila y en cada cuadrado los valores han de ser todos diferentes entre sí.</p>
+<pre><code class="language-python">
+# rows
+for i in range(9):
+    row = [sudoku_z3[j] for j in range(9*i, 9*(i+1))]
+    s.add(Distinct(*row))
+
+# columns
+for i in range(9):
+    column = [sudoku_z3[j] for j in range(i, 81, 9)]
+    s.add(Distinct(*column))
+
+# square
+for i in range(9):
+    o = i // 3
+    p = i % 3
+    square = [
+        sudoku_z3[o*27+p*3],
+        sudoku_z3[o*27+p*3+1],
+        sudoku_z3[o*27+p*3+2],
+        sudoku_z3[o*27+p*3+9],
+        sudoku_z3[o*27+p*3+10],
+        sudoku_z3[o*27+p*3+11],
+        sudoku_z3[o*27+p*3+18],
+        sudoku_z3[o*27+p*3+19],
+        sudoku_z3[o*27+p*3+20]
+    ]
+    s.add(Distinct(square))
+</code></pre>
+<p>Por último, hacemos el check. Nos dará <i>sat</i> si es un Sudoku resoluble y <i>unsat</i> si no lo es. Y podemos obtener los datos del modelo para pintar el Sudoku resuelto.</p>
+<pre><code class="language-python">
+print(s.check())
+
+for i, cell in enumerate(sudoku):
+    if cell == 0:
+        print(f"{s.model()[sudoku_z3[i]]}", end=" ")
+    else:
+        print(f"{cell}", end=" ")
+    if i % 9 == 8:
+        print()
+</code></pre>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Z3PythonSudoku.png">
+</div>
+<p>Obtenemos la misma solución que con Prolog, así que podemos darlo por bueno.</p>
+<p>Z3 se puede usar para resolver muchos problemas bastante más serios que el Sudoku. Con este artículo, vemos otro miembro más dentro de la programación lógica.</p>

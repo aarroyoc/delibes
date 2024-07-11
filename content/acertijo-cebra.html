@@ -1,0 +1,123 @@
+<p>Hoy vamos a resolver un acertijo bastante famoso, <a href="https://en.wikipedia.org/wiki/Zebra_Puzzle">el de la cebra</a>, atribuido a Einstein y a Lewis Carroll. Seguramente no haya sido inventado por ninguno de los dos, pero sigue siendo muy interesante.</p>
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/ZebraPuzzle.webp">
+</div>
+
+<p>El puzzle dice lo siguiente:</p>
+<ul>
+<li>Cinco hombres de cinco nacionalidades diferentes viven en las primeras cinco casas de una calle. Tienen cinco profesiones diferentes y cada uno tiene un animal y una bebida favorita diferentes. Cada casa está pintada de un color diferente.</li>
+<li>El inglés vive en la casa roja.</li>
+<li>El español tiene un perro.</li>
+<li>El japonés es pintor.</li>
+<li>El italiano bebe té.</li>
+<li>El noruego vive en la primera casa por la izquierda.</li>
+<li>El dueño de la casa verde bebe café.</li>
+<li>La casa verde está a la derecha de la casa blanca.</li>
+<li>El escultor cultiva caracoles.</li>
+<li>El diplomático vive en la casa amarilla.</li>
+<li>La leche se bebe en la casa de enmedio.</li>
+<li>La casa del noruego está al lado de la casa azul.</li>
+<li>El violinista bebe zumo de frutas.</li>
+<li>El zorro está en una casa al lado de la del doctor.</li>
+<li>El caballo está en una casa al lado de la del diplomático.</li>
+</ul>
+<p>¿Quién tiene una cebra? ¿Quién bebe agua?</p>
+
+<h1>Resolviéndolo usando clpz</h1>
+<p>Usando <a href="https://blog.adrianistan.eu/soccerdoku-prolog-clpz">clpz</a> podemos resolver este acertijo de forma muy clara y concisa. El truco consista en asignar un número a cada casa, en orden, siendo el 1 la casa más a la izquierda y 5 la casa a la derecha. Sobre eso, creamos variables para cada una de las nacionalidad, profesiones, bebidas, etc que podrán adquirir un valor entre 1 y 5. Por supuesto, dentro de cada categoría, no se pueden repetir los números, porque cada uno está asignado a una casa diferente.</p>
+<pre><code class="language-prolog">
+    Vars = [
+	% nationalities
+	English, Spanish, Japanese, Norwegian, Italian,
+	% professiones
+	Painter, Doctor, Diplomat, Violinist, Sculptor,
+	% beverages
+	Tea, Coffee, Juice, Milk, Water,
+	% colors
+	Red, Green, White, Yellow, Blue,
+	% animals
+	Dog, Snails, Fox, Horse, Zebra],
+    Vars ins 1..5,
+
+    all_different([English, Spanish, Japanese, Norwegian, Italian]),
+    all_different([Painter, Doctor, Diplomat, Violinist, Sculptor]),
+    all_different([Tea, Coffee, Juice, Milk, Water]),
+    all_different([Red, Green, White, Yellow, Blue]),
+    all_different([Dog, Snails, Fox, Horse, Zebra]),
+</code></pre>
+<p>A continuación codificamos las reglas. Como asignamos el valor en base a la posición de la casa, una casa a la derecha de otra es simplemente sumar 1. Decir que una casa está al lado de otra, significa que la diferencia absoluta entre 2 variables tiene que ser 1.</p>
+<pre><code class="language-prolog">
+    English #= Red,
+    Spanish #= Dog,
+    Japanese #= Painter,
+    Italian #= Tea,
+    Norwegian #= 1,
+    Green #= Coffee,
+    Green #= White + 1,
+    Sculptor #= Snails,
+    Diplomat #= Yellow,
+    Milk #= 3,
+    abs(Norwegian-Blue) #= 1,
+    Violinist #= Juice,
+    abs(Fox-Doctor) #= 1,
+    abs(Horse-Diplomat) #= 1,
+</code></pre>
+<p>Si juntamos todo, nos dará el siguiente programa, ya bonito para ver el resultado.</p>
+<pre><code class="language-prolog">
+:- use_module(library(clpz)).
+:- use_module(library(lists)).
+:- use_module(library(format)).
+
+run :-
+    zebra(Vars),
+    append([English,Spanish,Japanese,Norwegian,Italian|_], [Zebra], Vars),
+    Nats = [English-english, Spanish-spanish, Japanese-japanese, Norwegian-norwegian, Italian-italian],
+    member(Zebra-Nat, Nats),
+    format("The ~a has the zebra~n", [Nat]),
+    nth0(14, Vars, Water),
+    member(Water-Nat1, Nats),
+    format("The ~a has the water~n", [Nat1]).
+    
+
+zebra(Vars) :-
+    Vars = [
+	% nationalities
+	English, Spanish, Japanese, Norwegian, Italian,
+	% professiones
+	Painter, Doctor, Diplomat, Violinist, Sculptor,
+	% beverages
+	Tea, Coffee, Juice, Milk, Water,
+	% colors
+	Red, Green, White, Yellow, Blue,
+	% animals
+	Dog, Snails, Fox, Horse, Zebra],
+    Vars ins 1..5,
+
+    all_different([English, Spanish, Japanese, Norwegian, Italian]),
+    all_different([Painter, Doctor, Diplomat, Violinist, Sculptor]),
+    all_different([Tea, Coffee, Juice, Milk, Water]),
+    all_different([Red, Green, White, Yellow, Blue]),
+    all_different([Dog, Snails, Fox, Horse, Zebra]),
+
+    English #= Red,
+    Spanish #= Dog,
+    Japanese #= Painter,
+    Italian #= Tea,
+    Norwegian #= 1,
+    Green #= Coffee,
+    Green #= White + 1,
+    Sculptor #= Snails,
+    Diplomat #= Yellow,
+    Milk #= 3,
+    abs(Norwegian-Blue) #= 1,
+    Violinist #= Juice,
+    abs(Fox-Doctor) #= 1,
+    abs(Horse-Diplomat) #= 1,
+    
+    label(Vars).
+</code></pre>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ZebraRun.png">
+</div>
+<p>El resultado es que la cebra la tenía el <b>japonés</b> y el <b>noruego</b> es el que bebe agua.</p>

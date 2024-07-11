@@ -1,0 +1,135 @@
+<p><a href="https://blog.adrianistan.eu/tag/prolog">Prolog</a> es un lenguaje de programación dentro del paradigma lógico. Desde su invención en 1972 en Marsella, Francia, Prolog ha sido un lenguaje base para otros lenguajes ya que Prolog prácticamente inventó el paradigma. Las ventajas originales de Prolog son su sintaxis reducida y tersa, altamente modificable ya que es un lenguaje <a href="https://es.wikipedia.org/wiki/Homoiconicidad">homoicónico</a> donde el código y los datos son lo mismo. De esta forma se permite expresar el conocimiento fácilmente. En el lenguaje solo existen comentarios, términos y variables. El lenguaje funciona mediante conceptos como la unificación SLD y la búsqueda. Pero como todo lenguaje, la gente no se quedó con Prolog a secas, sino que ha habido modificaciones respecto a la versión de 1972. Adentrémonos en el universo de lenguajes inspirados y versiones de Prolog.</p>
+
+<div style="text-align:center">
+<img width="700" src="https://files.adrianistan.eu/PrologDebug.png">
+</div>
+
+<p>Primero exploraremos los que se podrían considerar descendientes más directos y con el mismo espíritu que Prolog original, después veremos cambios más grandes.</p>
+
+<h2>ISO Prolog</h2>
+<p>En 1997, Prolog pasó a ser un lenguaje estandarizado por ISO bajo el nombre de <a href="https://www.iso.org/standard/21413.html">ISO/IEC 13211</a> y se unió a la lista de lenguajes ya estandarizados por ISO tales como C, SQL, Ada, C++, Fortran, PL/I, ALGOL, COBOL y BASIC. Hoy en día la estandarización de un lenguaje es algo menos importante ya que suele haber implementaciones de software libre, pero antiguamente era muy importante. ISO Prolog define lo que hasta entonces era la evolución más común del lenguaje Prolog original. ISO Prolog se implementa en muchos sitios, veamos los más relevantes.</p>
+
+<h3>SICstus</h3>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Sicstus.png">
+</div>
+<p><a href="https://sicstus.sics.se/">SICstus</a> es una implementación de ISO Prolog de manos de RISE, unos laboratorios de investigación del gobierno de Suecia. Tiene fama de ser una de las implementaciones más fieles al estándar y una de las más rápidas. Pero este intérprete es de pago por lo que tiene menos usuarios de los que debería tener por su calidad técnica</p>
+
+
+<h3>GNU Prolog</h3>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/gprolog.png">
+</div>
+<p><a href="http://gprolog.org/">GNU Prolog</a> es la versión del proyecto GNU de Prolog. Se trata de otra implementación fiel de ISO Prolog y rápida, ya que es capaz de generar ejecutables nativos. Esto último no es nada habitual en los sistemas Prolog. Sin embargo, GNU Prolog no es de los entornos más amigables ni cuenta con muchas más librerías además de las definidas por ISO Prolog, por lo que en la práctica tampoco es tan usado.</p>
+
+<h3>Scryer Prolog</h3>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/scryer.png">
+</div>
+<p><a href="https://github.com/mthom/scryer-prolog">Scryer Prolog</a> es una implementación, todavía en desarrollo, de un entorno fiel a ISO Prolog. Está implementado en Rust y pretende ser un entorno completo con gran cantidad de librerías. Al ser un desarrollo desde cero, pretende alcanzar gran rendimiento usando técnicas modernas.</p>
+
+<h3>XSB Prolog</h3>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/XSBProlog.png">
+</div>
+<p><a href="http://xsb.sourceforge.net/">XSB Prolog</a> es una variante de Prolog comunitaria especialmente enfocada en <i>Tabled Logic Programming</i>. Si quieres explorar esta parte de la programación lógica XSB es el mejor sistema, aunque otros sistemas también soportan tabling. El tabling es especialmente interesante en problemas de <i>programación dinámica</i>.</p>
+
+<h3>YAP</h3>
+<p><a href="https://github.com/vscosta/yap-6.3">YAP</a> significa Yet Another Prolog, y sí, es otro Prolog más. Bastante ligero, no termina de implementar ISO Prolog pero no introduce incompatibilidades para que en un futuro pueda serlo. Es mantenido por la Universidad de Porto en Portugal.</p>
+
+<h3>B-Prolog</h3>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/BProlog.png">
+</div>
+<p><a href="http://www.picat-lang.org/bprolog/">B-Prolog</a> es otra implementación estándar de Prolog. La razón de ser de B-Prolog es la incorporación de bucles foreach, soporte para tabling, list comprehensions, matching clauses y action rules que permiten realizar una programación donde ciertas condiciones se retrasan, dando lugar a una especie de programación orientada a eventos.</p>
+
+<h3>Jekejeke</h3>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Jekejeke.png">
+</div>
+<p><a href="http://jekejeke.ch">Jekejeke</a> es una implementación de Prolog 100% escrita en Java. Como muchos otros, intenta seguir ISO Prolog.</p>
+
+<h3>ECLiPSe</h3>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Eclipse.png">
+</div>
+<p><a href="https://eclipseclp.org/">ECLiPSe</a> es un Prolog especializado en CHR, o programación por restricciones. La mayoría de Prolog incluyen soporte a CHR así que no lo he mencionado, pero este está especializado en este tipo concreto de programación.</p>
+
+
+<h3>Tau Prolog</h3>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/TauProlog.png">
+</div>
+<p><a href="http://tau-prolog.org/">Tau Prolog</a> es quizá una de las implementaciones de Prolog más usadas en el mundo, aunque mucha gente no lo sepa. Se trata de una implementación de ISO Prolog escrita en JavaScript, por lo que puede ejecutarse sin problema en los navegadores y en Node.js. Precisamente ahí, dentro de Yarn, ha encontrado un hueco y es como dependencia de este gestor de paquetes, de donde vienen la mayoría de sus descargas. Se trata de un proyecto del español José Antonio Riaza Valverde.</p>
+
+<h3>Todavía más</h3>
+<p>Otras implementaciones, menos usadas e interesantes son <a href="https://people.cs.kuleuven.be/~bart.demoen/hProlog/">hProlog</a>, <a href="https://quintus.sics.se/">Quintus Prolog</a>, <a href="https://www.nuget.org/packages/CSProlog/">CSProlog</a> o <a href="https://www.info.ucl.ac.be/~pvr/aquarius.html">Aquarius Prolog</a>, especialmente eficiente en arquitecturas MIPS y SPARC.</p>
+
+
+<h2>SWI Prolog</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/SWIPrologLogo.png">
+</div>
+<p><a href="https://www.swi-prolog.org/">SWI Prolog</a> es una implementación comunitaria de Prolog, aunque su principal desarrollador, Jan Wielemaker, está respaldado por la Vrije Universiteit Amsterdam. Inicialmente era una implementación más de ISO Prolog, pero a partir de la versión 7 rompe la compatibilidad con el estándar, así pues hoy día no es una implementación del estándar, si bien cumple con gran parte de este.</p>
+
+<p>SWI Prolog se centra en ser práctico y usable como un lenguaje de programación más, altamente productivo. Prueba de ello lo tenemos en las inmensa cantidad de librerías, herramientas y documentación que tiene el proyecto. Librerías de APIs web, GUIs multiplataforma, regex, acceso a bases de datos JDBC, JSON, XML, RDF, PlDoc, PlUnit, debug gráfico, packs, diccionarios, etc. No es la implementación más rápida, aunque está relativamente optimizada. Se autodefine como el Prolog para los grandes proyectos. Actualmente, es mi implementación Prolog predilecta.</p>
+
+<h2>Ciao</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Ciao.png">
+</div>
+<p><a href="https://ciao-lang.org">Ciao</a> es un lenguaje derivado de Prolog. Es posible usarlo como un ISO Prolog más, pero añade bastantes cosas extra y de hecho esta compatibilidad con ISO es simplemente un modo más. La primera diferencia es su propia definición. Ciao no es un lenguaje lógico sino multiparadigma. Introduce varias características de otros lenguajes tales como: funciones, mutabilidad, diccionarios, grafos, concurrencia, paralelismo y ejecución distribuida. También cuenta con librerías para desarrollo web. Además dispone de numerosas herramientas que lo convierten en un entorno productivo de programación. El proyecto Ciao está coordinado por la Universidad Politécnica de Madrid y el centro de investigación español IMDEA y es bastante menos popular que SWI Prolog.</p>
+
+<h2>Visual Prolog</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/VisualPrologLogo.png">
+</div>
+<p><a href="https://www.visual-prolog.com/">Visual Prolog</a> es el heredero de Turbo Prolog de Borland. Este dialecto de Prolog nunca fue cercano al estándar, ya que realizó modificaciones fuertes para que fuese más práctico para desarrollar interfaces de usuario para Windows. Incorpora orientación a objetos, tipado fuerte, llamadas directas a la API Win32, APIs de base de datos y APIs para programación web. Genera ejecutables nativos aunque de forma exclusiva para Windows. Es un producto de pago, aunque cuenta con una edición gratuita limitada.</p>
+
+<h2>Logtalk</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Logtalk.png">
+</div>
+<p><a href="https://logtalk.org/">Logtalk</a> es el lenguaje que surgiría si Smalltalk y Prolog tuvieran un hijo. Se trata de un lenguaje cuya principal característica es añadir programación orientada a objetos a Prolog. Pero no la típica implementación popularizada por C++ y Java, sino una más cercana a Smalltalk. Diseñado por Paulo Moura, uno de los artífices de ISO Prolog, el lenguaje incluye módulos, prototipos, clases, protocolos (interfaces), categorías, programación orientada a eventos y programación concurrente.</p>
+<p>Quizá la característica más chocante de Logtalk es que no es un entorno de ejecución, es simplemente una capa intermedia. El código Logtalk tiene que ser ejecutado en algún intérprete como SWI, SICstus, XSB o YAP.</p>
+
+<h2>Mercury</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MercuryLang.png">
+</div>
+<p><a href="https://www.mercurylang.org/">Mercury</a> es el lenguaje que surgiría si Haskell y Prolog tuvieran un hijo. Se trata de un lenguaje que añade un tipado estático, fuerte y muy potente. Añade además otras características de lenguajes funcionales. Se trata de un lenguaje de muy buen rendimiento que compila  a código nativo. Es usado por el producto comercial <a href="https://www.princexml.com/">PrinceXML</a> de la empresa australiana YesLogic.</p>
+
+<h2>Erlang</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/erlang.png">
+</div>
+<p><a href="https://www.erlang.org/">Erlang</a> es quizá el lenguaje más conocido de esta lista y no es un lenguaje de programación lógica. ¿Entonces por qué está aquí? Porque la tan odiada por algunos sintaxis de Erlang es prácticamente la misma de Prolog. Los diseñadores de Erlang que trabajaban en Ericsson eran grandes fans de Prolog y de hecho los primeros compiladores de Erlang estaban hechos en Prolog. Es por ello que se puede considerar parte del universo Prolog.</p>
+
+<h2>Picat</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Picat.png">
+</div>
+<p><a href="http://picat-lang.org">Picat</a> es un lenguaje, en esencia muy similar a Prolog, pero que incorpora una sintaxis incompatible. Picat incorpora estructuras de datos adicionales, funciones, notación de funciones OOP, list comprehensions, asignaciones, bucles y tabling.</p>
+
+<h2>Datalog</h2>
+<p><a href="https://en.wikipedia.org/wiki/Datalog">Datalog</a> es un subconjunto de Prolog. Se le eliminan características para hacerlo puramente declarativo y de esta forma se consigue que acabe siempre en tiempo finito (por tanto no es Turing completo). Existen muchas implementaciones de este lenguaje más sencillo que Prolog pero surgido posteriormente.</p>
+
+<h2>Teyjus</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Teyjus.png">
+</div>
+<p><a href="http://teyjus.cs.umn.edu/">Teyjus</a> es una implementación de un lenguaje llamado LambdaProlog. LambdaProlog es un lenguaje que incorpora las ideas de Church de la Teoría Simple de Tipos. Este lenguaje añade tipos de datos abstractos y la sintaxis lambda-árbol para representar variables. Es bastante experimental todavía.</p>
+
+<h2>LPS</h2>
+
+<p><a href="http://lps.doc.ic.ac.uk/">LPS</a> es un interesante lenguaje que parte de Prolog y añade funcionalidad imperativa para que sea más fácil de utilizar. Tiene especial aplicación en el mundo financiero. Es un proyecto mantenido por el Imperial College de Londres.</p>
+
+<h2>Bousi~Prolog</h2>
+<p><a href="https://dectau.uclm.es/bousi-prolog/">Bousi~Prolog</a> es un Prolog adaptado para lógica difusa. Bastante experimental.</p>
+
+<h2>Tamgu</h2>
+<p><a href="https://github.com/naver/tamgu">Tamgu</a> es un lenguaje de programación creado por Naver, multiparadigma. Soporta los paradigmas lógico, imperativo y funcional. La parte lógica es extremadamente similar a Prolog, aunque no compatible. No existen átomos, todo funciona vía strings y las variables lógicas deben usar '?' como prefijo.</p>
+
+
+<h2>Otros proyectos interesantes</h2>
+<p>Otros proyectos relacionados son Flora-2, PARLOG, KL1, DR-PROLOG, P#, N-PROLOG, FASILL, Yield Prolog,... Muchos de estos proyectos son/fueron experimentales y muchos ya se han abandonado o tienen un uso muy minoritario. También existen lenguajes como miniKanren, Curry o Twelf, los cuales no derivan de Prolog, pero sí son parte del paradigma lógico.</p>

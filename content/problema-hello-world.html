@@ -1,0 +1,39 @@
+<p>Cuando empezamos en un lenguaje de programación lo más habitual suele ser empezar con la mítica frase de Hello World (Hola Mundo). Sin embargo, hay que tener en cuenta que este pequeño programa tiene algunos inconvenientes si lo queremos usar para comparar entre lenguajes y sus funcionalidades.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/PrologHelloPure.png">
+</div>
+
+<p>El primer Hello World fue escrito por Brian Kernighan en 1973, en el tutorial del lenguaje de programación B. B fue un predecesor de C y cuando se lanzó C al mundo, también se introdujo este ejemplo.</p>
+
+<pre><code class="language-c">
+/* Hello World en B */
+
+main() {
+  extern a, b, c;
+  putchar (a); putchar (b); putchar (c); putchar ('!*n');
+}
+
+a 'hell' ;
+b 'o, w' ;
+c 'orld' ;
+</code></pre>
+
+<p>El Hello World sirve para varias cosas. En primer lugar, nos permite comprobar que las herramientas necesarias para programar con ese lenguaje están correctamente instaladas (IDE, compilador, intérprete, etc). Además, no deja de ser un programa breve en el que vemos ya resultados. Esto motiva bastante al recién llegado que ve como ya sus acciones tienen repercusiones.</p>
+
+<p>Sin embargo, hay un par de problemas relacionados con el Hello World que me gustaría destacar.</p>
+
+<p>El primero es que, a día de hoy, no sirve apenas para probar una instalación. En muchos lenguajes, puedes hacer el Hello World de forma muy simple (y eso queda muy bien, para qué engañarnos) pero en proyectos reales nunca lo harás así. Por ejemplo, en el mundo Java, lo más habitual es usar Maven o Gradle, pero el Hello World es tan simple que podrás hacerlo directamente con javac. También forma parte del setup tener alguna forma de hacer tests (o al menos así pienso yo). En algunos lenguajes como Rust no hay problema, ya que los tests vienen integrados en el propio lenguaje (por tanto si funciona el Hello World, funcionará el sistema de tests) pero en la mayoría de lenguajes no es así. Hay que configurar el GoogleTest o JUnit de turno. Así pues, un Hello World simplifica demasiado y hacernos creer que nuestro entorno está 100% listo cuando no es así.</p>
+
+<p>En segundo lugar, el Hello World es un ejemplo que opera directamente con la IO (bueno, de hecho solo con la O). Esto es relevante, ya que en ciertos lenguajes, sobre todo funcionales, la IO hay que tratarla con cuidado y no ejemplifica el uso normal del código. Pongamos ejemplos. Haskell es un lenguaje funcional puro. Pero no podemos hacer IO en Haskell sin más, ya que eso no sería puro (estamos generando side-effects sin control). La solución en Haskell es, controlarlos, mediante mónadas. Así, podemos hacer el Hello World pero estamos metiéndonos en un aspecto del lenguaje que no es tan habitual. Tampoco es el ideal para aprender a usar Haskell. Lo mismo sucede en Prolog, donde podemos usar write/1 para tener un código breve, pero es mala práctica y la buena práctica requiere algo más de aprendizaje previo. Incluso en Rust, un lenguaje imperativo, se usa una macro en vez de una función. En este caso no hay mucha diferencia, salvo porque las macros se explican con detalle mucho maś adelante que las funciones. Otro caso extremo es JavaScript. Este lenguaje se puede ejecutar tanto en una web como en un servidor y la forma de mostrar cosas por pantalla es muy diferente en ambos casos (console.log, alert, modificar el DOM, ...)</p>
+
+<pre><code class="language-haskell">
+-- Hello World en Haskell
+main :: IO ()
+main = do
+    putStrLn "Hello World!"
+</code></pre>
+
+<p>Este punto nos saca otro más amplio. ¿Sirve el Hello World para observar diferencias significativas entre lenguajes? Pues realmente no mucho. La IO es una parte limitada de todo un lenguaje. No se pueden apreciar diferencias reales entre Prolog y Python si solo te quedas en el Hello World simplón y eso que son terriblemente diferentes. Para hacer este tipo de comparativas, Knuth y Pardo diseñaron el <a href="https://en.wikipedia.org/wiki/TPK_algorithm">algoritmo TPK</a>. Es un algoritmo que no hace nada útil, como el Hello World, pero tiene en cuenta bastantes cosas que cuando se diseñó eran relevantes: arrays, funciones matemáticas, subrutinas, IO, condicionales e iteraciones. Hoy en día quizá el algoritmo TPK esté desfasado ya que hay muchas más cosas a tener en cuenta, ¿cómo maneja la concurrencia? ¿cómo usa la memoria dinámica? ¿el sistema de tipos es fuerte o débil? Quizá en los comentarios se os ocurran mil cosas más.</p>
+
+<p>Como conclusión. Hacer el Hello World no está mal, pero hay que ser consciente de sus limitaciones. Si acabas de llegar a la programación es ilusionante sí, pero ya, no lo uses ni como comprobación de un setup exitoso ni para comparar lenguajes entre sí.</p>

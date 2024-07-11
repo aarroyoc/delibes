@@ -1,0 +1,96 @@
+<p>Existe un programa dentro de los sistemas Unix llamado wc. Son las iniciales de "word counter". Este programa en cuestión toma un fichero de texto y cuenta líneas, palabras y bytes/caracteres. Vamos a intentar hacer un programa similar pero en Prolog, buscando la pureza, no la velocidad.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/PrologWc.png">
+</div>
+
+<p>Vamos a implementar una máquina de estados, usando como referencia la máquina de estados de este <a href="https://files.adrianistan.eu/wc.pdf">artículo de Robert Graham.</a></p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/WcStates.png">
+</div>
+
+<p>Lo primero será leer el archivo mediante <i>phrase_from_file/2</i>. Este predicado nos permite aplicar una DCG a la vez que se va leyendo el archivo (no hay que leer el fichero entero para ir empezando con la ejecución). Esta es de las formas más eficientes de leer ficheros en Scryer Prolog.</p>
+
+<pre><code class="language-prolog">
+:- use_module(library(format)).
+:- use_module(library(lists)).
+:- use_module(library(pio)).
+
+:- initialization(run).
+
+run :-
+    phrase_from_file(state(was_space, 1, 0, 0, Lines, Words, Chars), "quijote.txt"),
+    format("~d ~d ~d~n", [Lines, Words, Chars]),
+    halt.
+</code></pre>
+
+<p>La DCG básicamente va a leer caracter a caracter, comprobando de qué tipo es, actualizando los valores de líneas, palabras y caracteres (los valores iniciales son 1, 0 y 0 respectivamente).</p>
+
+<p>Los tipos de caracteres que podemos leer los definiremos en este predicado llamado type/2, y podrán ser de tres tipos: space, newline y word. El primer argumento será el caracter, el segundo el tipo.</p>
+
+<pre><code class="language-prolog">
+type(X, space) :- member(X, " \t").
+type('\n', newline).
+type(X, word) :- \+ member(X, " \t\n").
+</code></pre>
+
+<p>Ahora definimos las transiciones de estado en un predicado state/3. El primer argumento será el estado actual, después el tipo de caracter encontrado, y por último, el estado al que se pasa.</p>
+
+<pre><code class="language-prolog">
+state(_, space, was_space).
+state(_, newline, new_line).
+state(was_space, word, new_word).
+state(new_line, word, new_word).
+state(new_word, word, was_word).
+state(was_word, word, was_word).
+</code></pre>
+
+<p>¡Ya lo tenemos casi todo! Ahora falta definir la DCG que va a ir leyendo los caracteres. También la he llamado state, aunque su aridad es mucho mayor. El primer argumento es el estado que implementa, seguido de las líneas, palabras y caracteres antes de entrar al estado, y al finalizar la lectura.</p>
+
+<p>Importante no olvidar la última definición, que aplica cuando ya no hay más que leer, y que reporta los resultados.</p>
+
+<pre><code class="language-prolog">
+state(was_space, Lines0, Words0, Chars0, Lines, Words, Chars) -->
+    [X],
+    {
+	type(X, Type),
+	state(was_space, Type, NextState),
+	Chars1 is Chars0 + 1
+    },
+    state(NextState, Lines0, Words0, Chars1, Lines, Words, Chars).
+
+state(new_line, Lines0, Words0, Chars0, Lines, Words, Chars) -->
+    [X],
+    {
+	type(X, Type),
+	state(new_line, Type, NextState),
+	Lines1 is Lines0 + 1,
+	Chars1 is Chars0 + 1
+    },
+    state(NextState, Lines1, Words0, Chars1, Lines, Words, Chars).
+	
+state(new_word, Lines0, Words0, Chars0, Lines, Words, Chars) -->
+    [X],
+    {
+	type(X, Type),
+	state(new_word, Type, NextState),
+	Words1 is Words0 + 1,
+	Chars1 is Chars0 + 1
+    },
+    state(NextState, Lines0, Words1, Chars1, Lines, Words, Chars).
+
+state(was_word, Lines0, Words0, Chars0, Lines, Words, Chars) -->
+    [X],
+    {
+	type(X, Type),
+	state(was_word, Type, NextState),
+	Chars1 is Chars0 + 1
+    },
+    state(NextState, Lines0, Words0, Chars1, Lines, Words, Chars).
+
+state(_, L, W, C, L, W, C) --> [].
+</code></pre>
+<p>Con esto ya tenemos, de forma muy limpia, wc en Prolog. Nótese que el fichero de lectura está hardcodeado (es <a href="https://www.gutenberg.org/files/2000/2000-0.txt">este Quijote</a>). Esto lo he hecho para no despistar con esa parte, que todavía puede mejorar en Scryer Prolog.</p>
+
+<p>Y, ¿cómo es el rendimiento? Pues realmente es malo, para qué engañarnos. Es varios órdenes de magnitud más lento. Pero claro, hay que tener en cuenta que a día de hoy Scryer Prolog es 100% interpretado. También, en algunas definiciones estamos añadiendo choicepoints innecesarios (por ejemplo en type/2). Quitándolos obtenemos un programa el doble de rápido pero ya no es tan elegante.</p>

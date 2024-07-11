@@ -1,0 +1,171 @@
+<p>Como alguno de los lectores ya sabr&aacute;, he empezado a trabajar este verano en <a href="https://www.telefonica.com">Telef&oacute;nica</a> como becario. El proyecto donde estoy es 100% cloud y para ello usamos muchas herramientas. Hoy os vengo a hablar de <a href="https://www.terraform.io/">Terraform</a>, una herramienta que nos permite declarar la infraestructura como c&oacute;digo y de forma declarativa.</p>
+<h2>&iquest;Por qu&eacute;?</h2>
+<p>Antiguamente, cuando se desplegaban servicios, o una de dos: o se usaban servidores f&iacute;sicos, que se ten&iacute;an que comprar, instalar, mantener, ... o se usaba un hosting compartido, el cu&aacute;l para ciertas cosas puede estar bien, pero tiene muchas limitaciones. Hoy en d&iacute;a, gracias a los proveedores cloud, podemos alquilar infraestructura bajo demanda. Terraform es una herramienta para dejar por escrito toda la infraestructura en la nube que necesita nuestro servicio y crearla/modificarla seg&uacute;n modifiquemos los archivos. Adem&aacute;s es declarativo, lo que quiere decir que tenemos que expresarnos en c&oacute;digo seg&uacute;n lo que queremos obtener, no c&oacute;mo, por tanto tambi&eacute;n cumple el papel de documentaci&oacute;n. Piensa en Terraform como en los planos de un edificio. Nosotros definimos las vigas, paredes, tuber&iacute;as sobre el papel y los obreros se encargan de construirlo. Terraform es eso, nosotros definimos m&aacute;quinas, bases de datos y el programa se encarga de construir la infraestructura en la nube.</p>
+<h2>Funcionamiento interno</h2>
+<p>Terraform tiene varios componentes que vamos a definir primero:</p>
+<ul>
+<li>recurso: cualquier cosa que exista en la nube (o fuera) sobre la que Terraform tenga control de creaci&oacute;n, modificaci&oacute;n y destrucci&oacute;n</li>
+<li>datos: puntos donde podemos obtener informaci&oacute;n para nuestro c&oacute;digo.</li>
+<li>salidas: valores generados durante la ejecuci&oacute;n del plan y que pueden ser de inter&eacute;s (direcciones IP, contrase&ntilde;as, ...)</li>
+<li>c&oacute;digo: aqu&iacute; es donde vamos a escribir la infraestructura que necesitamos (m&aacute;quinas virtuales, cl&uacute;steres de Kubernetes, balanceadores de carga, discos, ...). Representa el estado &oacute;ptimo del sistema.</li>
+<li>estado: aqu&iacute; Terraform almacena la infraestructura real, con mucha m&aacute;s informaci&oacute;n que la que existe en el c&oacute;digo. Adem&aacute;s le sirve a Terraform para acordarse entre ejecuciones de la infraestructura que controla</li>
+<li>proveedores: los recursos y los datos necesitan de un plugin que conecte la nube con Terraform. Terraform contiene multitud de proveedores: Azure, AWS, Google Cloud, Netlify, OpenStack, Kubernetes, Let's Encrypt, Helm, Digital Ocean, OVH, Alibabba Cloud, Oracle Cloud, PostgreSQL, Triton, VMware vSphere, Heroku, Linode, Packet, 1&amp;1 <a href="https://www.terraform.io/docs/providers/">y muchos m&aacute;s</a>. Adicionalmente, existen proveedores creados por terceros.</li>
+<li>plan: se trata del paso en cual Terraform compara el estado con el c&oacute;digo y encuentra diferencias entre el estado real y el &oacute;ptimo. Opcionalmente el estado se puede actualizar antes (lo hace por defecto) para tener un estado lo m&aacute;s real posible. Cuando tengamos un plan lo podemos aplicar y entonces Terraform modificar&aacute; la infraestructura.</li>
+</ul>
+<h2>Una m&aacute;quina virtual sencilla</h2>
+<p>Para este ejemplo voy a usar Microsoft Azure, pero se pueden usar otros proveedores similares haciendo los cambios adecuados. Cualquier estudiante puede pedir el <a href="https://education.github.com/pack">GitHub Education Pack</a> que regala 100$ para gastar en Azure.</p>
+<pre><code>
+provider "azurerm" {
+  version = "~&gt; 1.28.0"
+}
+
+provider "random" {}
+
+resource "random_string" "username" {
+  length = 12
+  special = false
+}
+
+resource "random_password" "password" {
+  length = 12
+  special = true
+}
+
+resource "azurerm_resource_group" "main" {
+  name     = "blog"
+  location = "France Central"
+}
+
+resource "azurerm_public_ip" "main" {
+  name                = "blog-ip"
+  location            = "${azurerm_resource_group.main.location}"
+  resource_group_name = "${azurerm_resource_group.main.name}"
+  allocation_method   = "Static"
+}
+
+resource "azurerm_virtual_network" "main" {
+  name                = "blog-network"
+  address_space       = ["10.0.0.0/16"]
+  location            = "${azurerm_resource_group.main.location}"
+  resource_group_name = "${azurerm_resource_group.main.name}"
+}
+
+resource "azurerm_subnet" "internal" {
+  name                 = "blog-internal"
+  resource_group_name  = "${azurerm_resource_group.main.name}"
+  virtual_network_name = "${azurerm_virtual_network.main.name}"
+  address_prefix       = "10.0.2.0/24"
+}
+
+resource "azurerm_network_interface" "main" {
+  name                = "blog-nic"
+  location            = "${azurerm_resource_group.main.location}"
+  resource_group_name = "${azurerm_resource_group.main.name}"
+
+  ip_configuration {
+    name                          = "conf1"
+    subnet_id                     = "${azurerm_subnet.internal.id}"
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id = "${azurerm_public_ip.main.id}"
+  }
+}
+
+resource "azurerm_virtual_machine" "main" {
+  name                  = "blog-vm"
+  location              = "${azurerm_resource_group.main.location}"
+  resource_group_name   = "${azurerm_resource_group.main.name}"
+  network_interface_ids = ["${azurerm_network_interface.main.id}"]
+  vm_size               = "Standard_DS1_v2"
+
+  storage_image_reference {
+    publisher = "Canonical"
+    offer     = "UbuntuServer"
+    sku       = "18.04-LTS"
+    version   = "latest"
+  }
+  storage_os_disk {
+    name              = "disk-os-1"
+    caching           = "ReadWrite"
+    create_option     = "FromImage"
+    managed_disk_type = "Standard_LRS"
+  }
+  os_profile {
+    computer_name  = "blog"
+    admin_username = "${random_string.username.result}"
+    admin_password = "${random_password.password.result}"
+  }
+  os_profile_linux_config {
+    disable_password_authentication = false
+  }
+}
+
+output "login_information" {
+  value = "${random_string.username.result}:${random_password.password.result}:${azurerm_public_ip.main.ip_address}"
+}
+</code></pre>
+<p>&nbsp;</p>
+<p>El c&oacute;digo es sencillo y declarativo. Definimos dos proveedores (azurerm y random) para los recursos que vamos a definir. Los recursos se identifican por el tipo de recurso y por un identificador &uacute;nico. Luego definimos usuario y contrase&ntilde;a aleatorios para la m&aacute;quina, un grupo de recursos de Azure, una direcci&oacute;n IP p&uacute;blica, la infraestructura de red y finalmente una m&aacute;quina virtual con Ubuntu. En output mostramos la IP p&uacute;blica de la m&aacute;quina, su usuario y contrase&ntilde;a, para poder conectarnos. Aqu&iacute; podr&iacute;amos pasar a usar otras herramientas como Ansible para instalar todo lo necesario en la m&aacute;quina virtual.</p>
+<p>Aqu&iacute; hemos visto el uso de referencias, con el s&iacute;mbolo del d&oacute;lar. Estas referencias le permiten a Terraform construir/destruir la infraestructura en el orden correcto. Por defecto Terraform intenta realizar todas las operaciones en paralelo, salvo que necesite una informaci&oacute;n que venga de otro recurso. En ese caso, tiene que ser creado con &eacute;xito para poder proceder a la creaci&oacute;n del siguiente. Si no podemos usar referencias, podemos usar&nbsp;<strong>depends_on</strong>.</p>
+<p>Hagamos un&nbsp;<strong>terraform apply</strong> para realizar un plan y aplicarlo. Adem&aacute;s veremos las salidas definidas.</p>
+<p><img src="https://files.adrianistan.eu/TerraformOutput.png" alt="" /></p>
+<p>Y vemos como ha sido creado en Azure con &eacute;xito.</p>
+<p><img src="https://files.adrianistan.eu/PanelAzure.png" alt="" /></p>
+<p>Ahora si modificamos algo desde la web y volvemos a ejecutar <strong>terraform apply</strong>, se detectar&aacute; que el estado real es diferente al &oacute;ptimo y tratar&aacute; de revertir el cambio. Tambi&eacute;n si modificamos los ficheros se intentar&aacute; modificar el entorno real.&nbsp;</p>
+<h2>Variables y bucles</h2>
+<p>Terraform admite datos externos y bucles. Vamos a verlo. Con variable podemos introducir datos desde variables de entorno, la CLI o un fichero .tfvars. Estas variables pueden tener un valor por defecto. Las variables se definen con -var="var_name=var_value", con las variables de entorno TF_VAR_var_name=var_value y el fichero terraform.tfvars.</p>
+<p>Los bucles se pueden realizar con&nbsp;<strong>count</strong>, si cada elemento no tiene identidad (por ejemplo, el n&uacute;mero de r&eacute;plicas de una VM igual) o con&nbsp;<strong>for_each</strong> si cada elemento debe tener identidad (por ejemplo, una VM para cada pa&iacute;s).</p>
+<pre><code>
+provider "azurerm" {
+  version = "~&gt; 1.28.0"
+}
+
+variable "name" {
+  default = "adrianistan"
+}
+
+variable "country" {
+  default = [
+    "es",
+    "ar"
+  ]
+}
+
+resource "azurerm_resource_group" "main" {
+  name     = "blog"
+  location = "France Central"
+}
+
+resource "azurerm_app_service_plan" "main" {
+  name                = "main-appserviceplan"
+  location            = "${azurerm_resource_group.main.location}"
+  resource_group_name = "${azurerm_resource_group.main.name}"
+  kind                = "Linux"
+  reserved            = true
+
+  sku {
+    tier = "Basic"
+    size = "B1"
+  }
+}
+
+resource "azurerm_app_service" "main" {
+  for_each            = toset(var.country)
+  name                = "${var.name}-${each.value}"
+  location            = "${azurerm_resource_group.main.location}"
+  resource_group_name = "${azurerm_resource_group.main.name}"
+  app_service_plan_id = "${azurerm_app_service_plan.main.id}"
+
+  site_config {
+    linux_fx_version = "DOCKER|nginx:1.17.3"
+  }
+}
+
+output "web" {<br />  value = "${formatlist("%s", [for o in azurerm_app_service.main : o.default_site_hostname])}"<br />}
+</code></pre>
+<p>En este ejemplo usamos un bucle for_each para generar dos Azure App Services (cargados con nginx), uno para Espa&ntilde;a y otro para Argentina.</p>
+<p>Comprobamos como funciona:</p>
+<p><img src="https://files.adrianistan.eu/TerraformPlan.png" alt="" /></p>
+<p><img src="https://files.adrianistan.eu/TerraformApply.png" alt="" /></p>
+<p><img src="https://files.adrianistan.eu/TerraformNginx.png" alt="" /></p>
+<p>Espero que esta breve introducci&oacute;n a Terraform os haya resultado interesante. Se trata de un lenguaje sencillo, declarativo y donde la mayor parte de nuestros problemas vendr&aacute;n de conocer la documentaci&oacute;n de cada proveedor al dedillo.</p>
+<p>&nbsp;</p>

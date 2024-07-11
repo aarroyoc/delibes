@@ -1,0 +1,167 @@
+<p>Un tipo de librer&iacute;a muy popular en lenguajes din&aacute;micos son los ORM. Los ORM son librer&iacute;as que hacen de intermediario entre la base de datos y nuestra aplicaci&oacute;n, permiti&eacute;ndonos expresar en el lenguaje de programaci&oacute;n deseado las estructuras y datos y procedimientos. Rust, a pesar de ser un lenguaje de programaci&oacute;n est&aacute;tico, cuenta con un potente ORM gracias al sistema de macros. Se llama <a href="https://diesel.rs">Diesel&nbsp;</a> y es compatible con PostgreSQL, SQLite y MySQL. Un ejemplo uso de Diesel es este mismo blog, que lo usa para almacenar posts y comentarios en una base de datos PostgreSQL.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/Diesel.png" alt="" width="359" height="186" /></p>
+<h2>Enfoque</h2>
+<p>Dentro de los ORM existen varios enfoques, por un lado est&aacute;n aquellos que lo &uacute;nico que hacen es hacer accesibles las estructuras de datos desde el lenguaje, realizando las conversiones de tipos. Estos ORM m&aacute;s b&aacute;sicos se suelen llamar&nbsp;<strong>data mappers</strong>. Diesel soporta esto, pero adem&aacute;s soporta un enfoque donde las operaciones tambi&eacute;n se realizan en Rust y tambi&eacute;n podemos usar migraciones (a trav&eacute;s de una CLI).</p>
+<p>Personalmente no uso la CLI, pero para proyectos nuevos puede ser m&aacute;s que interesante. En este tutorial, intentaremos ver todas las formas de usar Diesel.</p>
+<h2>Creando el proyecto con migraciones</h2>
+<p>Lo primero ser&aacute; crear un proyecto Rust, con cargo new y a&ntilde;adir Diesel como dependencia en el fichero Cargo.toml. <a href="https://github.com/aarroyoc/blog-ejemplos">Todo el c&oacute;digo lo ten&eacute;is aqu&iacute; por si en alg&uacute;n momento necesit&aacute;is referencia</a>. Ser&aacute; el momento de instalar diesel_cli y crear la base de datos.</p>
+<pre><code>
+cargo new diesel-sample
+cargo install diesel_cli --no-default-features --features sqlite<br />diesel setup --database-url db.sqlite3
+</code></pre>
+<p>Se habr&aacute; generado un fichero diese.toml y una carpeta migrations vac&iacute;a. Vamos a crear una migraci&oacute;n nueva (init) en SQL.</p>
+<pre><code>
+diesel migration generate init
+</code></pre>
+<p>Habr&aacute; generado una carpeta dentro de migrations con dos ficheros up y down. Up sirve para hacer la migraci&oacute;n, down para revertirla. El contenido de up.sql ser&aacute; el siguiente:</p>
+<pre><code class="language-sql">
+CREATE TABLE post (
+	id INTEGER,
+	title TEXT NOT NULL,
+	content TEXT NOT NULL,
+	PRIMARY KEY(id));
+</code></pre>
+<p>Y el de down.sql</p>
+<pre><code>
+DROP TABLE post;
+</code></pre>
+<p>Podemos ejecutar la migraci&oacute;n con:</p>
+<pre><code>
+diesel migration run
+</code></pre>
+<p>Y deshacerla con</p>
+<pre><code>
+diesel migration redo
+</code></pre>
+<p>Adem&aacute;s de eso se nos habr&aacute; generado un fichero llamado schema.rs, en el lugar especificado por el fichero diesel.toml (normalmente ser&aacute; en src). Este fichero sigue una estructura muy interesante y es el verdadero pegamento entre nuestra aplicaci&oacute;n y la base de datos. Las migraciones lo &uacute;nico que hacen es ejecutar el SQL y tomar nota del resultado final para generar el fichero schema.rs, que contiene una macro.</p>
+<p>Es decir, ahora podemos seguir, vayas a usar migraciones o no.</p>
+<h2>Schema.rs</h2>
+<p>Si usas migraciones no deber&iacute;as editar este archivo a mano pero si no vas a usar migraciones (sistemas heredados o simplemente tienes otra forma de manejar el SQL) puedes crearlo y editarlo a mano. La sintaxis es sencilla:</p>
+<pre><code>
+table! {
+    post (id) {
+        id -&gt; Integer,
+        title -&gt; Text,
+        content -&gt; Text,
+    }
+}
+</code></pre>
+<p>Por un lado hay un table! por cada tabla en la base de datos. Esta lleva el nombre de la tabla (Post) y su clave primaria (id), a continuaci&oacute;n se define un listado de campos y su tipo. Estos tipos no son ni de Rust ni SQL, son tipos que define Diesel.</p>
+<p>Otras macros que pueden aparecer en el fichero schema.rs son joinable y <span class="pl-en">allow_tables_to_appear_in_same_query.</span></p>
+<p><span class="pl-en">Joinable indica que las tablas est&aacute;n relacionadas entre s&iacute; y se puede hacer un JOIN. As&iacute; pues, en el caso de que hubiese comentarios en la base de datos, y estos tuvieran un campo post_id, lo podr&iacute;amos relacionar as&iacute;:</span></p>
+<pre><code>
+joinable!(comment -&gt; post (post_id));
+</code></pre>
+<p>Normalmente siempre se usa juno con <span class="pl-en">allow_tables_to_appear_in_same_query, que permite que en una misma query se pueda acceder a dos tablas:<br /></span></p>
+<pre><code>
+allow_tables_to_appear_in_same_query!(post, comment);
+</code></pre>
+<h2>Queryable</h2>
+<p>Ahora podemos definir estructuras en Rust que representen el resultado de una consulta a la base de datos, esto lo podemos hacer con Queryable. La estructura no tiene por qu&eacute; ser id&eacute;ntica a la tabla, incluso puede tener menos campos o m&aacute;s resultado de un JOIN. Pero es muy importante que el orden de los campos estructura. Si queremos despreocuparnos podemos usar QueryableByName, pero tendremos que indicar la tabla. Pong&aacute;moslo todo junto. Adem&aacute;s, primero vamos a meter algunos datos en la base de datos:</p>
+<pre><code>
+sqlite3 db.sqlite3
+&gt; INSERT INTO post VALUES (1, "El Guardi&aacute;n entre el Centeno", "El libro de los psic&oacute;patas");<br />&gt; INSERT INTO post VALUES (2, "On the road", "Esencia de la generaci&oacute;n beat");
+</code></pre>
+<p>El c&oacute;digo es el siguiente:</p>
+<pre><code class="language-rust">
+#[macro_use]
+extern crate diesel;
+
+use diesel::prelude::*;
+use diesel::sqlite::SqliteConnection;
+use self::schema::*;
+
+mod schema;
+
+#[derive(Queryable)]
+struct Post{
+    id: i32,
+    title: String,
+    content: String,
+}
+
+fn main() {
+    let conn = SqliteConnection::establish("db.sqlite3").unwrap();
+
+    let posts = post::table.load::&lt;Post&gt;(&amp;conn).unwrap();
+    for post in posts {
+        println!("Title: {}\tContent: {}", post.title, post.content);
+    }
+}
+</code></pre>
+<p>Lo primero que hay que hacer es importar diesel con macros. Luego cargamos el preludio de Diesel, la conexi&oacute;n con Sqlite y nuestro esquema. Hay unos helpers disponibles bajo el subm&oacute;dulo dsl. Sin embargo, en mi experiencia, la colisi&oacute;n de nombres se vuelve un problema real y es mejor ser m&aacute;s verboso.</p>
+<p>Esta selecci&oacute;n es muy sencilla, veamos otra que tire de WHERE.</p>
+<p>Para a&ntilde;adir condiciones usamos&nbsp;<strong>filter.</strong> Las condiciones tienen que escribirse con una API fluent, no se pueden usar condiciones igual que en Rust de momento. Por ejemplo, para pedir los posts con ID &gt; 1:</p>
+<pre><code class="language-rust">
+    let posts = post::table
+        .filter(post::id.gt(1))
+        .load::&lt;Post&gt;(&amp;conn)
+        .unwrap();
+</code></pre>
+<p>Donde gt significa "greater than" y es el equivalente a &gt;.</p>
+<h2>SELECT y JOIN</h2>
+<p>La API de Diesel admite m&aacute;s opciones por supuesto. Podemos elegir los campos que queremos que se carguen de la base de datos. Evidentemente, la estructura a la que carguemos los datos deber&aacute; soportarlo. De hecho, si solo seleccionamos una columna podremos ahorrarnos este paso e ir directamente con tipos primitivos.</p>
+<pre><code class="language-rust">
+    let posts = post::table
+        .select(post::title)
+        .load::&lt;String&gt;(&amp;conn)
+        .unwrap();
+    for post_title in posts {
+        println!("Title: {}", post_title);
+    }
+</code></pre>
+<p>Para realizar JOIN, es necesario que las tablas est&eacute;n relacionadas por&nbsp;<strong>joinable</strong> y una vez hecho eso, podemos hacer el join directamente, sin especificar IDs ni claves for&aacute;neas, simplemente agregando&nbsp;<strong>inner_join</strong> a la petici&oacute;n.</p>
+<h2>Insertable</h2>
+<p>&iquest;Y si queremos insertar algo en la base de datos? Diesel nos ofrece Insertable, para poder volcar estructuras en las base de datos. Su uso es muy similar a Queryable pero a&ntilde;adiendo el nombre de la tabla. De hecho, en el ejemplo que voy a poner, PostInsert y Post podr&iacute;an ser la misma estructura pero lo voy a separar. Al igual que en SQL, no tenemos que proveer todos los campos si el esquema lo permite. A&ntilde;adimos los datos con&nbsp;<strong>insert_into</strong>.</p>
+<pre><code class="language-rust">
+#[derive(Insertable)]
+#[table_name="post"]
+struct PostInsert{
+    id: i32,
+    title: String,
+    content: String,
+}
+
+...
+
+let new_post = PostInsert {
+        id: 5,
+        title: "Test".to_string(),
+        content: "Lorem Ipsum".to_string(),
+    };
+
+    diesel::insert_into(post::table)
+        .values(&amp;new_post)
+        .execute(&amp;conn);
+</code></pre>
+<h2>SQL</h2>
+<p>Diesel nos permite escribir queries en SQL directamente tambi&eacute;n. Para ello tenemos&nbsp;<strong>sql_query</strong>. Las estructuras donde obtendremos la informaci&oacute;n deben tener QueryableByName, esto es debido a que Queryable hace la traducci&oacute;n simplemente por el orden de los elementos, QueryableByName la hace teniendo en cuenta el nombre de las columnas.</p>
+<pre><code class="language-rust">
+#[derive(QueryableByName)]
+#[table_name="post"]
+struct PostRaw {
+    id: i32,
+    title: String,
+}
+...
+    let posts = diesel::sql_query("SELECT id,title FROM post WHERE id &gt; 0").load::&lt;Post&gt;(&amp;conn).unwrap();
+    for post in posts {
+        println!("Title: {}\tID: {}", post.title, post.id);
+    }
+</code></pre>
+<p>De este modo, Diesel solo realiza las funciones de data mapper y podemos reusar nuestro c&oacute;digo SQL o si preferimos SQL, podemos usarlo.</p>
+<h2>UPDATE y DELETE</h2>
+<p>Para realizar UPDATE o DELETE, tenemos que seleccionar primero las filas (con find o filter) y despu&eacute;s ejecutar.</p>
+<p>En el caso de UPDATE, usaremos set para ir seteando los nuevos valores. Para introducir el valor usamos eq (igual):</p>
+<pre><code class="language-rust">
+diesel::update(post::table.find(1))
+        .set(post::title.eq("T&iacute;tulo actualizado".to_string()))
+        .execute(&amp;conn);
+</code></pre>
+<p>Y el DELETE ser&iacute;a similar.</p>
+<pre><code class="language-rust">
+    diesel::delete(post::table.find(1))
+        .execute(&amp;conn);
+</code></pre>
+<p>Y con esto ya tendr&iacute;amos las operaciones b&aacute;sicas de CRUD y alguna m&aacute;s implementadas con Diesel.</p>
+<p>Con el paso del tiempo, Diesel ha resultado ser una de las librer&iacute;as m&aacute;s interesantes del mundo Rust, una librer&iacute;a estable y que nos ahorra mucho trabajo y nos ayuda a encontrar errores. <a href="https://github.com/aarroyoc/blog-ejemplos">Todo el c&oacute;digo del art&iacute;culo est&aacute; en GitHub.</a></p>

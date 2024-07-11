@@ -1,0 +1,137 @@
+<p>Prolog es un lenguaje muy interesante pero muchas veces, cuando programamos en él, sentimos que estamos aislados. No existen muchas librerías en Prolog y eso hace que muchas veces se nos quiten las ganas de tener que reimplementar algo en Prolog. Sin embargo, varios entornos Prolog nos ofrecen llamadas nativas (normalmente a C). Algunos de estos sistemas son SWI Prolog o GNU Prolog. En este post vamos a ir un paso más allá, y en vez de usar C para complementar a Prolog, usaremos Rust. Todo ello gracias a <a href="https://github.com/terminusdb-labs/swipl-rs">swipl-rs</a>.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RaylibProlog.png" width="500">
+</div>
+<h2>Creando la librería en Rust con swipl-rs</h2>
+<p>El primer paso será crear la librería en Rust. Nuestra librería va a ser un wrapper de la librería gráfica <a href="https://www.raylib.com/">Raylib</a>. Usaremos cargo para crear el código inicial:</p>
+<pre><code>
+cargo new --lib raylog
+</code></pre>
+<p>A continuación editamos el fichero Cargo.toml para añadir la siguiente información:</p>
+<pre><code>
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+swipl = "0.3.0"
+raylib-sys = "3.5"
+</code></pre>
+<p>Por un lado definimos la librería de tipo cdylib (librería dinámica) y añadimos las dependencias de swipl-rs y de Raylib. En este caso, usaré raylib-sys, que compila automáticamente Raylib y tiene una API muy parecida a la de C. Esta API es más fácil que usar que la API estilo Rust del crate raylib a secas.</p>
+<p>A continuación vamos al fichero lib.rs. Hay dos cosas importantes: la macro predicates y la función install.</p>
+<p>La función install, será llamada para hacer el setup de nuestra librería. La macro predicates nos dejará definir predicados, de diversos tipos.</p>
+<pre><code class="language-rust">
+use swipl::prelude::*;
+use raylib_sys::*;
+
+predicates! {
+    semidet fn init_raylib(_context, width, height, title) {
+        let width = width.get::&lt;i64&gt;()? as i32;
+        let height = height.get::&lt;i64&gt;()? as i32;
+        let title = title.get::&lt;String&gt;()?;
+        let title = CString::new(title).unwrap();
+
+        unsafe {
+            InitWindow(width, height, title.as_ptr());
+        }
+        
+        Ok(())
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn install() {
+    register_init_raylib();
+}
+</code></pre>
+<p>En la macro definimos un predicado llamado init_raylib. Es de tipo semidet, es decir, solo genera una (posible) solución, pero también puede fallar. El primer argumento siempre es el contexto, después tenemos los argumentos que le pasaríamos al predicado. Sobre esos argumentos podemos obtener el valor real, haciendo un get, o unificarlos con algún valor si son variables. En este caso, simplemente inicializamos la ventana en Raylib, con los valores que nos dan y devolvemos un Ok, para indicar que el predicado es cierto.</p>
+<p>En la función install, hacemos el registro del predicado. La macro genera funciones del estilo register_XXXX para que las añadamos aquí.</p>
+<h2>Un predicado con fallo</h2>
+<p>Si has entendido por qué ponemos el Ok, al finalizar la definición del predicado, esto te resultará sencillo. Si queremos que en Prolog un predicado falle, deberemos devoler Err. En este caso hay dos opciones, una excepción de Prolog o un simple fallo. Esto lo podremos usar en el mapeo de WindowShouldClose:</p>
+<pre><code class="language-rust">
+    semidet fn should_close(_context) {
+        unsafe {
+            if WindowShouldClose() {
+                Ok(())
+            } else {
+                Err(PrologError::Failure)
+            }
+        }
+    }
+</code></pre>
+<h2>Unificando con términos sin traslación directa a Rust</h2>
+<p>En Prolog es muy habitual usar términos que contienen otros términos. Estos se llaman comunmente compuestos o complejos. En Prolog se usan para representar cierta información que va junta, como un struct o un record en otro lenguaje. Pero esto no tiene traducción directa a Rust. Para ello, usaremos la macro term_getable, que nos dejará definir tipos de datos compatibles con la operación get.</p>
+<p>En este ejemplo vamos a tener un compuesto de color, que contiene los valores de rojo, verde, azul y alpha de un color. Tiene sentido que vayan juntos. En Prolog diríamos:</p>
+<pre><code>
+Color = color(124, 123, 123, 255)
+</code></pre>
+<p>En swipl-rs podemos realizar la lectura de ese término con la macro así:</p>
+<pre><code class="language-rust">
+struct PrologColor{
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8
+}
+
+term_getable!{
+    (PrologColor, "color", term) => {
+        let r: i64 = attempt_opt(term.get_arg(1)).unwrap_or(None)?;
+        let g: i64 = attempt_opt(term.get_arg(2)).unwrap_or(None)?;
+        let b: i64 = attempt_opt(term.get_arg(3)).unwrap_or(None)?;
+        let a: i64 = attempt_opt(term.get_arg(4)).unwrap_or(None)?;
+
+        Some(PrologColor{
+            r: r as u8,
+            g: g as u8,
+            b: b as u8,
+            a: a as u8
+        })
+    }
+}
+</code></pre>
+<p>Y se podría usar así:</p>
+<pre><code class="language-rust">
+    semidet fn clear_background(_context, color) {
+        let color: PrologColor = color.get()?;
+        unsafe {
+            ClearBackground(Color{
+                r: color.r,
+                g: color.g,
+                b: color.b,
+                a: color.a
+            });
+        }
+        Ok(())
+    }
+</code></pre>
+<p>Con esto y algún predicado más, pero de construcción similar, ya podemos hacer un Hola Mundo.</p>
+<h2>El programa Prolog</h2>
+<p>El programa Prolog debe, en primer lugar, cargar la librería dinámica. Después, podremos usar los predicados que hemos hecho para controlar Raylib desde Prolog. Un código podría ser:</p>
+<pre><code class="language-prolog">
+:- use_module(library(random)).
+
+init :-
+    use_foreign_library('target/debug/libraylog.so'),
+    init_raylib(600, 400, "RayLog"),
+    loop.
+
+loop :-
+    \+ should_close,
+    !,
+    begin_drawing,
+    random_between(128, 255, Red),
+    random_between(128, 255, Green),
+    random_between(128, 255, Blue),
+    clear_background(color(Red, Green, Blue, 255)),
+    draw_text("Raylib + Prolog =:= Fun", 12, 12, 20, color(0, 0, 0, 255)),
+    end_drawing,
+    loop.
+
+loop :-
+    halt(0).
+</code></pre>
+<p>Ahora solo habrá que arrancar SWI Prolog con este fichero y ejecutar init.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RaylibProlog.png" width="500">
+</div>
+<p>Esto es solo un ejemplo de lo que nos permite hacer swipl-rs. Pero hay muchas más opciones. Ya no hay excusas para usar la librería que más te gusta desde Prolog.</p>

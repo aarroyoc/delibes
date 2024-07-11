@@ -1,0 +1,593 @@
+<p>Estaba experimentando con Bevy, un motor de videojuegos muy prometedor, escrito en Rust, cuando me surgió la necesidad (o en ese momento lo creía) de tener que hacer un hack usando shaders. Los shaders son pequeños programas que se ejecutan en la GPU. Tras mis aventuras, he podido comprender como funciona, más en detalle, los gráficos 3D modernos. Una ventaja que tiene Bevy respecto a otros motores, es que, actualmente te permite acceder al nivel base WebGPU de forma muy rápida y cómoda, sin las complicaciones habituales de hacer todo el setup. Es por ello que usaremos Bevy, para tener acceso rápido a WGSL y poder programar en la GPU.</p>
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyShaderFinal.png"/>
+</div>
+
+<h2> Setup inicial</h2>
+<p>
+Para empezar deberemos crear un proyecto en Rust. Añadiremos la dependencia de Bevy a nuestro Cargo.toml:
+</p>
+<pre>
+bevy = "0.12.1"
+</pre>
+<h3>Cámara</h3>
+<p>
+Una cosa que vamos a necesitar es una cámara. Bevy dispone de cámaras específicas de 2D y de 3D.
+Usaremos una de 3D sin muchos ajustes adicionales, aunque hay muchos parámetros modificables.
+</p>
+
+<pre class="example">
+use bevy::prelude::*;
+
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera3dBundle {
+        transform: Transform::from_xyz(0.0, 0.0, 2.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
+}
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_systems(Startup, setup_camera)
+        .run();
+}
+</pre>
+<p>
+<b>¿Qué es una cámara en realidad?</b>
+</p>
+<p>
+Esta pregunta es muy interesante. Cuando añadimos una cámara a nuestro proyecto Bevy, ¿qué estamos haciendo exactamente?
+Pues en esencia estamos agregando una matriz 4x4 a un sitio, que más adelante podremos usar. Simplemente eso.
+Esta matriz al ser multiplicada por un vértice (que será una matriz 4x1), nos dará la posición real del vértice en la pantalla.
+</p>
+<h3Mesh</h3>
+<p>Ahora ya podríamos ver algo, pero nos falta ese algo que ver. En los motores actuales los "objetos" se suelen dividir como mínimo en 2 componentes (si tenemos animaciones habrá más). Lo primero es el mesh y lo segundo es el material.</p>
+<p>Podemos pensar en el mesh como datos puros, de la forma del objeto. Así pues en el mesh tendremos los vértices del objeto tridimensional, en qué orden se dibujan, vectores de normales y de UV, &#x2026; En general, todo ello referido a vértices.</p>
+<p>Por otro lado, el material vendría a ser los programas que se ejecutan en la GPU (los shaders) más cierta configuración sobre ellos. Pero sin referirnos a los vértices individualmente.</p>
+<p>En Bevy es bastante sencillo crear mesh de cero. Para empezar, vamos a empezar con un cuadrado. Lo primero que hay que decir es que las GPUs modernas solo saben dibujar triángulos. Existen varias formas de dibujar, pero nosotros usaremos <i>TriangleList</i>, que es una técnica muy fácil de entender. A continuación deberemos especificar los vértices de nuestro cuadrado. En el mundo 3D se suelen usar números decimales. Debemos espeficar nuestros vértices en base a un cero relativo al objeto en sí. Si luego en esa escena 3D el objeto debe aparecer en otro sitio, se hará una transformación (multiplicación de matrices) independiente.</p>
+<p>
+El sistema de coordenadas depende del motor. Bevy sigue la regla de la mano derecha, con la Y apuntando arriba.
+En la siguiente imagen se ve de forma clara y comparado con otros motores.
+</p>
+<p>Posteriormente hay que indicar los índices. Como usamos TriangleList, deberemos de añadir tripletas, donde especificamos qué vértices corresponden a cada triángulo. Es decir, si tenemos <code>0,1,2</code>, el triángulo estará formado por los vértices 0, 1 y 2, y se tomarán sus datos de sus correspondientes buffers (de posición, de normal, &#x2026;) El orden importa, ya que podemos dibujar triángulos al revés, esos no se verían.</p>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyAxis.png"  />
+de
+<a href="https://bevy-cheatbook.github.io/fundamentals/coords.html">https://bevy-cheatbook.github.io/fundamentals/coords.html</a>
+</div>
+<p>
+Ahora sí, al lío. Como hemos dicho, el mesh se compone de buffers de datos.
+Existen en Bevy varios "atributos" o buffers predefinidos. Nosotros de momento usaremos solo el de <i>POSITION</i>.
+Para el material vamos a añadir un material básico de un color. Luego lo editaremos.
+</p>
+
+<pre class="example">
+use bevy::prelude::*;
+use bevy::render::mesh::Indices;
+use bevy::render::render_resource::PrimitiveTopology;
+
+fn setup_quad(mut commands: Commands, mut meshes: ResMut&lt;Assets&lt;Mesh&gt;&gt;, mut materials: ResMut&lt;Assets&lt;StandardMaterial&gt;&gt;) {
+    let mesh = Mesh::new(PrimitiveTopology::TriangleList)
+        .with_inserted_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![
+                [0.5, -0.5, 0.0],
+                [-0.5, 0.5, 0.0],
+                [-0.5, -0.5, 0.0],
+                [0.5, 0.5, 0.0]
+            ])
+        .with_indices(Some(Indices::U32(vec![
+            2,0,1,
+            0,3,1,
+        ])));
+
+    let mesh_handle = meshes.add(mesh);
+    let material_handle = materials.add(StandardMaterial::from(Color::RED));
+
+    commands.spawn(MaterialMeshBundle {
+        mesh: mesh_handle,
+        material: material_handle,
+        ..default()
+    });
+}
+
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera3dBundle {
+        transform: Transform::from_xyz(0.0, 0.0, 2.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
+}
+
+fn main() {
+    App::new()
+        .add_plugins(DefaultPlugins)
+        .add_systems(Startup, (setup_camera, setup_quad))
+        .run();
+}
+</pre>
+
+<p>
+Con esto podemos ver ya algo en pantalla.
+</p>
+
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/QuadBevy.png"  />
+</div>
+
+<h2>Custom Materials en Bevy</h2>
+<p>
+Ya podemos entrar de lleno a los materiales. Como hemos dicho antes los materiales van a controlar como se dibuja
+el mesh, mediante shaders (programas que se ejecutan en la GPU) y algunas variables que no dependen de los vértices.
+Para empezar hemos usado un material que ya viene en Bevy, muy potente, el <code>StandardMaterial</code>. Para que nosotros
+podamos toquetear a nivel de WGSL y WebGPU, tendremos que implementar un Custom Material.
+</p>
+
+<p>
+Hablemos un poco más de los shaders. Aunque actualmente existe un tercer tipo de shader (geometry shader), en esencia
+hay dos tipos de shader. Y estos dos son obligatorios. El primero de ellos es el <b>Vertex Shader</b>.
+Este shader se ejecutará para cada vértice que se ha mandado dibujar. Su misión principal es convertir la posición de cada vértice del objetivo,
+recordemos, relativa al centro del objeto, a una posición de la vista final, la llamada <i>clip_position</i>.
+Para hacer esto tendrá que intervenir la posición del vértice, la transformación del objeto en la escena y la transformación de la cámara.
+</p>
+
+<p>
+Realmente podremos hacer muchas más cosas pero esa es la idea principal.
+</p>
+
+<p>
+En segundo, lugar tenemos el <b>Fragment Shader</b>. Este se ejecuta después que los vertex shader.
+Entre el vertex shader y el fragment shader tiene lugar un proceso llamado rasterización. El proceso consiste en,
+una vez sabemos donde van los vértices de nuestros triángulos, calcular qué píxeles exactos en pantalla conforman el triángulo entero.
+Para cada uno de los píxeles que hay que pintar, se ejecuta el fragment shader. La tarea esencial del fragment shader es decirle al pixel en particular, qué color
+debe salir en pantalla.
+</p>
+
+<p>
+Para añadir el Custom Material deberemos modificar un par de cosas:
+</p>
+
+<pre class="example">
+use bevy::prelude::*;
+use bevy::render::mesh::Indices;
+use bevy::render::render_resource::PrimitiveTopology;
+use bevy::render::render_resource::ShaderRef;
+use bevy::render::render_resource::AsBindGroup;
+
+#[derive(AsBindGroup, Debug, Clone, Asset, TypePath)]
+struct CustomMaterial {}
+
+impl Material for CustomMaterial {
+    fn vertex_shader() -&gt; ShaderRef {
+        "shaders/custom.wgsl".into()
+    }
+    fn fragment_shader() -&gt; ShaderRef {
+        "shaders/custom.wgsl".into()
+    }
+}
+
+fn setup_quad(mut commands: Commands, mut meshes: ResMut&lt;Assets&lt;Mesh&gt;&gt;, mut materials: ResMut&lt;Assets&lt;CustomMaterial&gt;&gt;) {
+    let mesh = Mesh::new(PrimitiveTopology::TriangleList)
+        .with_inserted_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![
+                [0.5, -0.5, 0.0],
+                [-0.5, 0.5, 0.0],
+                [-0.5, -0.5, 0.0],
+                [0.5, 0.5, 0.0]
+            ])
+        .with_indices(Some(Indices::U32(vec![
+            2,0,1,
+            0,3,1,
+        ])));
+
+    let mesh_handle = meshes.add(mesh);
+    let material_handle = materials.add(CustomMaterial {});
+
+    commands.spawn(MaterialMeshBundle {
+        mesh: mesh_handle,
+        material: material_handle,
+        ..default()
+    });
+}
+
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera3dBundle {
+        transform: Transform::from_xyz(0.0, 0.0, 2.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
+}
+
+fn main() {
+    App::new()
+        .add_plugins((DefaultPlugins, MaterialPlugin::&lt;CustomMaterial&gt;::default()))
+        .add_systems(Startup, (setup_camera, setup_quad))
+        .run();
+}
+</pre>
+
+<p>
+Y deberemos añadir un fichero en <code>assets/shaders/custom.wgsl</code>.
+</p>
+
+<p>
+Este fichero para empezar puede ser así:
+</p>
+
+<pre class="example">
+@vertex
+fn vertex(@location(0) position: vec3&lt;f32&gt;) -&gt; @builtin(position) vec4&lt;f32&gt; {
+  return vec4(position, 1.0);
+}
+
+@fragment
+fn fragment() -&gt; @location(0) vec4&lt;f32&gt; {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}
+</pre>
+
+<p>
+El vertex shader simplemente devuelve la posición y el fragment shader devuelve el color rojo en RGBA.
+</p>
+
+<p>
+Deberíamos ver algo así:
+</p>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyFirstShader.png"  />
+</div>
+<p>
+Seguramente te preguntarás por qué ahora sale deformado. La respuesta es que ahora no hemos hecho ninguna transformación, la posición del vértice a pasado a ser la clip_position.
+Pero el StandardMaterial hacía transformaciones teniendo en cuenta la cámara, por ello preservaba la proporción.
+</p>
+<h2> WGSL</h2>
+<p>
+<a href="https://www.w3.org/TR/WGSL/">WGSL</a> es el lenguaje de shaders estandarizado por W3C para ser usado con la API de WebGPU. Ninguna tarjeta gráfica
+ejecuta WebGPU o WGSL de forma nativa sino que se implementa por encima de las APIs reales del sistema.
+Estas pueden ser Vulkan, DirectX, Metal, OpenGL, &#x2026;
+WGSL en ese sentido es un mínimo denominador común, se trata de un lenguaje diseñado para que pueda funcionar a través de cualquier tipo de API gráfica.
+</p>
+<p>
+WGSL toma bastante inspiración en su sintaxis de Rust, aunque sigue siendo un lenguaje bastante peculiar como iremos viendo.
+Una de las características de WGSL (y de otros lenguajes similares como GLSL en OpenGL) es que permiten multiplicar matrices directamente.
+Además, el tema de las variables puede resultar algo confuso, ya que las "importantes" tendremos que anotarlas,
+para de alguna manera, relacionarlas con los datos del mesh o de la API gráfica.
+</p>
+
+<p>
+Para empezar, algunas variables las podemos relacionar con un builtin, eso es, una variable que siempre está disponible en WebGPU.
+El listado de builtins y lo que significa varía dependiendo del tipo de shader y si es una variable de salida o de entrada. He aquí una pequeña tabla de equivalencias entre WGSL y GLSL.
+</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/WGSLBuiltin2.png"  />
+de <a href="https://dmnsgn.me/blog/from-glsl-to-wgsl-the-future-of-shaders-on-the-web/">https://dmnsgn.me/blog/from-glsl-to-wgsl-the-future-of-shaders-on-the-web/</a>
+</div>
+<p>
+Los location hacen referencia a datos de buffers. En los vertex shader, a la entrada, hacen referencia a datos del mesh.
+Los que hemos indicado con atributos, como la posición. En los fragment shader, a la salida, hacen referencia a los datos que el motor quiera obtener.
+Esto se puede configurar en Bevy, y en qué orden queremos que vayan, pero los ajustes por defecto son suficientemente buenos para no tocarlos.
+</p>
+<p>
+Además veremos groups y bindings, pero eso más adelante.
+</p>
+
+<h3>Vertex Shader</h3>
+<p>
+Como hemos dicho el vertex shader, se ejecuta para cada vértice, toma los datos del mesh y según el modo de dibujo, se ejecuta para ciertos vértices. Lo principal en este proceso es devolver un clip_position.
+</p>
+
+<p>
+Para ayudarnos a hacer las transformaciones, Bevy dispone de funciones predefinidas para WGSL que interactúan con otros elementos del motor, como la cámara.
+Añadiendo un import, podremos acceder a la matriz de transformación que necesitamos y que tiene la cámara 3D que añadimos.
+</p>
+<p>
+Con el nuevo vertex shader, nuestro cuadrado vuelve a tener las proporciones correctas:
+</p>
+<pre class="example">
+#import bevy_pbr::mesh_view_bindings as view_bindings
+
+@vertex
+fn vertex(@location(0) position: vec3&lt;f32&gt;) -&gt; @builtin(position) vec4&lt;f32&gt; {
+  return view_bindings::view.view_proj * vec4(position, 1.0);
+}
+
+@fragment
+fn fragment() -&gt; @location(0) vec4&lt;f32&gt; {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}
+</pre>
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyVertexShader1.png"  />
+</div>
+
+<p>
+Lo gracioso del vertex shader, es que, realmente, podemos deformar lo que queramos los vértices. Incluso podemos no hacer caso al atributo de posición e inventarnos una regla matemática para generar los vértices.
+Para acceder a varios datos a la vez en un vertex shader, podemos usar structs. Además en este ejemplo veremos los arrays:
+</p>
+
+<pre class="example">
+#import bevy_pbr::mesh_view_bindings as view_bindings
+
+struct VertexInput {
+  @location(0) position: vec3&lt;f32&gt;,
+  @builtin(vertex_index) vertex_index: u32,
+}
+
+@vertex
+fn vertex(in: VertexInput) -&gt; @builtin(position) vec4&lt;f32&gt; {
+  var figure = array&lt;vec2&lt;f32&gt;, 3&gt;(vec2(0.0, 0.5), vec2(0.0, 0.0), vec2(0.5, 0.0));  
+  let top: u32 = u32(3); 
+  let position = figure[in.vertex_index % top];
+  return view_bindings::view.view_proj * vec4(position, 0.0, 1.0);
+}
+
+@fragment
+fn fragment() -&gt; @location(0) vec4&lt;f32&gt; {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}
+</pre>
+
+<p>
+Nótese que no usamos la posición en ningún momento, solamente según el índice del vértice, obtenemos un vértice para construir un triángulo.
+Las variables declaradas con var son mutables y las declaradas con let son inmutables. Para acceder a un array mediante una constante calculada "así" es necesario que el array sea mutable.
+</p>
+
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyVertexTriangle.png"  />
+</div>
+
+<p>
+Evidentemente esta no es la forma óptima de mostrar un triángulo en pantalla, pero creo que es ilustrativo para ver como funciona un vertex shader.
+Dentro de un vertex shader están permitidas las estructuras de control más típicas de un lenguaje imperativo como bucles (while, for, loop), condicionales (if, switch, select) y llamadas a otras funciones.
+</p>
+
+<h3>Fragment Shader</h3>
+<p>
+Una vez se procesan los vertex shader, la GPU rasteriza y genera unos píxeles que debemos colorear. Hasta ahora lo hemos coloreado de rojo.
+Aprovechamos aquí para introducir otro tipo de variables. Si recordáis, en el primer ejemplo usando StandardMaterial, podíamos pasarle el color en la CPU al material.
+¿Cómo podemos hacer esto en nuestro material?
+</p>
+
+<p>
+En el lado de Bevy vamos a añadir un campo nuevo a la estructura CustomMaterial, en este caso un campo llamado color de tipo Color.
+Tendremos que anotarlo con <code>#[uniform(0)]</code>. Estas variables llamadas <i>uniform</i> son aquellas que se mantienen constantes en GPU. Indicamos 0 pues el la primera variable de este tipo que vamos a pasar.
+</p>
+
+<p>
+En WGSL hay algo más de código. Primero tenemos que identificar al grupo donde se encuentra el dato. En este caso es el grupo 1. Dentro del grupo 1, este dato era el uniform 0, así que hacemos binding al 0. Declaramos la variable con el tipo adecuado al código Rust y ya la podemos usar en nuestro fragment shader.
+</p>
+
+<pre class="example">
+#[derive(AsBindGroup, Debug, Clone, Asset, TypePath)]
+struct CustomMaterial {
+    #[uniform(0)]
+    color: Color,
+}
+</pre>
+
+<pre class="example">
+#import bevy_pbr::mesh_view_bindings as view_bindings
+
+@group(1) @binding(0) var&lt;uniform&gt; color: vec4&lt;f32&gt;;
+
+struct VertexInput {
+  @location(0) position: vec3&lt;f32&gt;,
+  @builtin(vertex_index) vertex_index: u32,
+}
+
+@vertex
+fn vertex(in: VertexInput) -&gt; @builtin(position) vec4&lt;f32&gt; {
+  var figure = array&lt;vec2&lt;f32&gt;, 3&gt;(vec2(0.0, 0.5), vec2(0.0, 0.0), vec2(0.5, 0.0));  
+  let top: u32 = u32(3); 
+  let position = figure[in.vertex_index % top];
+  return view_bindings::view.view_proj * vec4(position, 0.0, 1.0);
+}
+
+@fragment
+fn fragment() -&gt; @location(0) vec4&lt;f32&gt; {
+  return color;
+}
+</pre>
+<p>Ahora si desde Rust seleccionamos otro color, este se mostrará.</p>
+<p>Podemos experimentar también con patrones en WGSL. Para ello podemos valernos de la propiedad builtin position, que en la entrada de un fragment shader representa coordenadas de la pantalla.</p>
+<p>En este ejemplo, ocupamos toda la pantalla con nuestro vertex shader y posteriormente dibujamos líneas blancas sobre fondo negro:</p>
+<pre class="example">
+struct VertexInput {
+  @location(0) position: vec3&lt;f32&gt;,
+  @builtin(vertex_index) vertex_index: u32,
+}
+
+@vertex
+fn vertex(in: VertexInput) -&gt; @builtin(position) vec4&lt;f32&gt; {
+  return vec4(in.position * 2.0,1.0);
+}
+
+struct FragmentInput {
+  @builtin(position) frag_coord: vec4&lt;f32&gt;,
+}
+
+@fragment
+fn fragment(in: FragmentInput) -&gt; @location(0) vec4&lt;f32&gt; {
+  var color: vec4&lt;f32&gt;;
+  if(in.frag_coord.x % 16.0 &lt; 1.0) {
+    color = vec4(1.0, 1.0, 1.0, 1.0);
+  } else {
+    color = vec4(0.0, 0.0, 0.0, 1.0);
+  }
+
+  return color;
+}
+</pre>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyShaderLines.png"  />
+</div>
+<p>
+Con una pequeña variación obtendríamos una grid isométrica. Cabe recordar que el fragment shader solo se aplica al trozo de pantalla rasterizado.
+</p>
+<pre class="example">
+@fragment
+fn fragment(in: FragmentInput) -&gt; @location(0) vec4&lt;f32&gt; {
+  let gridA = ((in.frag_coord.x + in.frag_coord.y * 2.0) % 64.0) &lt; 1.0;
+  let gridB = abs((in.frag_coord.x - in.frag_coord.y * 2.0) % 64.0) &lt; 1.0;
+  var color: vec4&lt;f32&gt;;
+  if(gridA || gridB) {
+    color = vec4(1.0, 1.0, 1.0, 1.0);
+  } else {
+    color = vec4(0.0, 0.0, 0.0, 1.0);
+  }
+
+  return color;
+}
+</pre>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyMiniGrid.png"  />
+</div>
+<p>Una propiedad muy interesante de los shaders es que desde el vertex shader podemos asignar propiedades a una variable de salida, adicional a la posición. Posteriormente podremos acceder a ella desde desde el fragment shader con una propiedad interesante: será interpolada. Esto quiere decir que si en un vértice pongo un 1.0 y en otro 0.0 para esa variable, las llamadas a fragment shaders intermedios irán recibiendo valores de un espectro: 0.8, 0.56, 0.33, &#x2026; Probemos con ATTRIBUTE_COLOR, otro atributo predefinido en Bevy.</p>
+<pre class="example">
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_COLOR,
+        vec![
+            [1.0, 0.0, 0.0, 1.0],
+            [0.0, 1.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 1.0]
+        ])
+</pre>
+<pre class="example">
+struct VertexInput {
+  @location(0) position: vec3&lt;f32&gt;,
+  @location(5) color: vec4&lt;f32&gt;,
+  @builtin(vertex_index) vertex_index: u32,
+}
+
+struct VertexOutput {
+  @builtin(position) clip_position: vec4&lt;f32&gt;,
+  @location(0) color: vec4&lt;f32&gt;,
+}
+
+@vertex
+fn vertex(in: VertexInput) -&gt; VertexOutput {
+  var out: VertexOutput;
+  out.clip_position = view_bindings::view.view_proj * vec4(in.position,1.0);
+  out.color = in.color;
+  return out;
+}
+
+struct FragmentInput {
+  @builtin(position) frag_coord: vec4&lt;f32&gt;,
+  @location(0) color: vec4&lt;f32&gt;,
+}
+
+@fragment
+fn fragment(in: FragmentInput) -&gt; @location(0) vec4&lt;f32&gt; {  
+  return in.color;
+}
+</pre>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyInterpolate.png"  />
+</div>
+<p>
+Por último, vamos a ver como se podrían cargar texturas a nuestros shaders.
+Para ello deberemos añadir acceso a las texturas mediante nuestro material.
+Idealmente se usa una textura, y un sampler, que se encarga de poder hacer reducciones de tamaño de la textura.
+</p>
+<p>
+Una vez lo tenemos, podemos llamar a la función <code>textureSample</code>. La función necesitará unas coordenadas UV. Estas coordenadas vendrán también en el mesh y las definiremos como (0.0, 0.0) el vértice que corresponda a la parte superior izquierda y (1.0, 1.0) la parte inferior derecha.
+El interpolado se encargará del resto.
+</p>
+<pre class="example">
+#[derive(AsBindGroup, Debug, Clone, Asset, TypePath)]
+struct CustomMaterial {
+    #[uniform(0)]
+    color: Color,
+    #[texture(1)]
+    #[sampler(2)]
+    image: Handle&lt;Image&gt;,
+}
+
+...
+
+fn setup_quad(mut commands: Commands, mut meshes: ResMut&lt;Assets&lt;Mesh&gt;&gt;, mut materials: ResMut&lt;Assets&lt;CustomMaterial&gt;&gt;, mut server: Res&lt;AssetServer&gt;) {
+    let mesh = Mesh::new(PrimitiveTopology::TriangleList)
+        .with_inserted_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![
+                [0.5, -0.5, 0.0],
+                [-0.5, 0.5, 0.0],
+                [-0.5, -0.5, 0.0],
+                [0.5, 0.5, 0.0]
+            ])
+        .with_inserted_attribute(
+            Mesh::ATTRIBUTE_UV_0,
+            vec![
+                [1.0, 1.0],
+                [0.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 0.0],
+            ])
+        .with_inserted_attribute(
+            Mesh::ATTRIBUTE_COLOR,
+            vec![
+                [1.0, 0.0, 0.0, 1.0],
+                [0.0, 1.0, 0.0, 1.0],
+                [0.0, 0.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0, 1.0]
+            ])
+        .with_indices(Some(Indices::U32(vec![
+            2,0,1,
+            0,3,1,
+        ])));
+
+    let mesh_handle = meshes.add(mesh);
+    let image_handle: Handle&lt;Image&gt; = server.load("tren.png");
+    let material_handle = materials.add(CustomMaterial { color: Color::BLUE, image: image_handle});
+</pre>
+<p>Los shaders quedarían así:</p>
+<pre class="example">
+#import bevy_pbr::mesh_view_bindings as view_bindings
+
+@group(1) @binding(0) var&lt;uniform&gt; color: vec4&lt;f32&gt;;
+@group(1) @binding(1) var texture: texture_2d&lt;f32&gt;;
+@group(1) @binding(2) var samp: sampler;
+
+struct VertexInput {
+  @location(0) position: vec3&lt;f32&gt;,
+  @location(2) uv: vec2&lt;f32&gt;,
+  @location(5) color: vec4&lt;f32&gt;,
+  @builtin(vertex_index) vertex_index: u32,
+}
+
+struct VertexOutput {
+  @builtin(position) clip_position: vec4&lt;f32&gt;,
+  @location(0) color: vec4&lt;f32&gt;,
+  @location(1) uv: vec2&lt;f32&gt;,
+}
+
+@vertex
+fn vertex(in: VertexInput) -&gt; VertexOutput {
+  var out: VertexOutput;
+  out.clip_position = view_bindings::view.view_proj * vec4(in.position,1.0);
+  out.uv = in.uv;
+  out.color = in.color;
+  return out;
+}
+
+struct FragmentInput {
+  @builtin(position) frag_coord: vec4&lt;f32&gt;,
+  @location(0) color: vec4&lt;f32&gt;,
+  @location(1) uv: vec2&lt;f32&gt;,
+}
+
+@fragment
+fn fragment(in: FragmentInput) -&gt; @location(0) vec4&lt;f32&gt; {  
+  return textureSample(texture, samp, in.uv) * in.color;
+}
+</pre>
+<p>Y el resultado será el siguiente:</p>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BevyShaderFinal.png"/>
+</div>

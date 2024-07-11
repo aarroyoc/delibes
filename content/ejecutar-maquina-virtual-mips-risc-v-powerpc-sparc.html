@@ -1,0 +1,34 @@
+<p>¿Alguna vez has querido ejecutar una máquina virtual de una arquitectura diferente a la de base? Es decir, si usas AMD64 (la más habitual en portátiles y sobremesa actualmente), ¿cómo ejecutar un sistema operativo diseñado para otra arquitectura? Aunque esto no es tan eficiente como virtualizar sistemas operativos de la misma arquitectura, se puede hacer, en parte gracias a QEMU.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MIPSMalta.png" width="500">
+</div>
+
+<p>QEMU es un sistema de máquinas virtuales. Es bastante usado, muchas veces en la sombra (GNOME Boxes o Virt-Manager por ejemplo lo usan). En Linux se puede usar KVM, que permite acelerar la emulación. Sin embargo, una característica muy interesante de QEMU es que también dispone de emuladores de otras arquitecturas diferentes a AMD64. De este modo, podremos ejecutar sistemas operativos y programas diseñados para arquitecturas como MIPS64EL, RISC-V64, SPARC64, AArch64 (ARM 64 bits), ...</p>
+
+<p>Sin embargo, debido a las peculiaridades del hardware esto puede ser un poco más complejo que meter una ISO. Es por ello que Giovanni Mascellani, de Debian, puso a disposición de todos unos scripts e imágenes para hacer esto más sencillo. El proyecto se llama <a href="https://people.debian.org/~gio/dqib/">DQIB</a>.</p>
+
+<h2>Usando DQIB</h2>
+<p>Lo primero que hay que hacer es descargar un paquete con Debian en la arquitectura que queramos. A día de hoy parecen funcionar: mips64el, armhf, arm64, ppc64el, s390x, riscv64, hppa, powerpc, ppc64 y sparc64. En mi caso, voy a seleccionar MIPS64EL. La variante de 64 bits Little Endian de MIPS y que fue lo que buscaba cuando encontré esta herramienta. (Buscaba esta máquina virtual porque a diferencia de armhf, arm64 y riscv64, no dispongo de hardware mips64el).</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/DQIB.png" width="500">
+</div>
+
+<p>Extraemos la carpeta y veremos un par de ficheros. Entre ellos un readme.txt. En él, se nos indica el comando de QEMU que deberemos ejecutar para lanzar la máquina virtual correctamente. En este paso, deberemos comprobar que tenemos instalado el emulador de QEMU de la arquitectura que necesitemos. En mi caso, no lo tenía instalado, así que tuve que instalar el paquete <i>qemu-system-mips</i></p>.
+
+<p>Una vez lo tengamos instalado, ejecutamos el comando. En mi caso era:</p>
+<pre><code>
+qemu-system-mips64el -machine 'malta' -cpu '5KEc' -m 1G -drive file=image.qcow2 -device e1000,netdev=net -netdev user,id=net,hostfwd=tcp::2222-:22 -kernel kernel -initrd initrd -nographic -append "root=LABEL=rootfs console=ttyS0"
+</code></pre>
+<p>Y nuestra máquina virtual arrancará. Podemos logearnos directamente. Los usuarios son root (contraseña: root) y debian (contraseña: debian). Pero es mucho mejor conectarse por SSH a la máquina, ya que la terminal que implementa QEMU es un poco mala.</p>
+
+<p>Por defecto, tendremos el puerto 2222 para conectarnos por SSH en localhost.</p>
+<pre><code>
+ssh debian@localhost -p 2222
+</code></pre>
+<p>Una vez dentro ya podemos hacer las cosas que queramos hacer en nuestro sistema.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MIPSMalta.png" width="500">
+</div>

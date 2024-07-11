@@ -1,0 +1,251 @@
+<p>Ya tenemos un sistema que es capaz de probar cosas mediante backtracking interactivo pero no podemos pasarle ficheros ni escribir queries de forma normal. Lo primero que tendremos que hacer será un parser de la sintaxis de Prolog a nuestras estructuras de datos y después lo juntaremos todo en un programa ejecutable. Veremos como resolver el problema de la cebra.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ZebraEsgueva.png">
+</div>
+
+
+<h2>Parsear</h2>
+<p>Para parsear voy a usar la librería <a href="https://crates.io/crates/nom">nom</a> ya que es muy sencilla de usar. Consiste en ir tragándonos parte del input mientras devolvemos la parte de input que queda y lo que hemos parseado.</p>
+
+<p>Lo primero que voy a añadir es como parsear un átomo. Hay Un átomo puede ser de tres tipos en nuestro sistema. Por un lado cualquier cosa que empiece por minúsculas. Por otro lado cualquier cosa entre comillas simples. Por otro lado, añadiremos [] como nil, un átomo que usaremos para las listas.</p>
+
+<pre><code class="language-rust">
+fn term_atom(input: &str) -> IResult<&str, Term> {
+    alt((term_atom_default, term_atom_quoted, term_atom_nil))(input)
+}
+
+fn term_atom_default(input: &str) -> IResult<&str, Term> {
+    let (input, first) = anychar(input)?;
+    if !first.is_ascii_lowercase() {
+	return Err(Err::Error(Error::new(input, ErrorKind::Char)));
+    }
+    let (input, atom) = alphanumeric0(input)?;
+
+    Ok((input, Term::Atom(format!("{}{}", first, atom))))
+}
+
+fn term_atom_quoted(input: &str) -> IResult<&str, Term> {
+    let (input, atom) = delimited(char('\''), is_not("'"), char('\''))(input)?;
+
+    Ok((input, Term::Atom(atom.to_string())))
+}
+
+fn term_atom_nil(input: &str) -> IResult<&str, Term> {
+    let (input, _) = tag("[]")(input)?;
+
+    Ok((input, Term::Atom("[]".into())))
+}
+</code></pre>
+
+<p>Las variables serán simplemente texto que empieza por mayúsculas</p>
+<pre><code class="language-rust">
+fn term_var(input: &str) -> IResult<&str, Term> {
+    let (input, first) = anychar(input)?;
+    if !first.is_ascii_uppercase() {
+	return Err(Err::Error(Error::new(input, ErrorKind::Char)));
+    }
+    let (input, var) = alphanumeric0(input)?;
+
+    Ok((input, Term::Var(format!("{}{}", first, var))))
+}
+</code></pre>
+<p>Las estructuras vamos a soportar las normales (átomo (entrecomillado o no) + lista de argumentos)) y azucar sintáctico sobre listas que es habitual en Prolog.</p>
+<pre><code class="language-rust">
+fn term_str(input: &str) -> IResult<&str, Term> {
+    alt((term_str_default, term_str_quoted, term_str_list, term_str_head_tail))(input)
+}
+
+fn term_str_default(input: &str) -> IResult<&str, Term> {
+    let (input, first) = anychar(input)?;
+    if !first.is_ascii_lowercase() {
+	return Err(Err::Error(Error::new(input, ErrorKind::Char)));
+    }
+    let (input, atom) = alphanumeric0(input)?;
+    
+    let (input, _) = char('(')(input)?;
+
+    let (input, args) = separated_list1(spaced_comma, alt((term_str, term_var, term_atom)))(input)?;
+    
+    let (input, _) = char(')')(input)?;
+
+    Ok((input, Term::Str(format!("{}{}", first, atom), args)))
+}
+
+fn term_str_quoted(input: &str) -> IResult<&str, Term> {
+    let (input, atom) = delimited(char('\''), is_not("'"), char('\''))(input)?;
+    let (input, _) = char('(')(input)?;
+
+    let (input, args) = separated_list1(spaced_comma, alt((term_str, term_var, term_atom)))(input)?;
+    
+    let (input, _) = char(')')(input)?;
+
+    Ok((input, Term::Str(atom.to_string(), args)))
+}
+
+fn term_str_list(input: &str) -> IResult<&str, Term> {
+    let (input, _) = char('[')(input)?;
+    let (input, elements) = separated_list1(spaced_comma, alt((term_str, term_var, term_atom)))(input)?;
+    let (input, _) = char(']')(input)?;
+
+    let list = build_list(elements.into());
+
+    Ok((input, list))
+}
+
+fn build_list(mut elements: VecDeque<Term>) -> Term {
+    if let Some(element) = elements.pop_front() {
+	Term::Str(".".into(), vec![element, build_list(elements)])
+    } else {
+	Term::Atom("[]".into())
+    }
+}
+
+fn term_str_head_tail(input: &str) -> IResult<&str, Term> {
+    let (input, _) = char('[')(input)?;
+    let (input, head) = alt((term_str, term_var, term_atom))(input)?;
+    let (input, _) = char('|')(input)?;
+    let (input, tail) = alt((term_str, term_var, term_atom))(input)?;
+    let (input, _) = char(']')(input)?;
+
+    Ok((input, Term::Str(".".into(), vec![head, tail])))
+}
+</code></pre>
+<p>Por último, un fichero estará compuesto de Clauses, ya sean facts (sin cuerpo) o rules (con cuerpo).</p>
+
+<pre><code class="language-rust">
+pub fn file(input: &str) -> IResult<&str, Vec<Clause>> {
+    let (input, clauses) = separated_list0(multispace1, clause)(input)?;
+
+    Ok((input, clauses))
+}
+
+fn clause(input: &str) -> IResult<&str, Clause> {
+    let (input, clause) = alt((clause_fact, clause_rule))(input)?;
+
+    Ok((input, clause))
+}
+
+fn clause_fact(input: &str) -> IResult<&str, Clause> {
+    let (input, head) = alt((term_str, term_atom))(input)?;
+    let (input, _) = char('.')(input)?;
+
+    Ok((input, Clause { head, body: vec![] }))
+}
+
+fn clause_rule(input: &str) -> IResult<&str, Clause> {
+    let (input, head) = alt((term_str, term_atom))(input)?;
+    let (input, _) = many1(char(' '))(input)?;
+    let (input, _) = tag(":-")(input)?;
+    let (input, _) = many1(char(' '))(input)?;
+    let (input, body) = clause_body(input)?;
+
+    Ok((input, Clause { head, body }))
+}
+
+pub fn clause_body(input: &str) -> IResult<&str, Vec<Term>> {
+    let (input, goals) = separated_list1(spaced_comma, alt((term_str, term_atom)))(input)?;
+    let (input, _) = char('.')(input)?;
+
+    Ok((input, goals))
+}
+
+fn spaced_comma(input: &str) -> IResult<&str, ()> {
+    let (input, _) = many0(char(' '))(input)?;
+    let (input, _) = char(',')(input)?;
+    let (input, _) = many0(char(' '))(input)?;
+
+    Ok((input, ()))
+}
+</code></pre>
+<p>Con eso tendríamos el parseado.</p>
+
+<h2>Juntándolo todo</h2>
+<p>Vamos a juntarlo todo para hacer un programa. Este programa lo que hará será leer de un archivo (o no) para rellenar la base de datos. Después iniciaría un REPL (Read-Eval-Print-Loop). En el REPL se lee de teclado la query (será un clause_body se nuestro parser), obtenemos las variables, añadimos el Term de backtracking interactivo al final y llamamos a prove_all.</p>
+
+<pre><code class="language-rust">
+fn main() {
+    println!("Esgueva Prolog 0.1.0 - Adrián Arroyo Calle 2022");
+    let args: Vec<String> = env::args().collect();
+
+    match args.len() {
+	2 => {
+	    if args[1] == "-h" {
+		print_help();
+	    } else {
+		repl(file_to_database(&args[1]))
+	    }
+	}
+	1 => repl(Database::new()),
+	_ => print_help()
+    }
+
+}
+
+fn print_help() {
+    println!("Usage: esgueva [PROLOG FILE]\tStart Esgueva top-level optionally loading a file");
+    println!("       esgueva -h\t\tShow help");
+}
+
+fn file_to_database(file: &str) -> Database {
+    let mut db = Database::new();
+    let contents = fs::read_to_string(file).expect("File must exist");
+
+    if let Ok((_, clauses)) = parser::file(&contents) {
+	for clause in clauses {
+	    db.add_clause(clause);
+	}
+    } else {
+	eprintln!("Error loading file: {}", file);
+    }
+    
+    db
+}
+
+fn repl(database: Database) {
+    loop {
+	print!("?- ");
+	io::stdout().flush().unwrap();
+	let mut input = String::new();
+	io::stdin().read_line(&mut input).unwrap();
+	if let Ok((_, mut goals)) = parser::clause_body(&input) {
+	    let vars_in_goals = prover::find_variables_in_goals(&goals);
+	    goals.push(Term::Atom("__backtracking?".into()));
+	    prover::prove_all(goals.into(), Some(HashMap::new()), &database, &vars_in_goals);
+	    println!("false.");
+	} else {
+	    eprintln!("Can't parse query!");
+	}
+    }
+}
+</code></pre>
+<p>Finalmente podemos ejecutarlo y ¡hacer pruebas!</p>
+
+<h2>El problema de la Cebra</h2>
+<p>El problema de la cebra vimos <a href="https://blog.adrianistan.eu/acertijo-cebra">como resolverlo con clp(Z) en otro post.</a> También podemos resolverlo en nuestro nuevo mini Prolog.</p>
+
+<p>No voy a explicar el problema de nuevo. El programa que lo resuelve es este:</p>
+
+<pre><code class="language-prolog">
+member(X, [X|Xs]).
+member(X, [Y|Xs]) :- member(X, Xs).
+
+nextto(X, Y, List) :- iright(X, Y, List).
+nextto(X, Y, List) :- iright(Y, X, List).
+
+iright(Left, Right, [Left|[Right|Xs]]).
+iright(Left, Right, [X|Xs]) :- iright(Left, Right, Xs).
+
+eq(X, X).
+
+
+zebra(H, W, Z) :- eq(H, [house(norwegian, X1, X2, X3, X4), X5, house(X6, X7, X8, milk, X9), X10, X11]), member(house(englishman, A1, A2, A3, red), H), member(house(spaniard, dog, B1, B2, B3), H), member(house(C1, C2, C3, coffee, green), H), member(house(ukrainian, D1, D2, tea, D3), H), iright(house(E1, E2, E3, E4, ivory), house(F1, F2, F3, F4, green), H), member(house(G1, snails, winston, G2, G3), H), member(house(H1, H2, kools, H3, yellow), H), nextto(house(I1, I2, chesterfield, I3, I4), house(J1, fox, J2, J3, J4), H), nextto(house(K1, K2, kools, K3, K4), house(L1, horse, L2, L3, L4), H), member(house(M1, M2, luckystrike, orangejuice, M3), H), member(house(japanese, N1, parliaments, N2, N3), H), nextto(house(norwegian, O1, O2, O3, O4), house(P1, P2, P3, P4, blue), H), member(house(W, R1, R2, water, R3), H), member(house(Z, zebra, S1, S2, S3), H).
+</code></pre>
+
+<p>Genera la solución correcta</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ZebraEsgueva.png">
+</div>
+
+<p>Con esto termino la serie. Alguno se preguntará si desde aquí se podría seguir construyendo un sistema Prolog más avanzado. La respuesta es que sí pero no es lo habitual. Llegado el momento se considera otra forma de implementar Prolog basado en nificación destructiva y en máquinas virtuales como WAM, ZIP o TOAM. En cualquier caso, el código de este sistema está disponible en GitHub: <a href="https://github.com/aarroyoc/esgueva">Esgueva Prolog</a></p>
+

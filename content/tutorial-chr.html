@@ -1,0 +1,149 @@
+<p><a href="http://constraint-handling-rules.org/">CHR</a> es un lenguaje de programación lógico basado en reglas, pero a diferencia de Prolog o miniKanren, se aplican "hacia delante". Diseñado en Alemania en 1991 por Thom Frühwirth, se trata de un lenguaje muy pequeño (tiene solo tres casos) y que normalmente se usa a través de otro lenguaje que le aporta expresividad (como Prolog, Haskell, C, Java o JavaScript). En este tutorial aprenderemos a usar CHR y usaremos Prolog como lenguaje base. </p>
+<div style="text-align:center">
+<img width="300" src="https://files.adrianistan.eu/chr-logo.gif"><br>
+<small>El símbolo de CHR es el símbolo chino "chr"</small>
+</div>
+<h2>Almacén de hechos</h2>
+<p>Lo primero que hay que saber, es que a diferencia de otros lenguajes lógicos, CHR mantiene estado de los hechos. Un programa CHR se compone de reglas y hechos. Las reglas manipulan los hechos. Cualquier programa CHR empieza cuando introducimos hechos a ese almacén. Una vez han sido añadidos, se revisa si hay reglas que se cumplen para esos hechos, si es así, se ejecutan, eliminando y/ añadiendo nuevos hechos, volviéndose a ejecutar la búsqueda de reglas a aplicar. Cuando ya no se puedan aplicar reglas, el programa habrá acabado.</p>
+<p>He aquí un pseudocódigo:</p>
+<pre><code>
+HECHOS = lista de hechos
+REGLAS = lista de reglas
+
+loop:
+    for REGLA in REGLAS:
+        if REGLA es aplicable con HECHOS:
+            ejecutar REGLA y modifica HECHOS
+    if no se ha aplicado ninguna REGLA:
+        salir
+</code></pre>
+<p>Este sistema de funcionamiento es similar a <a href="http://clipsrules.net/">CLIPS</a> o a <a href="https://www.drools.org/">Drools</a> y es lo que se llama "forward-chaining" o procesado de reglas hacia delante. Prolog en comparación es "backward-chaining" o hacia atrás.</p>
+<h2>Las reglas</h2>
+<p>CHR solo tiene tres tipos de reglas.</p>
+<ul>
+<li>Simpagation (\ <=>)</li>
+<li>Simplifcation (<=>)</li>
+<li>Propagation (==>)</li>
+</ul>
+<p>La sintaxis general se puede resumir en esto:</p>
+<pre><code>
+name @ retained \ discarded <=> guard | body.    Simpagation
+name @ discarded <=> guard | body.      Simplification
+name @ retained ==> guard | body.         Propagation
+</code></pre>
+<p>El campo name es puramente para el programador y es optativo.</p>
+<p>A continuación van los hechos que se tienen que cumplir para disparar la regla. Es la parte izquierda de la regla. Dependiendo de la regla que estemos usando, los hechos se eliminan (discarded) o se mantienen (retained) del almacén. La regla Simpagation permite tener hechos que se descartan a la vez que hechos que no, mediante el separador \.</p>
+<p>A la derecha de la regla, se ubica el guard, un elemento opcional que sirve para hacer comprobaciones más precisas sobre los hechos. Si se ejecuta satisfactoriamente, la regla continúa, si no, se cancela.</p>
+<p>A la derecha del guard se ubica el body, donde podemos definir los nuevos hechos que se van guardar en el almacén.</p>
+<h2>Un ejemplo tortillero</h2>
+<p>Veamos un ejemplo en acción. Voy a usar la implementación de CHR de SWI Prolog, por lo que necesitaremos este programa antes.</p>
+<pre><code>
+:- use_module(library(chr)).
+
+:- chr_constraint patata/0, huevo/0, cebolla/0, tortilla/0.
+
+patata, huevo, cebolla <=> tortilla.
+</code></pre>
+<p>Que quiere decir, si tienes patata, huevo y cebolla en el almacén, quítalos y añade tortilla. Para empezar a ejecutarlo, vamos añadiendo hechos al almacén.</p>
+<pre><code>
+➜  chr git:(master) ✗ swipl example1.pl 
+Welcome to SWI-Prolog (threaded, 64 bits, version 8.2.2)
+SWI-Prolog comes with ABSOLUTELY NO WARRANTY. This is free software.
+Please run ?- license. for legal details.
+
+For online help and background, visit https://www.swi-prolog.org
+For built-in help, use ?- help(Topic). or ?- apropos(Word).
+
+?- cebolla, patata, huevo.
+tortilla.
+
+?- cebolla, patata.
+patata,
+cebolla.
+
+?- cebolla, patata, huevo, huevo, patata.
+patata,
+huevo,
+tortilla.
+
+?- cebolla, patata, huevo, huevo, patata, cebolla.
+tortilla,
+tortilla.
+
+
+</code></pre>
+<p>Como veis, si existen los tres hechos en almacén, se dispara la regla y ese es el resultado que vemos en la terminal. Si no se puede aplicar la regla, se mantienen los hechos introducidos.</p>
+<h2>Un ejemplo con Fibonacci</h2>
+<p>Vamos a ver como se implementaría la típica función de obtener el número correspondiente a la secuencia de Fibonacci. Para ello vamos a usar dos tipos de hechos, fib, que guardan el índice y el valor y upto, que guarda hasta que índice queremos seguir calculando nuevos fib (este programa si no, sería infinito)</p>
+<pre><code>
+:- use_module(library(chr)).
+
+:- chr_constraint fib/2, upto/1.
+
+fib(A, AV), fib(B, BV), upto(N) ==> B is A+1, B < N | X is AV+BV, K is B+1, fib(K, X).
+</code></pre>
+<p>Básicamente lo que hacemos es coger un fib con índice A y valor AV, otro fib con índice B y valor BV y un upto con valor N. No eliminamos ninguno de esos hechos pero si la regla se dispara, ejecutamos primero el guard. El primero comprueba que B es el elemento siguiente de A, y por otro lado, que no nos estamos pasando con el upto. Una vez hecho eso, hacemos las sumas y añadimos otro fib. El uso de is no viene dado por CHR sino por Prolog, que hace de lenguaje host.</p>
+<p>Para ejecutarlo, introduciríamos los primeros dos elementos de la secuencia en el almacén y un upto.</p>
+<pre><code>
+➜  chr git:(master) ✗ swipl example2.pl
+Welcome to SWI-Prolog (threaded, 64 bits, version 8.2.2)
+SWI-Prolog comes with ABSOLUTELY NO WARRANTY. This is free software.
+Please run ?- license. for legal details.
+
+For online help and background, visit https://www.swi-prolog.org
+For built-in help, use ?- help(Topic). or ?- apropos(Word).
+
+?- fib(1,1), fib(2,1), upto(10).
+fib(10, 55),
+fib(9, 34),
+fib(8, 21),
+fib(7, 13),
+fib(6, 8),
+fib(5, 5),
+fib(4, 3),
+fib(3, 2),
+fib(2, 1),
+fib(1, 1),
+upto(10).
+
+?- 
+</code></pre>
+<h2>Un ejemplo de caminos</h2>
+<p>Para acabar CHR, vamos a ver un ejemplo más elaborado.</p>
+<p>Imaginemos que tenemos un grafo tal que así. Los cables rojos representan conexiones entre los nodos. Cada nodo tiene una posición X e Y. Dado un punto, ¿hasta qué puntos podemos llegar siguiendo las líneas rojas?</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ChrNetwork.png">
+</div>
+<pre><code>
+:- use_module(library(chr)).
+
+:- chr_constraint connected/2, origin/2, edge/4, node/2, world/0.
+
+
+world <=> 
+    node(1, 1),
+    node(1, 2),
+    node(2, 1),
+    node(2, 2),
+    node(3, 1),
+    node(3, 2),
+    node(4, 1),
+    node(4, 2),
+    edge(1, 1, 2, 1),
+    edge(2, 1, 3, 1),
+    edge(3, 1, 4, 1),
+    edge(2, 1, 2, 2),
+    edge(4, 1, 4, 2).
+
+origin(X, Y) <=> connected(X, Y).
+connected(X1, Y1), edge(X1, Y1, X2, Y2) \ node(X2, Y2) <=> connected(X2, Y2). 
+</code></pre>
+<p>Definimos varios tipos de hechos. connected sería un nodo conectado (representado por sus posiciones X e Y), origin el punto de origen, edge es una conexión entre dos puntos, node es un listado de puntos y world lo definimos para simplificar las consultas.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ChrExample.png">
+</div>
+<p>Para iniciar el cómputo, indicamos world (para cargar el resto de hechos del "mundo") y especificamos el punto de origen. Obtendremos bajo los hechos connected aquellos puntos conectados al punto origin.</p>
+
+<p>Hasta aquí el tutorial de CHR, los ejemplos de código están subidos al <a href="https://github.com/aarroyoc/blog-ejemplos">repositorio de ejemplos de código del blog</a>. ¿Qué te parece este lenguaje? ¿Te parece sencillo? ¿Le ves aplicaciones? ¡Deja tu opinión en los comentarios!</p>
+
+

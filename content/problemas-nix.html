@@ -1,0 +1,61 @@
+<p>En el <a href="https://blog.adrianistan.eu/primeros-pasos-nix-linux-funcional">post anterior</a> vimos de forma general lo más básico de Nix. Aquí veremos algunos de los inconvenientes que posee Nix actualmente</p>
+
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/Nix7.png" width="300">
+</div>
+
+<h2>Construcción de paquetes deterministas</h2>
+<p>Cuando construimos un paquete en Nix, normalmente hacemos un import a nixpkgs, que representa el canal central actualizado a ese momento. Los canales de Nix no soportan que convivan varias versiones del programa a nivel de código, sí a nivel binario, que como vimos es una de las grandes ventajas, pero no a nivel de código. Por tanto cuando recompilemos el paquete, si hemos actualizado nispkgs en nuestro ordenador, podemos estar usando otros paquetes diferentes, ya que la versión antigua ya no existe en el canal nixpkgs.</p>
+
+<p>La solución es pinear los nixpkgs, es decir, tomar un punto (normalmente un commit) y construir siempre el paquete con esa versión de nixpkgs. Esto es fácil de conseguir gracias a varias funciones predefinidas, pero no deja de ser un poco coñazo</p>
+
+<p>Así pues este código</p>
+<pre><code>
+let 
+    nixpkgs = import &lt;nixpkgs&gt; {} ;
+in
+nixpkgs.stdenv.mkDerivation {
+    name = "pcc-1.0.0" ;
+    builder = ./builder.sh ;
+    src = nixpkgs.fetchurl {
+        url = https://github.com/aarroyoc/pcc/archive/3f90d424494f4d1971ea34e66883fdee8a587b1f.zip;
+        sha256 = "ec80f0c8af5dc9d6f0fbb691a4132ac8d44e42dd05865e23c80c2e0f0219d56f";
+    };
+    buildInputs = [ nixpkgs.unzip nixpkgs.bison nixpkgs.flex];
+}
+</code></pre>
+<p>se convertiría en este</p>
+<pre><code>
+let 
+    nixpkgs = import (builtins.fetchTarball {
+        name = "nixos-unstable-2018-09-12";
+        url = https://github.com/NixOS/nixpkgs/archive/1144ee553852f5e91cf85a639ee2e30438a5136a.tar.gz;
+        sha256 = "02lzg2m7snc3ph2a3hscb0az5prgab7ri8aic91x4b0slj54g168";
+    }) {};
+in
+nixpkgs.stdenv.mkDerivation {
+    name = "pcc-1.0.0" ;
+    builder = ./builder.sh ;
+    src = nixpkgs.fetchurl {
+        url = https://github.com/aarroyoc/pcc/archive/3f90d424494f4d1971ea34e66883fdee8a587b1f.zip;
+        sha256 = "ec80f0c8af5dc9d6f0fbb691a4132ac8d44e42dd05865e23c80c2e0f0219d56f";
+    };
+    buildInputs = [ nixpkgs.unzip nixpkgs.bison nixpkgs.flex];
+}
+</code></pre>
+
+<h2>Integración paquetería lenguajes</h2>
+<p>Nix tiene una forma muy particular de empaquetar el software. Por contra, cada vez es más habitual que cada lenguaje de programación use además su propio sistema de gestión de paquetes. Hay ciertos lenguajes que se adaptan bien a Nix, como Haskell o Python, pero hay muchos otros como Go o JavaScript (npm) que se comportan muy mal. Cualquier intento de portar estos sistemas a Nix implican crear paquetes Nix por cada paquete npm, algo que se vuelve muy tedioso. Actualmente se suelen recurrir a soluciones llamadas Nix-in-Nix. Básicamente consiste en usar programas como node2nix internamente, para que este programa nos genere automáticamente un montón de ficheros Nix que cargamos desde Nix. En mi opinión no es una solución elegante.</p>
+
+<h2>Actualizaciones de seguridad</h2>
+<p>Una de los inconvenientes de la paquetería Nix, es que cada paquete necesita ser responsables de sus fallos de seguridad, ya que aunque nixpkgs actualice la versión de la librería en cuestión, el programa va a seguir usando la versión con la que se construyó, y es imposible de cambiar a no ser que reconstruyamos el paquete.</p>
+
+<h2>Mi valoración personal</h2>
+<p>Nix me parece una propuesta interesante para los sistemas de paquetería en Linux. Aporta algo diferente, aun así, la situación es la siguiente:</p>
+<ul>
+<li>Tenemos distros tradicionales con paquetería apt, yum, ... Estas distros no suelen actualizar las versiones de los paquetes mientras está viva la versión de la distro: Debian, Ubuntu, Fedora, ...</li>
+<li>Tenemos distro rolling release con paquetería tradicional: Debian Sid, openSUSE Tumbleweed, Arch Linux, ...</li>
+<lI>Tenemos sistemas de paquetería paralelos, que incluyen sus dependencias, como Snap, Flatpak o AppImage</li>
+<li>Tenemos Docker y <a href="https://buildah.io/">Buildah</a> que permiten construir imágenes OCI.</li>
+</ul>
+<p>A día de hoy para entornos de programación (para instalar todas las dependencias que necesita un proyecto) y en servidor usaría Docker. Es mucho más sencillo de aprender a usar, mucho más reproducible y cuenta con una mayor comunidad alrededor. Para el uso de escritorio, usaría una distro rolling o una distro con ciclos de vida tradicionales complementada bien con Snap/Flatpak/AppImage o Nix. No tengo una preferencia fuerte entre Snap/Flatpak/AppImage aunque suelo usar Snap. También estoy probando Nix ¿Cuál es vuestra opinión al respecto? ¿Cuál sería vuestra estrategia ideal?</p>

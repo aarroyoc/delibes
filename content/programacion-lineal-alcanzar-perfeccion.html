@@ -1,0 +1,122 @@
+<p>La <strong>programación lineal</strong> es una disciplina dentro de las matemáticas, más concretamente, del campo de la <strong>investigación operativa</strong> muy interesante. La problemática que trata de resolver es la de asignar recursos limitados entre actividades competitivas de la mejor manera posible, es decir, optimizar este reparto. Programación significa en este contexto <strong>planificación</strong>.</p>
+<p>La historia de la programación lineal está muy ligada a la investigación operativa. Esta disciplina tuvo su auge durante la Segunda Guerra Mundial, cuando los ejércitos financiaron a los matemáticos para encontrar formas óptimas de asignar los recursos limitados de los que se disponía durante la guerra (comida, medicamentos, soldados, aviones, ...). Durante estos años se sentaron las bases pero no fue hasta el año 1947 cuando George Dantzig desarrolló el <strong>algoritmo símplex</strong>. Este algoritmo, ha sido calificado como uno de los 10 algoritmos más importantes del siglo XX, y no es para menos, ya que abre la puerta a resolver un montón de problemas en un tiempo relativamente eficiente.</p>
+<p>El algoritmo símplex tiene una complejidad de [latex]O(2^{n})[/latex], muy costoso computacionalmente, pero afortunadamente la mayoría de problemas se resolverán en tiempo polinómico.</p>
+<p style="text-align: center;"><img src="https://files.adrianistan.eu/Simplex.png" alt="" /></p>
+<p>En primer lugar vamos a describir las características de la programación lineal, ya que existen otros modelos, programación entera, programación binaria, ...</p>
+<ul>
+<li>Modelo lineal: es decir, todo lo que aparecen son funciones lineales. Esto significa que vamos a trabajar SIEMPRE con números reales (esta es una de las grandes limitaciones)</li>
+<li>Variables de decisión: variables del modelo que deben determinarse, la solución suele formar parte de ellas</li>
+<li>Función objetivo: Una función donde intervienen una o más variables de decisión y que tenemos que optimizar: ya sea maximizar o minimizar.</li>
+<li>Restricciones: desigualdades e igualdades que tienen que cumplir las variables de decisión en una solución válida, también llamada, factible</li>
+</ul>
+<p>Imagina que tenemos 30 piezas de hierro. Nuestro objetivo es tener el mayor número de piezas de hierro al cabo de 100 segundos. Para ello podemos comprar un extractor básico o un extractor eléctrico. El extractor básico tiene un coste de 10 piezas de hierro y el eléctrico 23 piezas. La velocidad de minado del primero es 0.25 piezas por segundo y el segundo es 0.5 piezas por segundo. ¿Cuál sería la forma óptima de hacerlo?</p>
+<p style="text-align: center;"><img src="https://files.adrianistan.eu/FactorioExtractor.png" alt="" /></p>
+<p>Bien, el modelo de programación lineal es muy simple, hay dos variables de decisión (cantidad de extractores básico y eléctricos que compramos), una función objetivo a maximizar que representa la cantidad final de hierro que vamos a tener. Esto se calcula teniendo en cuenta el hierro que va a producir en 100 segundos y el coste que tiene comprar uno. Y una restricción que sirve para indicar que tenemos una cantidad de hierro limitado y cada extractor tiene un precio en hierro diferente. Esto se expresa de la siguiente forma:</p>
+<p> </p>
+<p>$$X_1: \text{cantidad de extractores básicos a fabricar} \\ X_2: \text{cantidad de extractores eléctricos a fabricar} \\ \text{maximizar} z= (100*0.25-10)X_1 + (100*0.5-23)X_2 \\ 10X_1 + 23X_2 \le 30 \\ X_i \ge 0, i=1,2$$</p>
+<p>Y ya está. Ahora, si usamos un programa que soporte el algoritmo símplex obtendremos la solución. Existen muchos programas, y por lo general, bastante caros: IBM CPLEX, Xpress de FICO, Gurobi e incluso el GNU GLPK. No obstante, estos programas son bastante avanzados y admiten muchas opciones. Para resolverlo voy a usar SWI Prolog, pero no nos centremos mucho en los detalles:</p>
+<pre><code class="language-prolog">
+:- use_module(library(simplex)).
+
+extractor(S) :-
+    gen_state(S0),
+    extractor_constraints(S0,S1),
+    maximize([15*x1,27*x2],S1,S).
+
+extractor_constraints -->
+    constraint([10*x1,27*x2] =< 30).
+</code></pre>
+<p style="text-align: center;"><img src="https://files.adrianistan.eu/PrologSimplex.png" alt="" /></p>
+<p>El resultado es que X1=3 y X2=0, lo que quiere decir, que lo óptimo es gastarse el hierro en comprar 3 extractores básicos y ninguno avanzado. Una cosa que podemos plantearnos es si modificando el coste de compra del extractor avanzado, la solución pasa a ser otra. Simplemente modificamos la restricción y la función objetivo:</p>
+<p>$$X_1: \text{cantidad de extractores básicos a fabricar} \\ X_2: \text{cantidad de extractores eléctricos a fabricar} \\ \text{maximizar} z= (100*0.25-10)X_1 + (100*0.5-20)X_2 \\ 10X_1 + 20X_2 \le 30 \\ X_i \ge 0, i=1,2$$</p>
+<p>Y en este caso la solución sí es diferente, pero es una fracción, lo cuál no tiene mucho sentido. Este es uno de los inconvenientes principales de la PL, que las variables son infinitamente divisibles.</p>
+<h2>Mezclas</h2>
+<p>Vamos a poner un ejemplo un poco más complejo, en este caso con mezclas.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/Refineria.jpg" alt="" /></p>
+<p>Una refinería mezcla 4 tipos de crudos para producir 3 tipos de gasolina los datosde interés son los siguientes:</p>
+<table style="border-collapse: collapse; width: 100%;" border="1">
+<tbody>
+<tr>
+<td style="width: 25%;">Crudos</td>
+<td style="width: 25%;">Octanaje</td>
+<td style="width: 25%;">Barriles diarios</td>
+<td style="width: 25%;">€/barril</td>
+</tr>
+<tr>
+<td style="width: 25%;">1</td>
+<td style="width: 25%;">68</td>
+<td style="width: 25%;">4000</td>
+<td style="width: 25%;">31</td>
+</tr>
+<tr>
+<td style="width: 25%;">2</td>
+<td style="width: 25%;">86</td>
+<td style="width: 25%;">5050</td>
+<td style="width: 25%;">33</td>
+</tr>
+<tr>
+<td style="width: 25%;">3</td>
+<td style="width: 25%;">91</td>
+<td style="width: 25%;">7100</td>
+<td style="width: 25%;">36</td>
+</tr>
+<tr>
+<td style="width: 25%;">4</td>
+<td style="width: 25%;">99</td>
+<td style="width: 25%;">4300</td>
+<td style="width: 25%;">39</td>
+</tr>
+</tbody>
+</table>
+<p> </p>
+<table style="border-collapse: collapse; width: 100%;" border="1">
+<tbody>
+<tr>
+<td style="width: 25%;">Gasolina</td>
+<td style="width: 25%;">Octanaje mínimo</td>
+<td style="width: 25%;">PVP</td>
+<td style="width: 25%;">Demanda diaria</td>
+</tr>
+<tr>
+<td style="width: 25%;">1</td>
+<td style="width: 25%;">95</td>
+<td style="width: 25%;">45</td>
+<td style="width: 25%;">Como máximo 10000 barriles</td>
+</tr>
+<tr>
+<td style="width: 25%;">2</td>
+<td style="width: 25%;">90</td>
+<td style="width: 25%;">43</td>
+<td style="width: 25%;">Cualquier cantidad</td>
+</tr>
+<tr>
+<td style="width: 25%;">3</td>
+<td style="width: 25%;">85</td>
+<td style="width: 25%;">41</td>
+<td style="width: 25%;">Al menos 15000 barriles</td>
+</tr>
+</tbody>
+</table>
+<p>La compañía vende el crudo que no utiliza en la producción de gasolinas a 39€/barril si su índice de octanaje está por encima de 90 y a 37€/barril si está pordebajo de 90.</p>
+<p>¿Cuál es el plan de producción óptimo?</p>
+<p>$$X_{ij}: \text{barriles de crudo i para producir gasolina de tipo j} \\ V_i: \text{barriles de crudo tipo i que se venden} \\ C_i: \text{barriles de crudo de tipo i que se compran} \\ G_J: \text{barriles de gasolina de tipo j que se producen y se venden} \\ Max z = 45G_1+43G_2+41G_3+37V_1+37V_2+39V_3+39V_4-31C_1-33C_2-36C_3-39C_4 \\ C_1 \le 4000 \\ C_2 \le 5050 \\ C_3 \le 7100 \\ C_4 \le 4300 \\ G_1 \le 10000 \\ G_3 \ge 15000 \\ 68X_{11} + 86X_{21} + 91X_{31} + 99X_{41} \ge 95G_1 \\ 68X_{12} + 86X_{22} + 91X_{32} + 99X_{42} \ge 90G_2 \\ 68X_{13} + 86X_{23} + 91X_{33} + 99X_{43} \ge 85G_3 \\ X_{11} + X_{21} + X_{31} + X_{41} = G_1 \\ X_{12} + X_{22} + X_{32} + X_{42} = G_2 \\ X_{13} + X_{23} + X_{33} + X_{43} = G_3 \\ X_{11} + X_{12} + X_{13} + V_1 = C_1 \\ X_{21} + X_{22} + X_{23} + V_2 = C_2 \\ X_{31} + X_{32} + X_{33} + V_3 = C_3 \\ X_{41} + X_{42} + X_{43} + V_4 = C_4 $$</p>
+<p>Cuya solución es la siguiente: X13=3457.41, X21=1509.97, X23=3540.03, X33=7100, X41=3397.44, X43=902.564, G1=4907.41, G3=15000, V1=542.593, C1=4000, C2=5050, C3=7100 y C4=4300.</p>
+<h2>Transporte</h2>
+<p>Un tipo especial de PL es el problema del transporte. Tenemos N orígenes y M destinos, cada ruta entre origen y destino tiene un coste. ¿Cómo transportamos de forma óptima?</p>
+<p style="text-align: center;"><img src="https://files.adrianistan.eu/AmazonLogistics.jpg" alt="" /></p>
+<p>Por ejemplo, tenemos dos fábricas de chips verdes, A y B, y queremos transportarlo a 3 sitios, X, Y y Z. A-X cuesta 50, A-Y cuesta 100, A-Z cuesta 70. B-X cuesta 60, B-Y cuesta 30 y B-Z cuesta 200. En A hay 200 chips, en B hay 300, y queremos en 100 chips en X, 200 en Y y 200 en Z.</p>
+<p>$$X_{ij}: \text{chips que se mueven de i a j} \\ Min z = 50X_{AX} + 100X_{AY} + 70X_{AZ} + 60X_{BX} + 30X_{BY} + 200X_{BZ} \\ X_{AX}+X_{AY}+X_{AZ} = 200 \\ X_{BX}+X_{BY}+X_{BZ}=300 \\ X_{AX}+X_{BX}=100 \\ X_{AY} + X_{BY} = 200 \\ X_{AZ} + X_{BZ} = 200 \\ X_i \ge 0, i=A,B j=X,Y,Z$$</p>
+<pre><code class="language-prolog">transporte(S) :-
+    gen_state(S0),
+    transporte_constraints(S0,S1),
+    minimize([50*ax,100*ay,70*az,60*bx,30*by,200*bz],S1,S).
+
+transporte_constraints -->
+    constraint([ax,ay,az] = 200),
+    constraint([bx,by,bz] = 300),
+    constraint([ax,bx] = 100),
+    constraint([ay,by] = 200),
+    constraint([az,bz] = 200).</code></pre>
+<p>La solución es Xaz = 200 (todo lo que se produce en A va a Z) y Xbx = 100 y Xby = 200 (desde B se mandan 100 a X y 200 a Y).</p>
+<p>El problema del transporte es aplicable no solo a transporte propiamente dicho, sino que se puede aplicar a muchos otros problemas.</p>
+<p>Espero que esta corta introducción a la programación lineal os haya picado la curiosidad por si no lo conocíais. Esto es una disciplina muy amplia y se podría hacer un blog solo de esto.</p>

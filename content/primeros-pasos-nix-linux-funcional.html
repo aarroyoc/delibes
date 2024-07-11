@@ -1,0 +1,230 @@
+<p>Como ya sabéis, me encanta experimentar cosas alternativas dentro de la informática. Cosas que quizá no sean populares ni vayan a serlo, pero aportan un punto de vista diferente. Es por eso que en este blog se habla de <a href="https://blog.adrianistan.eu/programacion-web-prolog">Prolog</a>, hablamos de <a href="https://blog.adrianistan.eu/que-paso-con-web-semantica">web semántica</a>, <a href="https://blog.adrianistan.eu/rust-101-tutorial-rust-espanol">de Rust</a> y <a href="https://blog.adrianistan.eu/programando-haiku-bapplication-bwindow-bbutton-parte-i">se habla de Haiku</a>. Porque para ver el típico framework hecho en Java ya tienes cientos de blogs por ahí. En este blog intento hablar de cosas de las que poca gente habla. Hoy nos toca hablar de <a href="https://nixos.org/">Nix</a>, un gestor de paquetes funcional, y base de NixOS, una distribución Linux muy interesante. Sin embargo aquí solo nos centraremos en Nix.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Nix7.png" width="300">
+</div>
+
+<p>Nix es un gestor de paquetes, al igual que pacman en Arch Linux, apt en Debian o yum en RedHat. Si solo fuese un sistema más, no tendría interés, no solo hay estos tres, hay muchos más. Pero Nix ofrece algo diferente. Nix es funcional. Nix no mantiene un estado global del sistema y nos permite describir entornos de forma declarativa. Nix permite hacer rollbacks instantáneos (incluso varias versiones). Nix es además un lenguaje de programación, similar a Haskell (perezoso, puro, con currificación, pero con tipado dinámico). Nix permite tener instaladas a la vez varias versiones de un mismo paquete, sin provocar conflictos. En la gran mayoría de sistemas de paquetes, el funcionamiento es sencillo: se desempaqueta, reemplazando los ficheros si los hubiese, dentro del sistema de carpetas global. En Nix, se gestiona un PATH de forma dinámica que nos permite acceder a los paquetes residentes en /nix. Pero no nos adelantemos, vayamos poco a poco.</p>
+
+
+<h2>Instalando Nix</h2>
+<p>Hay dos formas de instalar Nix. Una es instalarse NixOS, la distro diseñada para trabajar con Nix de forma nativa. Pero también podemos instalar Nix en cualquier otra distro Linux y en macOS. Para ello deberemos ejecutar el siguiente comando:</p>
+<pre><code>
+curl https://nixos.org/nix/install | sh
+</code></pre>
+<p>Esto nos instalará Nix para nuestro usuario, aunque necesitará permisos de root. Por defecto crea un perfil. En Nix podemos tener infinitos perfiles. Cada perfil es un entorno, con paquetes diferentes que no interfieren entre sí. Podemos pensar en ello como si fuesen contenedores o máquinas virtuales, pero en realidad son simplemente colecciones de enlaces simbólicos al Nix Store, la carpeta donde se guardan todos los paquetes (por defecto /nix/store). Cada perfil carga ciertos programas en el PATH, así como sus librerías.</p>
+
+<p>Para cargar un perfil y usarlo desde Bash/Zsh tendremos que ejecutar el script nix.sh correspondiente:</p>
+<pre><code>
+source ~/.nix-profile/etc/profile.d/nix.sh
+</code></pre>
+<p>También lo podemos añadir a nuestro fichero .bashrc o equivalente para que no tengamos que hacerlo manualmente</p>.
+<h2>Instalar, borrar y actualizar paquetes</h2>
+<p>El comando principal para manipular los paquetes dentro de los perfiles es <b>nix-env</b>. Para ver los paquetes que tenemos disponibles para instalar ejecutamos:
+</p>
+<pre><code>
+nix-env -qa
+</code></pre>
+<p>Para acordarse mejor, qa significa "query all".
+Si queremos ver los paquetes que tenemos instalados en el perfil, podemos ejecutar solamente</p>
+<pre><code>
+nix-env -q
+</code></pre>
+<p>Que es simplemente query. Para filtrar los paquetes podemos usar expresiones regulares estándar. Por ejemplo:</p>
+<pre><code>
+nix-env -qa "firefox.*"
+</code></pre>
+<p>Busca todos los paquetes disponibles que empiezen por <i>firefox</i>. Para instalar paquetes tenemos el flag i, de install. Vamos a instalar cowsay.</p>
+<pre><code>
+nix-env -i cowsay
+</code></pre>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NixCowsay.png">
+</div>
+<p>
+Al instalar descarga el paquete y sus dependencias si no existiesen ya, las deja en el Nix Store y genera los enlaces simbólicos para que sean accesibles desde el perfil actual. Aquí pueden surgir varias dudas.</p>
+
+<p><b>¿Si ya existe un paquete con otra versión que ocurre?</b> Nix es quizá el gestor de paquetes más inteligentes al respecto. Si tienes ya descargada la misma versión exacta debido a otro paquete, se reutiliza, aprovechando el espacio. Sin embargo, Nix también quiere garantizar el funcionamiento de los programas y el determinismo de cuando se construyó el paquete, así que cuando las versiones divergen, se instalan ambas en paralelo. ¡Y ambas versiones de la librería funcionan a la vez en el mismo perfil! Esto se consigue gracias a la forma en la que se construyen los paquetes, que veremos más adelante.
+</p>
+<p><b>¿Qué es el fichero drv?</b> Es el fichero que almacena una derivación. Cuando realizamos modificaciones de los paquetes en Nix, estamos haciendo derivaciones. Esto nos facilita poder revertir los cambios y hace muy difícil que Nix se corrompa.</p>
+<p><b>¿De dónde se descargan los paquetes?</b> Los repositorios en Nix se llaman <b>channels</b>. Por defecto se usa nixpkg-unstable como repositorio, que es de tipo rolling release, disponiendo de los últimos paquetes siempre. Existen otros, no obstante, principalmente usados por NixOS. Los canales son en principio repositorios de código Nix, que dicen como compilar los paquetes. En la mayoría de los paquetes existen ya versiones compiladas, pero si no las hubiera la instalación procedería a compilar de cero el paquete.</p>
+<p>Vamos a usar el programa</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NixStegosaurus.png">
+</div>
+<p>Ahora vamos a quitar el programa. Podemos hacer dos cosas. Podemos hacer rollback y restaurar la versión anterior del perfil o podemos realizar una operación de borrado (que genera una nueva derivación).</p>
+<p>Para borrar, generando una nueva derivación:</p>
+<pre><code>
+nix-env -e cowsay
+</code></pre>
+<p>Para hacer rollback, podemos ejecutar:</p>
+<pre><code>
+nix-env --rollback
+</code></pre>
+<p>Que nos sirve para ir a la versión inmediatamente anterior. También podemos listar las generaciones y saltar a una de ellas</p>
+<pre><code>
+nix-env --list-generations
+nix-env -G NUMERO_GENERATION
+</code></pre>
+<p>Cuando borramos o actualizamos un paquete, no se elimina nada, todo se mantiene, de esta forma podemos hacer rollbacks instantáneos. Pero una vez ya estamos seguros de que no necesitamos ese paquete por si acaso, podemos limpiar las generaciones antiguas donde se usaba. Para ello debemos ejecutar periódicamente el siguiente comando:</p>
+<pre><code>
+nix-collect-garbage
+nix-collect-garbage -d
+</code></pre>
+<p>La segunda opción es más agresiva y perderemos la habilidad absoluta de hacer rollback, dejándonos solo con la última generación.</p>
+<p>Para actualizar los paquetes usamos este comando:</p>
+<pre><code>
+nix-env -u
+</code></pre>
+<h2>Gestionando canales</h2>
+<p>Los repositorios en Nix se llaman canales. Todas las operaciones con respecto a los canales se realizan con el comando nix-channel. Podemos ver los canales que tenemos con:</p>
+<pre><code>
+nix-channel --list
+</code></pre>
+<p>El canal nixpkgs-unstable es el que podemos encontrar en GitHub: <a href="https://github.com/NixOS/nixpkgs">https://github.com/NixOS/nixpkgs/</a>.</p>
+<p>Podemos actualizar los canales con update: </p>
+<pre><code>
+nix-channel --update
+</code></pre>
+<p>Para añadir un canal usamos add</p>
+<pre><code>
+nix-channel --add https://nixos.org/channels/channel-name nixos 
+</code></pre>
+<h2>El lenguaje Nix</h2>
+<p>Nix es realmente un lenguaje de programación funcional, especialmente diseñado para manejar la paquetería del sistema, pero completo. Es similar a Haskell, aunque sin tipado estático. No voy a entrar en muchos detalles de este lenguaje, pero vamos a ver algunas cosillas que serán útiles para construir paquetes y manejar ficheros .nix</p>
+<p>Podemos acceder a un REPL de Nix escribiendo</p>
+<pre><code>
+nix repl
+</code></pre>
+<p>En Nix todo son expresiones, que se evalúan de forma perezosa como en Haskell. La artimética es sencilla, con la única diferencia de que hay que hay que tener cuidado con la división. El símbolo / significa ruta de archivo, no división. Hay que usar la función builtins.div para dividir.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NixArithmetic.png">
+</div>
+<p>También existen listas, strings y attribute sets, que son como diccionarios. Para asignar variables usamos la sintaxis let/in, que también existe en Haskell. Básicamente, on let definimos las variables y en in la expresión que las usa.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NixList.png">
+</div>
+<p>Para acceder a los atributos de los attribute sets podemos usar la sintaxis punto o usar with para no tener que escribir. Así, estas dos líneas son equivalentes.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NixWith.png">
+</div>
+<p>En Nix también hay sentencias if, pero al ser expresiones, siempre deben retornar un valor, el else es obligatorio siempre</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NixIf.png">
+</div>
+<p>Las funciones en Nix son anónimas, pero podemos almacenarlas en variables. Admiten varios argumentos, aunque si vienes de Haskell, que sepas que Nix también realiza currificación. Las funciones de Nix también admiten parámetros que sean un attribute set, y los puede descomponer directamente. Además esto nos permite definir argumentos opcionales.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NixFunctions.png">
+</div>
+<p>Lo último que debemos saber del lenguaje es el uso de import, que sirve para cargar la expresión resultado de un archivo en otro</p>
+<h2>Creando paquetes</h2>
+<p>Una vez conocemos el lenguaje Nix, no es evidente como se crean paquetes. Existen dos formas básicas de crear paquetes: in-tree y out-tree. Los paquetes in-tree son los que componen nixpkgs, y básicamente cada paquete se define por una función que es llamada desde un punto de entrada principal, que es el índice de paquetes. Si queremos subir un paquete a nixpkgs deberemos hacerlos así. Sin embargo, si queremos empaquetar algo que no queremos que llegue a nixpkgs debemos hacerlo de forma que sea independiente, aunque usando algunas funciones de nixpkgs.</p>
+<p>Lo primero que vamos a hacer es importar nixpkgs, para poder usar sus utilidades. La mayoría de paquetes se beneficiarán de las funciones prediseñadas. Stdenv tiene funcionalidad genérica, pero útil para programas en C/C++. Para otros lenguajes podemos usar este mismo módulo u otros más específicos (de Rust, de Haskell, ...). La expresión es una llamada a mkDerivation, con ciertos datos, entre ellos un builder, que será un script que construirá la aplicación, el origen de los datos (función fetchurl normalmente) y algunas dependencias, con buildInputs. Podemos pasar cualquier variable de Nix a Bash, simplemente añadiendo más variables a mkDerivation.</p>
+
+<pre><code>
+let 
+    nixpkgs = import <nixpkgs> {} ;
+in
+nixpkgs.stdenv.mkDerivation {
+    name = "pcc-1.0.0" ;
+    builder = ./builder.sh ;
+    src = nixpkgs.fetchurl {
+        url = https://github.com/aarroyoc/pcc/archive/3f90d424494f4d1971ea34e66883fdee8a587b1f.zip;
+        sha256 = "ec80f0c8af5dc9d6f0fbb691a4132ac8d44e42dd05865e23c80c2e0f0219d56f";
+    };
+    buildInputs = [ nixpkgs.unzip nixpkgs.bison nixpkgs.flex];
+}
+</code></pre>
+<p>o si usamos with para simplificar</p>
+<pre><code>
+with import <nixpkgs> {};
+
+stdenv.mkDerivation {
+  name = "pcc-1.0.0";
+  builder = ./builder.sh;
+  src = fetchurl {
+    url = https://github.com/aarroyoc/pcc/archive/3f90d424494f4d1971ea34e66883fdee8a587b1f.zip;
+    sha256 = "ec80f0c8af5dc9d6f0fbb691a4132ac8d44e42dd05865e23c80c2e0f0219d56f";
+  };
+  buildInputs = [ unzip bison flex ];
+}
+</code></pre>
+<p>Y el builder.sh contiene:</p>
+<pre><code>
+source $stdenv/setup
+
+unzip $src
+cd pcc-*
+make
+mkdir -p $out/bin
+cp pcc $out/bin/
+</code></pre>
+<p>Dentro del script hay que cumplir varias normas. La primera línea, si usamos stdenv, debe ser llamar al setup. La variable src es la que hemos definido como resultado de fetchurl y la variable out representa la estructura que va a tener el paquete.</p>
+<p>Con Nix podemos importar otros paquetes como base y personalizarlos obteniendo así paquetes personalizados de forma sencilla y reproducible.</p>
+<p>Podemos compilar el paquete con nix-build</p>
+<pre><code>
+nix-build pcc.nix
+</code></pre>
+<p>E instalarlo</p>
+<pre><code>
+nix-env -f pcc.nix -i pcc
+</code></pre>
+<p>Lo que hacemos con nix-env es indicar que use otro archivo nix en vez de nixpkgs y de él, instale pcc.</p>
+<h2>Construyendo entornos</h2>
+<p>Con Nix también podemos construir entornos que tengan ciertos paquetes cargados, ideal para documentar el software exacto necesario para trabajar y desplegar programas. Para ello usaremos mkShell</p>
+<pre><code>
+let
+  pkgs = import <nixpkgs> {};
+in
+
+pkgs.mkShell {
+    name = "python-datascience";
+    buildInputs = with pkgs; [
+        python38
+        python38Packages.numpy
+        python38Packages.scikitlearn
+        python38Packages.scipy
+        python38Packages.matplotlib
+    ];
+}
+</code></pre>
+<p>Y lo cargamos</p>
+<pre><code>
+nix-shell datascience.nix
+</code></pre>
+<p>Y ya tendríamos un entorno para ejecutar nuestros scripts de NumPy, SciPy y Sklearn. Estos shells se construyen como si fuesen paquetes y también se pueden distribuir. Si faltase algún paquete de Python, podríamos añadirlo fácilmente a Nix. Por ejemplo, suponiendo que no tuviésemos paquete para <a href="http://python-requests.org/">requests</a>, usaríamos las funciones de Nix para Python</p>
+<pre><code>
+let
+  pkgs = import <nixpkgs> {};
+  requests = pkgs.python38.pkgs.buildPythonPackage rec {
+      pname = "requests";
+      version = "2.22.0";
+      src = pkgs.python38.pkgs.fetchPypi {
+          inherit pname version;
+          sha256 = "1d5ybh11jr5sm7xp6mz8fyc7vrp4syifds91m7sj60xalal0gq0i";
+      };
+      doCheck = false;
+      buildInputs = with pkgs; [
+          python38
+          python38Packages.chardet
+          python38Packages.idna
+          python38Packages.urllib3
+      ];
+  };
+in
+
+pkgs.mkShell {
+    name = "python-datascience";
+    buildInputs = with pkgs; [
+        python38
+        python38Packages.numpy
+        python38Packages.scikitlearn
+        python38Packages.scipy
+        python38Packages.matplotlib
+        requests
+    ];
+}
+</code></pre>
+
+<h2>Conclusión</h2>
+<p>Nix es un gestor de paquetes muy potente, ofrece mejoras respecto a apt, yum, dnf, etc y se acerca mucho a Docker y otros sistemas modernos. Es puramente funcional, que se refleja en una curva de aprendizaje inicial más elevada. A priori no parece que ninguna gran distro que quiera pasarse a Nix, pero se puede instalar de forma paralela en tu Linux o Mac. Si quieres ir un paso más allá, NixOS utiliza el lenguaje Nix para todavía más partes de la administración del sistema y existen proyectos como <a href="https://github.com/rycee/home-manager">home-manager</a> que te permiten configurar entornos completos en Nix de una forma más extensa que solo decidir los paquetes que va a disponer.</p>

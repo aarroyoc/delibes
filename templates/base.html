@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Adrianistán{% endblock %}</title>
+    <link rel="stylesheet" href="/static/fonts.css">
+    <link rel="stylesheet" href="/static/main.css">
+  </head>
+  <body>
+    <header>
+      <a class="title black-link" href="/">Adrianistán</a>
+      <nav>
+	<a class="black-link" href="/sobre-mi">Sobre mí</a>
+	<a class="black-link" href="/archivo">Archivo</a>
+	<a>Proyectos</a>
+      </nav>
+    </header>
+    <main>
+      {% block main %}{% endblock %}
+    </main>
+    <footer>
+      <div>&copy; Adrián Arroyo Calle / 2012 - 2024</div>
+      <div>Contenido bajo licencia Creative-Commons 4.0 BY-NC-SA salvo que se indique lo contrario.</div>
+      <div>Este blog es gestionado con <a href="https://github.com/aarroyoc/diario2">Delibes</a>, un sistema de blogging ejecutado sobre <a href="https://www.scryer.pl">Scryer Prolog</a></div>
+    </footer>
+  </body>
+</html>

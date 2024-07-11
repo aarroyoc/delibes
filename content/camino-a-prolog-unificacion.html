@@ -1,0 +1,199 @@
+<p>Ho, ho, ho. Durante estos días festivos de Navidad voy a escribir unos posts de una serie llamada <i>El camino a Prolog</i> donde vamos a tratar de construir un sistema Prolog de juguete. Mi intención no es construir un sistema Prolog real y usable, sino un sistema de juguete para que se pueda entender como funcionan por debajo muchas cosas. Esto me ayudará a mí a entender mejor como funcionan sistemas como Scryer Prolog por debajo. Sin más dilación empecemos con la primera parte.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RoadToProlog.webp" width="500">
+</div>
+
+<h2>¿Qué hace Prolog distinto a otros lenguajes</h2>
+<p>Existen muchos lenguajes de programación y existe mucha documentación sobre como implementarlos. No obstante, la mayoría de libros y webs se centran en implementar lenguajes imperativos. También existe documentación sobre lenguajes funcionales, que en los últimos años han recuperado popularidad. Sin embargo, Prolog es un lenguaje lógico y eso tiene desafíos únicos. Precisamente estos desafíos provienen de sus cualidad únicas.</p>
+
+<p>Cuando me pidan que describa Prolog, lo primero que se me viene a la cabeza son dos conceptos: unificación y no determinismo. Ambos requieren de la introducción del concepto de variables lógicas. Las variables lógicas que pueden tomar un valor. Mención especial al pueden, ya que una variable puede estar todavía sin valor. Una vez adquieren un valor, lo mantienen de forma permanente. Piensa en ellas como las variables matemáticas de álgebra, donde no se permite mutabilidad y además pueden tener un valor desconocido en cierto punto del cómputo.</p>
+
+<h2>Un algoritmo de unificación</h2>
+<p>Vamos a atacar el primer problema que hace a Prolog diferente de otros lenguajes. Tenemos que implementar la unificación, la cuál nos va a permitir tener variables lógicas. Las variables lógicas las escribiremos con su primera letra en mayúsculas.</p>
+
+<p>¿Qué quiere decir que dos expresiones unifiquen? Quiere decir que existe una sustitución de variables que permite hacer iguales las dos expresiones. Por ejemplo:</p>
+<pre><code>
+f(X, b) = f(a, Y).
+</code></pre>
+<p>Las dos expresiones a los dos lados del igual no son iguales, pero unifican, ya que es posible que X tome el valor a e Y tomar el valor b y de ese modo sí serían iguales.</p>
+
+<p>Existen <a href="https://norvig.com/unify-bug.pdf">varias formas de hacerlo</a> aunque muchos libros contenían un bug en su implementación. Para nuestro algoritmo vamos a implementar el código de Peter Norvig en <i><a href="https://amzn.to/3i0estP">Paradigms of AI Programming: Case Studies in Common Lisp</a></i>.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NorvigUnification.png" width="400">
+</div>
+
+<p>Primero vamos a implementar el caso más obvias. Las cosas idénticas a nivel fundamental deben unificar. Es decir un átomo y otro átomo igual unifican. Y una variable con ella misma también unifica directamente. En este caso no se genera ninguna sustitución de variable. Si dos átomos no son iguales, no pueden unificar.</p>
+
+<p>Vamos a empezar escribiendo en Rust nuestro algoritmo. Por un lado, vamos a tener un <a href="https://blog.adrianistan.eu/tipos-suma-typescript-rust">Sum Type</a> llamado Term. Los Term van a poder ser de tres tipos: átomos, variables y estructuras. Las estructuras no son más que un átomo seguido de un listado de Terms. Podrían ser incluso otras estructuras. De esta forma se pueden representar datos complejos en Prolog.</p>
+
+<p>Con esa información podemos tener algo parecido a esto.</p>
+
+<pre><code class="language-rust">
+#[derive(Debug, Clone)]
+enum Term {
+    Atom(String),
+    Var(String),
+    Str(String, Vec<Term>),
+}
+
+impl PartialEq for Term {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Term::Atom(x), Term::Atom(y)) => x == y,
+            (Term::Var(x), Term::Var(y)) => x == y,
+            _ => false
+        }
+    }
+}
+</code></pre>
+<p>Para el algoritmo de unificación vamos a ir modificando un diccionario con las variables y sus sustituciones. Este diccionario estará envuelto por Option, ya que solo tendrá sentido si la unificación es posible. Si no es posible devolveremos None. Otra idea  presente dentro de la función unify es que sea posible llamarla de forma recursiva.</p>
+
+<pre><code class="language-rust">
+type Bindings = Option<HashMap<String, Term>>;
+
+fn unify(x: Term, y: Term, bindings: Bindings) -> Bindings {
+    if x == y {
+        bindings
+    } else {
+        None
+    }
+}
+</code></pre>
+<p>Con esto ya tenemos el primer subcaso de la unificación resuelto. Ahora tocan las variables.</p>
+<h2>Unificando variables</h2>
+<p>En el caso de que el parámetro x sea una variable, debería poder unificar con y, sea cuál sea el valor de y. Ya que x tomará el valor concreto de y. Podría ser un átomo, una variable o una estructura. Lo que haremos será almacenar en el diccionario que para la variable x se sustituye por lo que tenga y. Podría existir el caso de que x ya apareciese en los bindings (hasta que no tengamos implementadas las estructuras no pero hay que irlo teniendo en cuenta). En ese caso, deberemos probar que lo que tenemos almacenado unifica con el nuevo valor con el que tratamos de unificar la variable. Y todo esto se aplica también en el caso de que la variable sea y en vez de x.</p>
+
+<pre><code class="language-rust">
+fn unify(x: Term, y: Term, bindings: Bindings) -> Bindings {
+    if x == y {
+        bindings
+    } else if let Term::Var(var) = x {
+        unify_variable(var, y, bindings)
+    } else if let Term::Var(var) = y {
+        unify_variable(var, x, bindings)
+    } else {
+        None
+    }
+}
+
+#[inline]
+fn unify_variable(var: String, y: Term, bindings: Bindings) -> Bindings {
+    let mut bindings = bindings?;
+    match bindings.get(&var) {
+        Some(value) => unify(value.clone(), y, Some(bindings)),
+        None => {
+            bindings.insert(var, y.clone());
+            Some(bindings)
+        }
+    }
+}
+</code></pre>
+<h2>Manejando estructuras</h2>
+<p>Ahora vamos a hacer que nuestro algoritmo de unificación maneje estructuras, de modo que el algoritmo funcione en unificaciones mucho más realistas, como el del ejemplo inicial.</p>
+
+<pre><code class="language-rust">
+fn unify(x: Term, y: Term, bindings: Bindings) -> Bindings {
+    if x == y {
+        bindings
+    } else if let Term::Var(var) = x {
+        unify_variable(var, y, bindings)
+    } else if let Term::Var(var) = y {
+        unify_variable(var, x, bindings)
+    } else if let (Term::Str(f_x, args_x), Term::Str(f_y, args_y)) = (x, y) {
+        if f_x == f_y && args_x.len() == args_y.len() {
+            zip(args_x, args_y).fold(bindings, |acc_bindings, (t_x, t_y)| {
+                unify(t_x, t_y, acc_bindings)
+            })
+        } else {
+            None
+        }
+    } else {
+        None
+    }
+}
+</code></pre>
+<p>Se comprueba que tanto x como y son estructuras, de la misma aridad y con el functor (el átomo inicial) iguales. Posteriormente vamos haciendo unificaciones de cada Term dentro de la estructura. Podemos añadir un test que pruebe la unificación de f(X, b) = f(a, Y).</p>
+<pre><code class="language-rust">
+#[test]
+fn unify_str() {
+    let x = Term::Str("f".into(), vec![Term::Var("X".into()), Term::Atom("b".into())]);
+    let y = Term::Str("f".into(), vec![Term::Atom("a".into()), Term::Var("Y".into())]);
+    let bindings = unify(x, y, Some(HashMap::new()));
+    let mut expected = HashMap::new();
+    expected.insert("X".into(), Term::Atom("a".into()));
+    expected.insert("Y".into(), Term::Atom("b".into()));    
+    assert_eq!(Some(expected), bindings);
+}
+</code></pre>
+<p>Y funcionará correctamente. No obstante, si pasamos algunos ejemplos más específicos, podemos hacer que falle. La unificación de f(X, Y) = f(Y, X) es correcta pero genera dos bondings: X -> Y y Y -> X. Y de hecho si añadiésemos más términos que tuviesen que unificar con esas variables de nuevo, entraríamos en un bucle infinito. La solución es modificar unify_variable para, cuando tenemos una variable ya en nuestros bindings, que se unifique sobre el valor al que apunta y no sobre la propia variable.</p>
+
+<pre><code class="language-rust">
+#[inline]
+fn unify_variable(var: String, y: Term, bindings: Bindings) -> Bindings {
+    let mut bindings = bindings?;
+    match bindings.get(&var) {
+        Some(value) => unify(value.clone(), y, Some(bindings)),
+        None => {
+            if let Term::Var(ref y_var) = y {
+                if let Some(y_val) = bindings.get(y_var) {
+                    return unify(Term::Var(var), y_val.clone(), Some(bindings))
+                }
+            }
+            bindings.insert(var, y.clone());
+            Some(bindings)
+        }
+    }
+}
+</code></pre>
+<p>Ya tendríamos un algoritmo de unificación similar al de un sistema Prolog. No obstante, esto no sería unificación propiamente dicha, ya que podemos crear términos cíclicos. Por ejemplo: X = f(X) unificaría con X = f(X). Pero esto sería incorrecto. No obstante, tradicionalmente Prolog ha permitido esto. Opcionalmente se puede introducir un occurs check, una comprobación, que añade coste al cómputo pero que evita que estas unificaciones sucedan con éxito.</p>
+<h2>Occurs check</h2>
+<p>Si queremos introducir el occurs check simplemente tendremos que añadir una condición, a comprobar antes de añadir un binding nuevo y es si esa variable aparece en el otro lado, de forma recursiva si es necesario.</p>
+<pre><code class="language-rust">
+#[inline]
+fn unify_variable(var: String, y: Term, bindings: Bindings, occurs_check_flag: bool) -> Bindings {
+    let mut bindings = bindings?;
+    match bindings.get(&var) {
+        Some(value) => unify(value.clone(), y, Some(bindings), occurs_check_flag),
+        None => {
+            if let Term::Var(ref y_var) = y {
+                if let Some(y_val) = bindings.get(y_var) {
+                    return unify(Term::Var(var), y_val.clone(), Some(bindings), occurs_check_flag)
+                }
+            }
+
+            occurs_check(var.clone(), y.clone(), Some(bindings), occurs_check_flag).and_then(|mut bindings| {
+                bindings.insert(var, y.clone());
+                Some(bindings)
+            })
+	   
+        }
+    }
+}
+
+#[inline]
+fn occurs_check(var: String, y: Term, bindings: Bindings, occurs_check_flag: bool) -> Bindings {
+    if !occurs_check_flag {
+        bindings
+    } else if Term::Var(var.clone()) == y {
+        None
+    } else if let Term::Var(y_var) = y {
+        match bindings.clone()?.get(&y_var) {
+            Some(y_val) => {
+                return occurs_check(var, y_val.clone(), bindings, occurs_check_flag);
+	    }
+            None => bindings
+        }
+    } else if let Term::Str(_, args) = y {
+        args.iter().fold(bindings, |acc_bindings, t_y| {
+            occurs_check(var.clone(), t_y.clone(), acc_bindings, occurs_check_flag)
+        })
+    } else {
+        bindings
+    }
+}
+</code></pre>
+
+<h2>Conclusión</h2>
+<p>Con esto ya tendríamos un algoritmo de unificación completo en Rust para nuestro sistema Prolog de juguete.</p>

@@ -1,0 +1,115 @@
+<p>El otro día me encontré por Twitter con el reto semanal de Brais Moure (<a href="https://twitter.com/MoureDev">@MoureDev</a>). Se trataba de un programa que permitiese pasar texto a código morse y viceversa. Decidí resolver el problema en Prolog, mi lenguaje lógico favorito, y he aquí una explicación para entender la solución. Usaré Scryer Prolog ya que es el más cómodo para trabajar con strings.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/PrologMorse.png">
+</div>
+
+<p>La definición del reto es esta:</p>
+<blockquote>
+Crea un programa que sea capaz de transformar texto natural a código morse y viceversa.<br>
+ - Debe detectar automáticamente de qué tipo se trata y realizar la conversión.<br>
+ - En morse se soporta raya "—", punto ".", un espacio " " entre letras o símbolos y dos espacios entre palabras "  ".<br>
+ - El alfabeto morse soportado será el mostrado en <a href="https://es.wikipedia.org/wiki/C%C3%B3digo_morse">https://es.wikipedia.org/wiki/Código_morse</a>.
+</blockquote>
+<p>El primer paso será definir unos predicados que contengan el caracter y su equivalente en Morse. Hay que tener en cuenta que el alfabeto en el que nos basamos considera "ch" como letra independiente y por tanto la deberemos añadir también. Esto de "ch" también nos hará tener que meter una regla extra más adelante.</p>
+
+<pre><code class="language-prolog">
+morse("a", ".-").
+morse("b", "-...").
+morse("c", "-.-.").
+morse("ch", "----").
+morse("d", "-..").
+morse("e", ".").
+morse("f", "..-.").
+morse("g", "--.").
+morse("h", "....").
+morse("i", "..").
+morse("j", ".---").
+morse("k", "-.-").
+morse("l", ".-..").
+morse("m", "--").
+morse("n", "-.").
+morse("ñ", "--.--").
+morse("o", "---").
+morse("p", ".--.").
+morse("q", "--.-").
+morse("r", ".-.").
+morse("s", "...").
+morse("t", "-").
+morse("u", "..-").
+morse("v", "...-").
+morse("w", ".--").
+morse("x", "-..-").
+morse("y", "-.--").
+morse("z", "--..").
+morse("0", "-----").
+morse("1", ".----").
+morse("2", "..---").
+morse("3", "...--").
+morse("4", "....-").
+morse("5", ".....").
+morse("6", "-....").
+morse("7", "--...").
+morse("8", "---..").
+morse("9", "----.").
+morse(".", ".-.-.-").
+morse(",", "--..--").
+morse("?", "..--..").
+morse("\"", ".-..-.").
+morse("/", "-..-.").
+</code></pre>
+<p>Una vez tengamos hecho esto vamos a usar una DCG para realizar la transformación caracter a caracter. La regla básica es la siguiente:</p>
+<pre><code class="language-prolog">
+morse_string(Morse) -->
+    {
+	morse([X], M0),
+        append_morse(M0, M1, Morse)
+    },
+    [X],
+    morse_string(M1).
+
+morse_string([]) --> [].
+</code></pre>
+<p>Viene a decir que probemos valores de morse de 1 caracter de longitud. Probamos a ver si la entrada del texto es justo ese caracter (si no, reintentamos con otro valor) y el código Morse de traducción lo juntamos con los de los siguientes caracteres. Así hasta llegar al final cuando no hay más caracteres que procesar y devolvemos la lista vacía (string vacío).</p>
+<p>El predicado <i>append_morse</i> podría considerase un append normal salvo porque añade un espacio entre medias. De este modo, cumplimos el requisito de que los caracteres Morse van separados por un espacio. Cuando juntamos con un string vacío, no añadimos ese espacio.</p>
+<pre><code class="language-prolog">
+append_morse(M0, M1, Morse) :-
+    if_(M1 = "", append(M0, M1, Morse), append(M0, [' '|M1], Morse)).
+</code></pre>
+<p><i>if_</i> forma parte de la librería reif de Scryer Prolog. Se trata de un condicional lógico puro (a diferencia de ->) y nos permite que la condición aplique aunque las variables no estén instanciadas.</p>
+
+<p>Para el caso del espacio y de dos caracteres, tendremos que añadir otras dos reglas de <i>morse_string.</i></p>
+<pre><code class="language-prolog">
+morse_string(Morse) -->
+    {
+	morse([X,Y], M0),
+	append_morse(M0, M1, Morse)
+    },
+    [X,Y],
+    morse_string(M1).
+
+morse_string(Morse) -->
+    {
+	append(" ", M0, Morse)
+    },
+    " ",
+    morse_string(M0).
+</code></pre>
+
+<p>Y ya estaría. Finalmente añadimos el predicado para aplicar la DCG:</p>
+<pre><code class="language-prolog">
+text_morse(Text, Morse) :-
+    once(phrase(morse_string(Morse), Text)).
+</code></pre>
+<p>La ventaja de haberlo definido la DCG tal y como la hemos hecho es que ¡podemos aplicar la conversión en ambos sentidos! Tanto de Morse a Texto como de Texto a Morse, la transformación se hace correctamente, solo tenemos que usar <i>text_morse</i> en el sentido correcto. Podemos solventar este problema e intentar realizar la transformación en ambos sentidos de forma automática. Esto sería el equivalente a "Debe detectar automáticamente de qué tipo se trata y realizar la conversión.".</p>
+<pre><code class="language-prolog">
+solve(Input, Output) :-
+    text_morse(Output, Input) ; text_morse(Input, Output).
+</code></pre>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/PrologMorse.png">
+</div>
+
+<p>El código completo en el repo de <a href="https://github.com/aarroyoc/blog-ejemplos/blob/master/morse/morse.pl">blog-ejemplos</a></p>
+

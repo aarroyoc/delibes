@@ -1,0 +1,421 @@
+<p>El año pasado, un día anodino, vi por casualidad un cartel en la escuela de Ingeniería Informática. Hablaba de un curso de buceo, como los buceadores de las películas, con su botella, su regulador y pasarse bajo el agua un montón de tiempo. El nombre <i>técnico</i> de este tipo de buceo es <a href="https://en.wikipedia.org/wiki/Scuba_diving">SCUBA</a>, que viene de Self-Contained Underwater Breathing Apparatus. Decidí apuntarme y este año y tras unos cursos y unas cuantas inmersiones más, llega el primer artículo de buceo al blog. Pero no nos vamos a alejar mucho de la temática habitual, sino que veremos como podemos usar Prolog para planificar nuestras inmersiones.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/CuevaVirgenSalida.jpg" width="500">
+</div>
+
+<h2>¿Cómo funcionará el planificador?</h2>
+<p>Antes de entrar y añadir qué factores vamos a tener en cuenta vamos a centrarnos en lo básico del problema. ¿Qué es hacer una planificación de buceo? Un plan es una lista de profundidades a las que vamos a estar en un determinado momento. Así por ejemplo empezaremos a 0 metros de profundidad (superficie) en el minuto 0. En el minuto 2, hemos bajado a 10 metros de profundidad. Nos mantenemos a esa profundidad 20 minutos y finalmente, ascendemos a la superficie en el minuto 24.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/plan-de-buceo.webp" width="500">
+</div>
+
+<p>Lo que queremos comprobar es si ese plan es válido o requiere cambios. Prolog nos ayudará. Aunque el plan siempre deberá revisarse y/o comentar por humanos con información adicional (corrientes, visibilidad, etc)</p>
+
+<p>Lo primero será definir un predicado <i>plan/1</i> que toma una lista de puntos de la inmersión. Este predicado comprobará que el primer elemento es en superficie y que el último también lo es. Además comprobaremos que los tiempos estén alineados y que las variables estan dentro del rango. El tiempo estará entre 0 y 100 y la profundidad entre 0 y 30 (límite más o menos frecuente en buceo recreativo, aunque según la titulación podría ser 18 o 40). Para establecer este dominio de la variable, usamos between. ¿Podríamos haber usado clpz? Para esta parte sí, pero luego meteremos números decimales dentro de los cálculos y ahí ya dejaría de funcionar. clpz funciona cuando todas las variables son números enteros.</p>
+
+<pre><code class="language-prolog">
+:- use_module(library(between)).
+
+% s(Time, Depth)
+plan(Plan) :-
+    Plan = [X|Xs],
+    X = s(0, 0),
+    plan(X, Xs).
+
+plan(S, []) :-
+    S = s(_, D),
+    D = 0.
+plan(S0, [S|Ss]) :-
+    S0 = s(T0, D0),
+    S = s(T, D),
+    between(0, 100, T),
+    between(0, 100, T0),
+    between(0, 30, D),
+    between(0, 30, D0),
+    T > T0,
+    plan(S, Ss).
+</code></pre>
+
+<p>Con este código probamos nuestro plan.</p>
+<pre><code class="language-prolog">
+?- plan([s(0, 0), s(2, 10), s(22, 10), s(30, 0)]).
+   true.
+?- plan([s(0, 0), s(2, 10), s(22, 10), s(30, 2)]).
+   false.
+?- plan([s(0, 0), s(2, 10), s(22, 10), s(30, 0)]).
+   true.
+?- plan([s(0, 2), s(2, 10), s(22, 10), s(30, 0)]).
+   false.
+?- plan([s(0, 0), s(2, 10), s(22, 10), s(30, 0)]).
+   true.
+</code></pre>
+<p>Como veis, algunos planos son viables mientras que otros no. No obstante, hay todavía más cosas que añadir.</p>
+
+<h2>Consumo de aire</h2>
+<p>Quizá el problema más evidente que vemos cuando nos planteamos explorar el mar es cómo respirar. Los humanos no tenemos branquias, no podemos respirar bajo el agua de forma natural. Ante esto hay varias soluciones, cada una dará lugar a tipos de buceo diferentes. Desde aguantar la respiración (apnea), llevar un tubo y bucear a poca profundidad (snorkel), estar conectado a una campana, ... En SCUBA, el aire (aire, no oxígeno), se lleva en una botella (botella, no bombona) a muy alta presión. Esta botella se conecta a un aparato llamado regulador. Los reguladores actuales normalmente disponen de dos etapas, una primera que se conecta a la botella y devuelve aire a 8-9 bares. La segunda toma ese aire y lo transforman a la presión correcta para que nuestros pulmones puedan procesar el aire correctamente. ¿Cuál es esa presión?</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ley-de-boyle.jpg">
+</div>
+
+<p>La presión de aire a la que tiene que transformar el aire la segunda etapa es la presión que haya en el exterior sobre el cuerpo humano. Cuando estamos en superficie, la presión atmosférica es de 1 bar (aprox). Bajo el agua, a esa presión deberemos sumar 1 bar por cada 10 metros de profundidad.</p>
+
+<p>Las botellas son de diferentes tamaños y materiales. Las más comunes en Europa son de 12L y de 15L de acero. No obstante, el aluminio es necesario si metemos gases diferentes (más adelante). Estas botellas suelen llenarse a 200 bar. Una botella de 12L a 200 bar contiene 2400L de aire a presión a nivel de mar. (Volumen de Aire = Volumen de Botella * Presión, por la Ley de Boyle).</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/LeyBoyle.png">
+</div>
+
+<p>De normal, un ser humano respira unos 20 L por minuto. Al ser bajo el agua, estos litros en realidad son más, ya que tienen que salir 20L a la presión de la profundidad. Por tanto en un minuto, los litros de aire consumidos serán 20*Presión de la profundidad. Para saber la presión perdida, volvemos a la ley de Boyle, la diferencia de presión será la diferencia de volumen de aire dividido el volumen de la botella.</p>
+
+<p>En el caso de que estemos calculando el consumo entre dos puntos, a diferente profundidad, podemos hacer una aproximación a la profundidad media sin apenas diferencias.</p>
+
+<pre><code class="language-prolog">
+% Calculates the pressure difference between two times, probably at different depth
+pressure_dif(DifTime, D0, D, DifGas) :-
+    breathing_rate(BR),
+    bottle_size(BL),
+    DifVolume is BR*DifTime*(((D0+D) / 20)+1), % breathing rate * time * air pressure
+    DifGas is DifVolume / BL. % Air volume = Bottle volume * bottle pressure
+
+% Breathing Rate (20 L/m) to (70 L/m)
+breathing_rate(20).
+% Bottle Sizes (10, 12, 15, 18)
+bottle_size(12).
+</code></pre>
+
+<p>Ahora hay que modificar el plan para añadir el consumo de aire, que será una variable entre 0 y 200. Además al salir, hay que asegurarse una reserva, de mínimo 50 bares.</p>
+
+<pre><code class="language-prolog">
+plan(Plan) :-
+    Plan = [X|Xs],
+    X = s(0, 0, _),
+    plan(X, Xs).
+
+plan(S, []) :-
+    S = s(T, D, G),
+    D = 0.
+plan(S0, [S|Ss]) :-
+    S0 = s(T0, D0, G0),
+    S = s(T, D, G),
+    between(0, 100, T),
+    between(0, 100, T0),
+    between(0, 30, D),
+    between(0, 30, D0),
+    between(50, 200, G0),
+    T > T0,
+    DifTime is T - T0,
+    pressure_dif(DifTime, D0, D, GasConsumption),
+    G is G0 - round(GasConsumption),
+    between(50, 200, G),
+    plan(S, Ss).
+</code></pre>
+<p>Con esto podemos probar si vamos a tener aire suficiente en ciertos planes. Además, en cada punto podemos saber el aire que tenemos, dejando una variable. Dejar el tamaño de botella y la breathing rate configurables quedan como ejercicio para el lector.</p>
+
+<pre><code>
+?- plan([s(0, 0, 200), s(2, 10, _), s(22, 10, _), s(30, 0, G0)]).
+   G0 = 108.
+?- plan([s(0, 0, 200), s(2, 10, _), s(50, 10, _), s(70, 0, _)]).
+   false.
+</code></pre>
+
+<h2>Enfermedad descompresiva</h2>
+<p>Antiguamente, se sabía que si los buzos se quedaban mucho tiempo bajo el agua tenían una enfermedad y podían morir. No se sabía muy bien por qué, ya que no era por ahogamiento.</p>
+<p>Hoy en día se sabe que se produce debido a la absorción del nitrógeno por parte de nuestros tejidos. Aquí intervienen la ley de Henry y la de Dalton, pero no me quiero meter mucho. Realmente el problema no está en absorber ese nitrógeno extra sino liberarlo. Este nitrógeno se irá liberando solo al ir ascendiendo, en forma de microburbujas. Pero si ascendemos muy rápido o si hemos capturado mucho nitrógeno, estas microburbujas se fusionarán entre ellas y serán burbujas grandes que pueden bloquear arterias y venas. Ese es el verdadero peligro.</p>
+<p>Realmente no existe forma 100% garantizada de que a un buzo no le suceda ya que no podemos medir como está siendo la expulsión de burbujas de su organismo, pero sí que podemos prevenirlo: ascendiendo lentamente y teniendo unos límites de tiempo bajo el agua.</p>
+
+<p>Lo primero es relativamente sencillo. Dependiendo de la agencia, las normas varían, pero vamos a poner que no se puede ascender más de 9 metros por minuto. Añadiendo este código a nuestro predicado plan, podemos hacer la comprobación.</p>
+
+<pre><code class="language-prolog">
+    DifDepth is D0 - D,
+    % Max SAFE speed to ascend is 9/min SSI or 18/min PADI
+    (
+	DifDepth > 0 ->
+	DifDepth / DifTime =< 9
+    ;   true
+    ),
+</code></pre>
+<p>Y listo. Podemos ver como si ascendemos muy rápido, nos rechazará el plan.</p>
+<pre><code>
+?- plan([s(0, 0, 200), s(2, 10, _), s(7, 30, _), s(8, 0, _)])
+   false.
+</code></pre>
+
+<p>Para no excedernos el tiempo en el agua hay varios sistemas. Actualmente existen los ordenadores de buceo, que usan un algoritmo como el RGBM (Modelo de Gradiente Reducido de la Burbuja, algoritmo cerrado y con muchas variaciones), Buhlmann (ZH-L16A,  ZH-L16B, ...), VPM, Haldane,... Con estos ordenadores buceas y al tener profundímetro, saben exactamente la profundidad a la que te encuentras en cada momento y ajustan de ese modo el tiempo máximo que te queda de forma segura. Existe otro método, las tablas de buceo, como esta de PADI, que nos indican de forma sencilla el tiempo máximo pero con la contra de que son más restrictivas (suelen dar menos tiempo) y hay que llevarlas en la cabeza cuando se bucea. Estas tablas también se han desarrollado mediante algoritmos, en concreto las de PADI usan DSAT.</p>
+
+<div style="text-align:center">
+<img width="600" src="https://files.adrianistan.eu/PadiRDP.png">
+<img width="600" src="https://files.adrianistan.eu/PadiRDPBack.png">
+</div>
+
+<p>Una aproximación inicial puede ser intentar utilizar alguna de estas tablas en nuestro programa. Las tablas funcionan cogiendo la profundidad máxima que alcanzamos y dándonos un tiempo máximo de inmersión. Además se pueden utilizar para combinar varias inmersiones entre sí, ya que al salir del agua no nos liberaremos del nitrógeno mágicamente, sino que seguirá habiendo mucho dentro de nuestro cuerpo y deberemos ser más conservadores.</p>
+
+<p>Para ello, después de comprobar nuestro plan, vamos a hacer una comprobación extra a través del predicado <i>deco_time</i>. Este predicado toma la profunidad máxima de la inmersión (usando foldl) y el tiempo final. Comprueba que no nos pasamos de tiempo según la profunidad máxima que hayamos alcanzado. Hay muchos valores en la tabla que no vienen. Cuando esto pasa, tanto en el caso de la profundidad o del tiempo, miramos un valor siempre mayor. En el caso del tiempo ponemos un tope para no introducir un bucle infinito.</p>
+
+<p>Además, nos saca el grupo de presión por el que salimos. Esto es importante si vamos a hacer más de una inmersión en un día. Por simplificar, no lo voy a introducir, ya que habría que usar el resto de tablas, añadir descansos, etc.</p>
+
+<pre><code class="language-prolog">
+plan(Plan) :-
+    Plan = [X|Xs],
+    X = s(0, 0, _),
+    plan(X, Xs),
+    deco_time(Plan).
+
+deco_time(Plan) :-
+    foldl(plan_max_depth, Plan, 0, MaxDepth),
+    append(_, [s(T,_,_)], Plan),
+    padi_depth(MaxDepth, _PG, T).
+</code></pre>
+<p>Y la parte de la tabla...</p>
+<pre><code class="language-prolog">
+% padi(MaxDepth, PressureGroup, Time)
+padi(10, a, 10).
+padi(10, b, 20).
+padi(10, c, 26).
+padi(10, d, 30).
+padi(10, e, 34).
+padi(10, f, 37).
+padi(10, g, 41).
+padi(10, h, 45).
+padi(10, i, 50).
+padi(10, j, 54).
+padi(10, k, 59).
+padi(10, l, 64).
+padi(10, m, 70).
+padi(10, n, 75).
+padi(10, o, 82).
+padi(10, p, 88).
+padi(10, q, 95).
+padi(10, r, 104).
+padi(10, s, 112).
+padi(10, t, 122).
+padi(10, u, 133).
+padi(10, v, 145).
+padi(10, w, 160).
+padi(10, x, 178).
+padi(10, y, 199).
+padi(10, z, 219).
+padi(12, a, 9).
+padi(12, b, 17).
+padi(12, c, 23).
+padi(12, d, 26).
+padi(12, e, 29).
+padi(12, f, 32).
+padi(12, g, 35).
+padi(12, h, 38).
+padi(12, i, 42).
+padi(12, j, 45).
+padi(12, k, 49).
+padi(12, l, 53).
+padi(12, m, 57).
+padi(12, n, 62).
+padi(12, o, 66).
+padi(12, p, 71).
+padi(12, q, 76).
+padi(12, r, 82).
+padi(12, s, 88).
+padi(12, t, 94).
+padi(12, u, 101).
+padi(12, v, 108).
+padi(12, w, 116).
+padi(12, x, 125).
+padi(12, y, 134).
+padi(12, z, 147).
+padi(14, a, 8).
+padi(14, b, 15).
+padi(14, c, 19).
+padi(14, d, 22).
+padi(14, e, 24).
+padi(14, f, 27).
+padi(14, g, 29).
+padi(14, h, 32).
+padi(14, i, 35).
+padi(14, j, 37).
+padi(14, k, 40).
+padi(14, l, 43).
+padi(14, m, 47).
+padi(14, n, 50).
+padi(14, o, 53).
+padi(14, p, 57).
+padi(14, q, 61).
+padi(14, r, 64).
+padi(14, s, 68).
+padi(14, t, 73).
+padi(14, u, 77).
+padi(14, v, 82).
+padi(14, w, 87).
+padi(14, x, 92).
+padi(14, y, 98).
+padi(16, a, 7).
+padi(16, b, 13).
+padi(16, c, 17).
+padi(16, d, 19).
+padi(16, e, 21).
+padi(16, f, 23).
+padi(16, g, 25).
+padi(16, h, 27).
+padi(16, i, 29).
+padi(16, j, 32).
+padi(16, k, 34).
+padi(16, l, 37).
+padi(16, m, 39).
+padi(16, n, 42).
+padi(16, o, 45).
+padi(16, p, 48).
+padi(16, q, 50).
+padi(16, r, 53).
+padi(16, s, 56).
+padi(16, t, 60).
+padi(16, u, 63).
+padi(16, v, 67).
+padi(16, w, 70).
+padi(16, x, 72).
+padi(18, a, 6).
+padi(18, b, 11).
+padi(18, c, 15).
+padi(18, d, 16).
+padi(18, e, 18).
+padi(18, f, 20).
+padi(18, g, 22).
+padi(18, h, 24).
+padi(18, i, 26).
+padi(18, j, 28).
+padi(18, k, 30).
+padi(18, l, 32).
+padi(18, m, 34).
+padi(18, n, 36).
+padi(18, o, 39).
+padi(18, p, 41).
+padi(18, q, 43).
+padi(18, r, 46).
+padi(18, s, 48).
+padi(18, t, 51).
+padi(18, u, 53).
+padi(18, v, 55).
+padi(18, w, 56).
+padi(20, a, 6).
+padi(20, b, 10).
+padi(20, c, 13).
+padi(20, d, 15).
+padi(20, e, 16).
+padi(20, f, 18).
+padi(20, g, 20).
+padi(20, h, 21).
+padi(20, i, 23).
+padi(20, j, 25).
+padi(20, k, 26).
+padi(20, l, 28).
+padi(20, m, 30).
+padi(20, n, 32).
+padi(20, o, 34).
+padi(20, p, 36).
+padi(20, q, 38).
+padi(20, r, 40).
+padi(20, s, 42).
+padi(20, t, 44).
+padi(20, u, 45).
+padi(22, a, 5).
+padi(22, b, 9).
+padi(22, c, 12).
+padi(22, d, 13).
+padi(22, e, 15).
+padi(22, f, 16).
+padi(22, g, 18).
+padi(22, h, 19).
+padi(22, i, 21).
+padi(22, j, 22).
+padi(22, k, 24).
+padi(22, l, 25).
+padi(22, m, 27).
+padi(22, n, 29).
+padi(22, o, 30).
+padi(22, p, 32).
+padi(22, q, 34).
+padi(22, r, 36).
+padi(22, s, 37).
+padi(25, a, 4).
+padi(25, b, 8).
+padi(25, c, 10).
+padi(25, d, 11).
+padi(25, e, 13).
+padi(25, f, 14).
+padi(25, g, 15).
+padi(25, h, 17).
+padi(25, i, 18).
+padi(25, j, 19).
+padi(25, k, 21).
+padi(25, l, 22).
+padi(25, m, 23).
+padi(25, n, 25).
+padi(25, o, 26).
+padi(25, p, 28).
+padi(25, q, 29).
+padi(30, a, 3).
+padi(30, b, 6).
+padi(30, c, 8).
+padi(30, d, 9).
+padi(30, e, 10).
+padi(30, f, 11).
+padi(30, g, 12).
+padi(30, h, 13).
+padi(30, i, 14).
+padi(30, j, 15).
+padi(30, k, 16).
+padi(30, l, 17).
+padi(30, m, 18).
+padi(30, n, 19).
+padi(30, o, 20).
+padi_depth(D, PG, T) :-
+    T < 219,
+    (
+	padi(D, _, _) ->
+	(
+	    padi(D, PG, T) ->
+	    true
+	;   (
+	    T1 is T + 1,
+	    padi_depth(D, PG, T1)
+	)
+	)
+    ;
+	(
+	    D1 is D+1,
+	    padi_depth(D1, PG, T)
+	)
+    ).
+</code></pre>
+
+<h2>Parada de seguridad</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/safety_stop.jpg" width="500">
+</div>
+<p>La parada de seguridad es una parada de 3 minutos que se hace entre 6 y 4 metros, antes de finalizar la inmersión. Aunque siguiendo estas tablas no deberíamos nunca tener <i>necesidad</i> de parada de seguridad, sigue siendo muy recomendable, ya que prevenimos más si cabe la enfermedad descompresiva.</p>
+
+<p>Vamos a añadir otro check para ver si en el plan aparece una parada de seguridad. Para ello usaremos en este caso DCGs.</p>
+
+<pre><code class="language-prolog">
+plan(Plan) :-
+    Plan = [X|Xs],
+    X = s(0, 0, _),
+    plan(X, Xs),
+    deco_time(Plan),
+    phrase(safe_stop, Plan).
+
+safe_stop -->
+    ... ,
+    [s(T0, D0, _),s(T1, D1, _), _],
+    {
+	T1 - T0 >= 3,
+	between(4, 6, D0),
+	between(4, 6, D1)
+    }.
+</code></pre>
+<p>safe_stop es una DCG donde cogemos los estados penúltimo y antepenúltimo y comprobamos que entre ellos hay mínimo 3 minutos y que las profundidades están entre 4 y 6 metros.</p>
+
+<h2>Más cosas</h2>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/nitrox.jpg" width="400">
+</div>
+<p>Con esto ya tendríamos un validador de inmersiones simples de buceo. También nos sirve para generarlas, aunque ya no será inmediato. ¿Qué cosas faltarían? Faltaría poder hacer varias inmersiones en un mismo día, usar otros gases además del aire (Nitrox principalmente) y contar con un algoritmo de descompresión más flexible que las tablas. Pero como esto ya haría el post infumable, decido cortar por aquí. Espero que os haya gustado esta mezcla de buceo y Prolog.</p> 

@@ -1,0 +1,54 @@
+<p>Hace ya un tiempo hice un pequeño <a href="https://blog.adrianistan.eu/introduccion-a-prolog-tutorial-en-espanol">tutorial de Prolog</a>. Desde entonces hasta hoy he aprendido mucho y seguramente rehaga el tutorial en algún momento, de forma más práctica. Mientras tanto voy a repasar una sección que tenía el tutorial, el debugging</p>
+
+<div style="text-align:center">
+<img width="700" src="https://files.adrianistan.eu/PrologDebug.png">
+</div>
+
+
+<p>Prolog dispone de un modo de depuración textual, basado en el término <i>trace/0</i>. Cuando aparece, Prolog entra en modo debug y nos va informando de como se van ejecutando las cosas. Qué unificaciones realiza, cuando falla, etc Pero tiene pocas opciones de control</p>
+<p>Sin embargo es extremadamente verboso y difícil de manipular. Es por ello que en bastantes entorno gráficos podemos hacer una llamada a <i>gtrace/0</i>, que abrirá un debugger gráfico.</p>
+
+<p>El debugger gráfico nos permite ver el código en un editor tipo Emacs. Nos marca con un color la regla que ha probado, y si su resultado ha sido satisfactorio (color verde) o no (color rojo). Después una regla que no se puede cumplir, salta hasta el punto anterior de decisión con color amarillo. Todos los puntos de decisión que Prolog detecta se marcan arriba a la derecha, en el <i>Call Stack</i>, como caminos alternativos.</p>
+
+<div style="text-align:center">
+<img width="700" src="https://files.adrianistan.eu/PrologDebugPoints.png">
+<br>
+<small>Arriba a la derecha se ve el camino alternativo que ha generado between</small>
+</div>
+
+<p>Arriba a la izquierda tenemos las variables en ese momento, que podemos inspeccionar con detalle</p>
+
+<p>Por último, el control de ejecución. Podemos avanzar paso a paso sobre nuestro código, paso a paso sobre todo el código (para inspeccionar por dentro de una librería por ejemplo), podemos saltarnos una regla y lo más importante, podemos ir marcha atrás en el código para volverlo a inspeccionar. Esto último es algo que muy pocos entornos de depuración tienen y es algo extremadamente útil por si nos saltamos por error algo o queremos mirar detalladamente algo otra vez sin tener que parar y volver a empezar.</p>
+<ul>
+<li>La flecha hacia abajo nos permite entrar en el código de las librerías de Prolog</li>
+<li>La flecha recta hacia la derecha sigue todos los pasos de nuestro código</li>
+<li>La flecha bombeada hacia la derecha avanza el código sin meterse en ninguna regla que no sea la actual.</li>
+<li>La bandera deja acabar la regla actual</li>
+<li>La flecha bombeada hacia la izquierda nos deja volver a empezar la regla actual</li>
+</ul>
+<div style="text-align:center">
+<img width="700" src="https://files.adrianistan.eu/PrologDebugUnification.png">
+<br>
+<small>La flecha hacia abajo nos permite entrar en el código de las librerías de Prolog</small>
+</div>
+
+
+<p>El editor gráfico también nos permite añadir breakpoint o spy. Los spy se pueden añadir previamente con <i>tspy/1</i> que necesita el nombre de una regla</p>
+
+<div style="text-align:center">
+<img width="700" src="https://files.adrianistan.eu/PrologTspy.png">
+<br>
+<small>Usando tspy y el botón del espía para ir hasta el el inicio de la regla con tspy</small>
+</div>
+
+<h2>Code swapping</h2>
+<p>Prolog además nos permite hacer code swapping, es decir, cambiar el código que se está ejecutando sin tener que volver a iniciar el programa. Tiene algunas limitaciones no obstante. Para ello podemos activar el modo edición dentro del debugger (el lápiz) y empezar a modificar reglas siempre que no sea una que no esté en el call stack (en ese caso Prolog se guarda una copia internamente hasta se salga de ella).</p>
+<p>Para cargar el código hay que salir del modo edición, e ir a Compile->Make. En el caso de estar editando la regla que estábamos debugeando, caso muy típico, deberemos volver hacia atrás también (flecha bombeada hacia la izquierda)</p>
+<div style="text-align: center">
+<video width="700" src="https://files.adrianistan.eu/PrologDebugCodeSwap-2.webm" controls></video>
+<br>
+<small>El vídeo muestra un ejemplo de code swap. Sin embargo, lo mejor es que lo pruebes por ti mismo</small>
+</div>
+<p>Aprendiendo a usar estas herramientas lograremos una fantástica <b>prolugtividad</b></p>
+
+

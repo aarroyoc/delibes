@@ -1,0 +1,113 @@
+<p>Hace unos días desplegué una nueva versión de mi página de inicio: <a href="https://adrianistan.eu">https://adrianistan.eu</a>. Se trata de un sitio estática, hecha con Lektor, alojado en Netlify y que gracias a GitHub Actions se publica una nueva versión cada vez que hay un commit nuevo. En este post explicaré como construí el despliegue continuo para que tú también puedas hacerlo.</p>
+
+<h2>Herramientas</h2>
+
+<p>El sitio web lo construí con <a href="https://www.getlektor.com/">Lektor</a>, un generador de sitios estáticos hecho en Python por el <a href="https://lucumr.pocoo.org/">creador de Flask</a>, que cuenta con un panel de administración estilo WordPress para poder editarlo. Es de los mejores generadores estáticos que he probado, ya que personalmente se ajusta a muchas de mis preferencias personales, más que Hugo o Jekyll.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/LektorEdit.png" width="600">
+</div>
+
+<p>Usaré <a href="https://www.netlify.com/">Netlify</a> para alojar mi paǵina, es un servicio de una calidad excelente, con una capa gratuita muy generosa. Otras alternativas eran Amazon S3, Firebase Hosting, Zeit, GitHub Pages, GitLab, ... pero las descarté porque además ya uso Netlify en otros proyectos.</p>
+
+<p>Para alojar el código usaré GitHub, mi opción por defecto, y usaré el nuevo servicio de GitHub Actions para realizar la compilación del sitio y subirlo a Netlify</p>
+
+<p>Entre medias usaré Docker para poder probar en mi ordenador comportamientos muy similares a los que obtendremos en GitHub Actions.</p>
+
+<h2>Netlify</h2>
+
+<p>De la página de Netlify necesitamos dos variables: el Site ID y un token para poder desplegar. El token lo podemos generar en los ajustes de usuario, en la sección de Personal Access Tokens.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NetlifyPAT.png" width="600">
+</div>
+
+<p>Este token lo almacenamos en GitHub, yendo a Ajustes y desde allí a la sección de Secretos. Lo llamamos NETLIFY_AUTH_TOKEN.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/GitHubSecret.png" width="600">
+</div>
+
+<p>Para obtener el Site ID, necesitamos crear un sitio en Netlify (sube cualquier cosa para que se cree) y copia el Site ID desde la pantalla de ajustes generales. Estos Site ID son públicos, así que los podemos dejar en el código fuente.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NetlifySiteID.png" width="600">
+</div>
+
+<p>Ya hemos acabado con Netlify. Desde Netlify también podemos configurar las DNS y HTTPS pero eso es algo sencillo, que veréis en los ajustes como hacer.</p>
+
+<h2>Docker</h2>
+<p>Vamos a crear una imagen con el entorno de ejecución que tiene todo lo necesario para construir y publicar la página. Usaremos docker-compose para definir dos comandos: los dos operando sobre la carpeta del proyecto, builder y publisher. El fichero Dockerfile es el siguiente:</p>
+
+<pre><code>
+FROM debian:buster
+
+RUN apt-get update && apt-get install -y python3.7-dev python3-pip nodejs npm && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
+RUN npm install -g netlify-cli@2.30.0
+WORKDIR /opt/adrianistan.eu
+</code></pre>
+<p>Partimos de Debian Buster e instalamos Python 3.7 y Node.js (que en Buster es la versión 10, suficiente por ahora). Para instalar los paquetes de Python usamos un fichero requirements.txt usado por Pip</p>
+<pre><code>
+Lektor==3.1.3
+</code></pre>
+<p>Creamos además un fichero docker-compose.yml para guardar los comandos.</p>
+<pre><code>
+version: "3.6"
+services:
+  builder:
+    build: .
+    command: lektor build -O out
+    volumes:
+    - ./:/opt/adrianistan.eu
+  publisher:
+    build: .
+    command: netlify deploy --dir=out --prod
+    environment: 
+      NETLIFY_AUTH_TOKEN:
+      NETLIFY_SITE_ID: 76f0a0da-c560-431e-a5c2-743809bf96e0
+    volumes:
+    - ./:/opt/adrianistan.eu
+</code></pre>
+<p>Aquí es importante el tema de las variables de entorno. NETLIFY_AUTH_TOKEN hay que dejarlo vacío para que Docker coja la variable del exterior, mientras que NETLIFY_SITE_ID lo podemos poner ya que es un dato público. Los dos comandos operan sobre la misma imagen y sobre los mismos volúmenes, que es la carpeta sobre la que está.</p>
+<p>Podemos probar que funciona de forma sencilla:</p>
+<pre><code>
+docker-compose build
+docker-compose run builder
+NETLIFY_AUTH_TOKEN=XXXXXXX docker-compose run publisher
+</code></pre>
+<p>Y debería desplegar correctamente la página sin pedirnos nada</p>
+
+<h2>GitHub Actions</h2>
+<p>Para crear una acción en GitHub necesitamos crear un archivo en la carpeta .github/workflows, de tipo YAML. Las GitHub Actions definen unos parámetros para saber cuando se inician y uno o más jobs. Cada job puede tener su vez varios steps. Los jobs son paralelos, los steps son secuenciales. Cada job define además una imagen base, nosotros usaremos Ubuntu 18.04, pero nos da un poco igual mientras tenga Docker.</p>
+<pre><code>
+name: Deploy
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Build Docker images
+      run: docker-compose build
+    - name: Build website
+      run: docker-compose run builder
+    - name: Deploy website to Netlify
+      run: docker-compose run publisher
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+</code></pre>
+<p>El primer paso es obtener el código, después repetimos los mismos comandos que en local, debidamente separados en steps diferentes. Para definir variables de entorno usamos env y para acceder a los secretos que almacena GitHub accedemos al objeto global secrets.</p>
+<p>Y ya estaría. Ahora cada vez que subamos un cambio, GitHub arrancará la acción, que desplegará en Netlify una nueva versión de la página</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/GitHubAction.png" width="600">
+</div>
+
+<p>Lo bueno de este sistema es que es muy personalizable. Si no usas Lektor y usas Hugo, Jekyll o Gatsby, puedes cambiar simplemente la imagen Docker y los comandos en docker-compose y seguirá funcionando. Incluso puedes hacer virguerías mucho mayores. También hay gente que en vez de usar Docker usa Nix con el mismo propósito: tener todo definido en archivos comunes compartidos entre desarrollo y GitHub Actions. Sin embargo, Nix me daba muchos problemas para instalar el paquete npm de Netlify y en general Nix no viene instalado en las imágenes de GitHub Actions, así que sería un paso extra.</p>
+<p>Hay gente que dirá que para qué usar Docker si puedes instalarlo con comandos similares directamente en el fichero de workflow de GitHub Actions. Y la diferencia es que tu sistema y GitHub Actions van a tener comportamientos más separados. Puede que nunca falle, pero puede que sí, ya que estás trabajando con dos entornos diferentes y que pueden evolucionar por caminos diferentes. Por eso recomiendo usar Docker o Nix o algo que nos permita tener entornos iguales tanto en el desarrollo como el despliegue.</p>
+<p>Un paso extra que podríamos añadir sería subir la imagen de Docker a un registro, y usar esa imagen en nuestro docker-compose.yml, en vez de generarla cada vez. De este modo sí que sí, todas nuestras nuestras builds usasen el mismo exacto entorno, inmutable, y si quisiéramos cambiarlo deberíamos generar una nueva imagen y subirla al registro de nuevo</p>

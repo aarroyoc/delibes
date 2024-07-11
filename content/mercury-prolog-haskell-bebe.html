@@ -1,0 +1,327 @@
+<p><a href="https://mercurylang.org/">Mercury</a> es un lenguaje de programación muy poco conocido pero muy interesante. De forma corta podríamos describirlo como el hijo que tendrían Prolog y Haskell. Se trata de un lenguaje que combina los paradigmas lógico y funcional en uno solo. Fue desarrollado por la Universidad de Melbourne en Australia aunque ahora sobrevive como proyecto opensource. Su objetivo era la creación de software grande, robusto y eficiente. La sintaxis es tremendamente parecida a Prolog, por lo que aunque haya algunas modificaciones, es relativamente fácil escribir en él si ya conocemos Prolog. Mercury tiene tipado fuerte y estático y genera ejecutables nativos. Es algo más puro que Prolog ya que gestiona mejor los side effects y es probablemente el lenguaje lógico más rápido que existe a día de hoy.</p>
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/MercuryWeb.png">
+</div>
+
+<p>Para empezar con Mercury, una opción es descargar la última versión estable (formato DEB) desde <a href="http://dl.mercurylang.org/index.html">la página oficial</a> aunque muchas distros Linux ya han empaquetado Mercury. También soporta Windows y otros sistemas operativos pero hay que compilar desde cero, lo cuál puede ser un poco complicado de primeras.</p>
+
+<h2>Hola mundo en Mercury</h2>
+<p>La primera diferencia con Prolog la vamos a tener nada más ponernos a programar. No existe un shell donde introducir queries, sino que vamos a necesitar un fichero y compilarlo.</p>
+<p>En un fichero llamado hola.m podemos escribir lo siguiente:</p>
+<pre><code class="language-prolog">
+:- module hola.
+:- interface.
+
+:- import_module io.
+
+:- pred main(io::di, io::uo) is det.
+
+:- implementation.
+main(!IO) :-
+    write_string("¡Hola Mercury!\n", !IO).
+</code></pre>
+<p>Si conoces Prolog, verás que la sintaxis es muy similar pero hay bastantes cosas nuevas. No voy a explicar las cosas que son iguales que Prolog, para eso mejor ve al <a href="https://blog.adrianistan.eu/supertutorial-prolog">tutorial de Prolog</a>. Lo primero es indicar el módulo en el que estamos. En Mercury todos los programas están organizados en módulos, normalmente con el mismo nombre que el fichero. Cada módulo se compone de dos secciones, una interfaz y una implementación. La interfaz es lo que el módulo deja ver al resto del programa, y la implementación es completamente privada.</p>
+
+<p>En Mercury es necesario declarar los predicados que luego vamos a definir, indicando los tipos y modos. En este caso, para definir main, necesitamos acceder a tipos que están el módulo io, así que lo importamos antes. Los tipos del predicado main (que se ejecuta por defecto) son io::di e io::uo. Sin entrar mucho en detalles, el primero significa <i>destructive input</i> y el segundo, <i>unique output</i>. Con <i>is det</i> declaramos el predicado como determinista (siempre tiene solución y es única).</p> 
+
+<p>En la implementación vemos que aceptamos un único argumento (no eran dos?) y llamamos a write_string, que imprime un string y le tenemos que pasar el argumento de IO también. IO es una variable ya que, al igual que en Prolog, en Mercury las variables se distinguen porque empiezan por mayúsculas.</p>
+<p¿Cómo funciona esto? Digamos que Mercury no tiene mónadas para implementar la I/O, sino que usa variables de estado. Básicamente quiere decir, que pasamos un estado inicial y posteriormente, se unifica con el estado "posterior" al side effect. La exclamación es simplemente azúcar sintáctico para escribir menos, ya que en realidad el código es así:</p>
+<pre><code class="language-prolog">
+main(IO, IO1) :-
+    write_string("¡Hola Mercury!\n", IO, IO1)
+</code></pre>
+<p>Y ahí ya se ve claramente como los argumentos coinciden con lo que declaramos en la interfaz. Estas variables de estado se pueden encadenar y el azúcar sintáctico también nos  ayuda a hacer refactorizaciones más sencillas en código con variables de estado encadenadas.</p>
+
+<p>Para compilar, ejecutamos mmc</p>
+<pre><code>
+mmc hola.m
+</code></pre>
+<p>Y ya tenemos un ejecutable nativo llamado "hola" que podemos ejecutar.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MercuryHola.png">
+</div>
+
+<h2>Funciones</h2>
+<p>Aparte de predicados, Mercury también tiene funciones, algo de lo que carece Prolog. Veamos este ejemplo para calcular la sucesión de fibonacci:</p>
+<pre><code class="language-prolog">
+:- module fib.
+:- interface.
+
+:- import_module io.
+
+:- pred main(io::di, io::uo) is det.
+
+:- implementation.
+
+:- import_module int.
+
+:- func fibonacci(int) = int.
+
+fibonacci(N) =
+    ( if (N = 0;N = 1) then
+        1
+    else
+        fibonacci(N-1) + fibonacci(N-2)
+    ).
+
+main(!IO) :-
+    F = fibonacci(5),
+    io.write_int(F, !IO),
+    io.nl(!IO).
+</code></pre>
+<p>En este ejemplo, declaramos dentro de la implementación la función fibonacci, que toma un int y devuelve un int. Para usar int tenemos que importar el módulo, como solo lo necesitamos en la implementación, no lo importamos en la interfaz. Después la función se define con otra sintaxis. Aquí podemos ver los if-then-else (aunque la sintaxis de Prolog ( -> ; ) también es admitida). Más diferencias que podemos ver respecto a Prolog es que las expresiones aritméticas se evalúan directamente.</p>
+
+<p>Por último, en main, llamamos a la función fibonacci e imprimimos el resultado. Aquí usamos el nombre cualificado de los predicados, con io delante. Es opcional en muchos casos pero altamente recomendable ponerlo.</p>
+
+<h2>Tipos de datos</h2>
+<p>Vamos a entrar más en detalle en los tipos de datos de Mercury, que toman una fuerte inspiración de Haskell.</p>
+<p>Lo primero que hay que tener en cuenta es que en Mercury, todos las variables van a ser inmutables. Sin embargo, a diferencia de Prolog, el compilador puede inferir lugares donde aplicar mutabilidad internamente para mejorar el rendimiento.</p>
+<p>Los tipos más básicos son int, float, string y char. Además contamos con tuplas y listas.</p>
+<p>Las tuplas son un número de elementos prefijados de tipo diferente, por ejemplo, <i>{5, "hola"}</i> es una tupla de tipo <i>{int, string}</i></p>
+<p>Las listas en Mercury son colecciones de N elementos, todos ellos del mismo tipo.<i>[3,4,5,6]</i> es de tipo <i>list(int)</i>. Las listas se pueden deconstruir como en Prolog usando la barra vertical. Si <i>L = [1,2,3,4]</i> y <i>L = [X|Xs]</i>, entonces X es igual a 1 y Xs a <i>[2,3,4]</i>.</p>
+<h3>Tipos suma</h3>
+<p>Mercury soporta <a href="https://blog.adrianistan.eu/tipos-suma-typescript-rust">tipos suma</a>. Los más básicos son simples enumeraciones.</p>
+<pre><code class="language-prolog">
+:- type color ---> red ; green ; yellow ; blue ; black ; white ; purple.
+</code></pre>
+<p>En este caso crearíamos el tipo color con esos posibles valores. Pero cada enumeración puede llevar asociado algún dato extra.</p>
+<pre><code class="language-prolog">
+:- type font ---> serif(color) ; sans_serif ; mono.
+</code></pre>
+<p>En este caso los tipos de fuente pueden ser Serif, Sans-Serif y Mono, pero en el caso de la Serif, lleva asociado un color.</p>
+<p>Estos campos extra pueden tener un nombre, para acceder a ellos más fácilmente mediante ^. De este modo tendríamos lo que en otros lenguajes se llama records o estructuras.</p>
+<pre><code class="language-prolog">
+:- type mail ---> mail( from :: string, to :: string, msg :: string).
+
+% mas adelante
+...
+ToAddress = Mail^to,
+...
+</code></pre>
+<p>Con := podemos crear un nuevo record igual al anterior pero cambiando el valor de un campo.</p>
+<pre><code class="language-prolog">
+:- type mail ---> mail( from :: string, to :: string, msg :: string).
+
+...
+    Mail = mail("a@example.org", "b@example.org", "Test message"),
+    Mail1 = (Mail^to := "c@example.org"),
+    (if Mail1^to = "b@example.org" then
+        io.write_string("Mail to B\n", !IO)
+    else
+        io.write_string("Mail NOT to B\n", !IO)
+    ),
+...
+</code></pre>
+<p>En este caso se ejecutaría la parte de "Mail NOT to B".</p>
+<h3>Tipos polimórficos</h3>
+<p>Mercury soporta polimorfismo a nivel de tipo. Es posible crear estructuras de datos genéricas para un tipo de dato T. El ejemplo más archiconocido es la lista, que en Mercury podríamos definirla así.</p>
+<pre><code class="language-prolog">
+:- type list(T) ---> [] ; [T | list(T)].
+</code></pre>
+
+<h3>Tipos equivalentes</h3>
+<p>En Mercury podemos crear tipos idénticos a otros, pero con distinto nombre para mejorar la legibilidad.</p>
+<pre><code class="language-prolog">
+:- type money == int.
+:- type radius == float.
+</code></pre>
+<h2>Modos en Mercury</h2>
+<p>Un elemento vital para Mercury es la declaración de modos de los predicados. En parte ya lo hemos visto, ya que al declarar los predicados estábamos indicando los modos a la vez, pero en realidad puede separarse en dos directivas diferentes. Los modos indican a Mercury la "dirección" del código así como las posibles soluciones.</p>
+<p>Partamos de un ejemplo sencillo, un predicado (no función) de suma, donde pasamos los dos sumandos mediante una tupla.</p>
+<pre><code class="language-prolog">
+:- pred suma_tuple({int, int}::in, int::out) is det.
+
+suma_tuple({X, Y}, Z) :-
+    Z = X + Y.
+</code></pre>
+<p>En la línea de declaración hemos combinado los tipos y los modos. Esto se puede separar. Será obligatorio separar si queremos que un predicado se compile con más de un modo.</p>
+<pre><code class="language-prolog">
+:- pred suma_tuple({int, int}, int).
+:- mode suma_tuple(in, out) is det.
+suma_tuple({X, Y}, Z) :-
+    Z = X + Y.
+</code></pre>
+<p>En la declaración de modo indicamos que variables son de entrada y cuáles de salida. Además definimos el número de soluciones. Los posibles valores son: det (=1), semidet (<=1), multi(>= 1), nondet (>=0) y failure (=0).</p>
+<pre><code class="language-prolog">
+:- pred phone(string, string).
+:- mode phone(in, out) is semidet.
+phone("123456789", "Benito").
+phone("245678901", "Mar").
+</code></pre>
+<p>En este ejemplo phone va a tener un modo, donde proveemos un número y nos devuelve el nombre. Es semidet ya que puede que no encuentre el teléfono (no hay solución) o que sí. Pero no podemos devolver más de una solución (podríamos si lo declaramos como nondet).</p>
+<p>Con este modo podemos hacer estas llamadas:</p>
+<pre><code class="language-prolog">
+    (if phone("123456789", _Name) then
+        io.write_string("Phone found\n", !IO)
+    else
+        true
+    ),
+</code></pre>
+<p>Sin embargo, no podemos hacer lo inverso.</p>
+<pre><code class="language-prolog">
+    (if phone(_Phone, "Benito") then
+        io.write_string("Phone found\n", !IO)
+    else
+        true
+    ),
+</code></pre>
+<p>Para que compile deberemos agregar este otro modo:</p>
+<pre><code class="language-prolog">
+:- mode phone(out, in) is semidet.
+</code></pre>
+<p>Existen más tipos de modo pero no serán tan habituales.</p>
+<h2>Ejemplo más grande</h2>
+<p>He aquí un ejemplo de como se resolvería <a href="https://adventofcode.com/2021/day/1">el problema 1 del Advent of Code de 2021</a> en Mercury (ambas partes).</p>
+<pre><code class="language-prolog">
+:- module aoc2021day1.
+:- interface.
+
+:- import_module io.
+
+:- pred main(io::di, io::uo) is det.
+
+:- implementation.
+
+:- import_module int.
+:- import_module list.
+:- import_module string.
+
+:- pred load_data(string::in, list(string)::out, io::di, io::uo) is det.
+
+load_data(Filename, ReadData, !IO) :-
+    io.read_named_file_as_lines(Filename, OpenResult, !IO),
+    (if OpenResult = ok(Data) then
+        ReadData = Data
+     else
+        ReadData = []
+    ).
+
+:- pred solve(list(int)::in, int::out) is det.
+solve([], 0).
+solve([_], 0).
+solve([X,Y|Xs], N) :-
+    solve([Y|Xs], N0),
+    (if X < Y then
+        N = N0 + 1
+    else
+        N = N0
+    ).
+
+:- pred slide_window(list(int)::in, list(int)::out) is det.
+slide_window([], []).
+slide_window([_], []).
+slide_window([_,_], []).
+slide_window([X,Y,Z|Xs], Ys) :-
+    slide_window([Y,Z|Xs], Ys0),
+    N = X + Y + Z,
+    Ys = [N|Ys0].
+
+:- pred solve2(list(int)::in, int::out) is det.
+solve2(Data, N) :-
+    slide_window(Data, Slides),
+    solve(Slides, N).
+
+main(!IO) :-
+    load_data("input", ReadData, !IO),
+    (if list.map(string.to_int, ReadData, Data) then
+        solve(Data, N),
+	io.format("Solution 1: %d\n", [i(N)], !IO),
+	solve2(Data, M),
+	io.format("Solution 2: %d\n", [i(M)], !IO)
+    else
+        io.write_string("Invalid file\n", !IO)
+    ).
+</code></pre>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MercuryAOC.png">
+</div>
+<h2>Typeclasses</h2>
+<p>En Mercury podemos crear typeclasses de forma muy similar a Haskell. También son muy parecidas a las traits de Rust. Con typeclasses podemos restringir los argumentos de un predicado/función a tipos que implementen la typeclass que nos interesa.</p>
+<pre><code class="language-prolog">
+:- typeclass shape(T) where [].
+
+:- type point ---> point(float, float).
+:- type rectangle ---> rectangle(point, float, float).
+:- type circle ---> circle(point, float).
+
+:- instance shape(rectangle) where [].
+:- instance shape(circle) where [].
+</code></pre>
+<p>En este ejemplo, creamos una typeclass llamada shape, sin más requisitos y creamos 3 tipos: point, rectangle y circle. De estos, dos van a ser instancias de la typeclass shape: rectangle y circle.</p>
+<p>Posteriormente podremos definir predicados donde solo admitamos tipos que implementen shape, pero nos da igual si son rectangle o circle, de la siguiente forma.</p>
+<pre><code class="language-prolog">
+:- pred shapes_only(T::in) is det <= shape(T).
+</code></pre>
+<p>Sin embargo, la verdadera utilidad es que las typeclasses impongan ciertos predicados que deben implementarse para poder ser instancia de algo. En nuestro ejemplo de shape, podemos poner calcular el área. Es algo que en todas las figuras puede hacerse, pero el método es diferente si es un rectángulo o si es un círculo.</p>
+<p>Para ello, declaramos predicados y modos en la typeclass:</p>
+<pre><code class="language-prolog">
+:- typeclass shape(T) where [
+    pred get_area(T, float),
+    mode get_area(in, out) is det
+].
+</code></pre>
+<p>Al instanciar, podemos añadir el código directamente o hacer referencia a un predicado externo.</p>
+<pre><code class="language-prolog">
+:- instance shape(rectangle) where [
+    (get_area(Rect, Area) :-
+        Rect = rectangle(_Centre, Width, Height),
+	Area = Width * Height
+    )
+].
+:- instance shape(circle) where [
+   pred(get_area/2) is circle_area
+].
+
+:- pred circle_area(circle::in, float::out) is det.
+circle_area(circle(_Centre, Radius), Area) :-
+    Area = math.pi * Radius * Radius.
+</code></pre>
+<p>Un ejemplo completo de uso de typeclasses a continuación:</p>
+<pre><code class="language-prolog">
+:- module shape.
+:- interface.
+
+:- import_module io.
+:- pred main(io::di, io::uo) is det.
+
+:- implementation.
+
+:- import_module float.
+:- import_module list.
+:- import_module math.
+:- import_module string.
+
+:- typeclass shape(T) where [
+    pred get_area(T, float),
+    mode get_area(in, out) is det
+].
+
+:- type point ---> point(float, float).
+:- type rectangle ---> rectangle(point, float, float).
+:- type circle ---> circle(point, float).
+
+:- instance shape(rectangle) where [
+    (get_area(Rect, Area) :-
+        Rect = rectangle(_Centre, Width, Height),
+	Area = Width * Height
+    )
+].
+:- instance shape(circle) where [
+   pred(get_area/2) is circle_area
+].
+
+:- pred circle_area(circle::in, float::out) is det.
+circle_area(circle(_Centre, Radius), Area) :-
+    Area = math.pi * Radius * Radius.
+
+:- pred print_area(T::in, io::di, io::uo) is det <= shape(T).
+print_area(Shape, !IO) :-
+    get_area(Shape, Area),
+    io.format("Area of shape: %f\n", [f(Area)], !IO).
+
+main(!IO) :-
+    print_area(rectangle(point(1.0, 2.0), 30.0, 10.0), !IO),
+    print_area(circle(point(1.0, 2.0), 10.0), !IO).
+</code></pre>
+<p>Con esto ya conoceríamos las principales mejoras de Mercury respecto a Prolog y damos por acabado el tutorial. ¿Qué te parece Mercury? ¿Prefieres la brevedad de Prolog o la explicitud de Mercury?</p>

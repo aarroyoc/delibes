@@ -1,0 +1,93 @@
+<p>Estaba realizando uno de los problemas del Advent of Code 2019, cuando tuve la oportunidad de usar generadores y yield en Python, y para mi sorpresa, mucha gente los desconoc&iacute;a. Os pongo en situaci&oacute;n. Si record&aacute;is, el a&ntilde;o pasado intent&eacute; publicar mis soluciones al Advent of Code comentadas aqu&iacute;, aunque no logr&eacute; acabar y sigo teniendo pendientes de hacer los &uacute;ltimos d&iacute;as de 2018. Este a&ntilde;o lo he vuelto a intentar pero no he publicado nada por aqu&iacute;, lo que considero que ha sido una buena decisi&oacute;n, ya que gastaba mucho tiempo y eran posts bastante densos de leer con poca utilidad. Sin embargo, he seguido comentando con compa&ntilde;eros, a trav&eacute;s de Telegram sobre todo, diferentes soluciones. Ese d&iacute;a hab&iacute;a que ejecutar 4 procesos de forma circular, uno detr&aacute;s de otro pero manteniendo el estado en cada uno de ellos. Aunque existen otras formas v&aacute;lidas de resolverlo, considero que merece la pena echar un vistazo a los generadores y corrutinas de Python.</p>
+<p>Empecemos por lo m&aacute;s sencillo de definir, un generador.</p>
+<h2>&iquest;Qu&eacute; es un generador?</h2>
+<p>Un generador es una funci&oacute;n que permite ser pausada, devolviendo informaci&oacute;n, para posteriormente ser restaurada. En las paradas en el intercambio de datos solo se produce desde la corrutina, hacia la funci&oacute;n que la llam&oacute;. De ah&iacute; viene su nombre: funciones "generadoras" porque van generan informaci&oacute;n.</p>
+<p>Visto as&iacute; puede incluso parecer parecido a la programaci&oacute;n con hilos pero no os enga&ntilde;&eacute;is, todo esto sucede en un &uacute;nico hilo. Cuando se llega al punto de parada en el generador, definido dentro de esta, se guarda el estado de la funci&oacute;n, variables locales dentro de ella y se devuelve alg&uacute;n dato a la funci&oacute;n original. y se vuelve a la funci&oacute;n original. Cuando se vuelve a restaurar la corrutina, se carga en memoria el estado de la funci&oacute;n y se contin&uacute;a hasta la siguiente parada.</p>
+<p>Esto cambia un poco nuestra mentalidad, ya que normalmente se ense&ntilde;a que las funciones se llaman, con unos datos de entrada, y cuando acaban devuelven un valor.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/Coroutine.jpg" alt="" /></p>
+<p>&nbsp;</p>
+<h2>Sintaxis de los generadores en Python</h2>
+<p>La palabra clave para implementar corrutinas es&nbsp;<strong>yield.</strong> yield hace una parada de la corrutina y devuelve un valor. Podemos pensar en yield como un return, pero sobre el que despu&eacute;s sigue la funci&oacute;n. Para controlar la corrutina disponemos de varios m&eacute;todos. El primero, es usar <strong>for</strong> para ir llamando const&aacute;ntemente al generador.</p>
+<pre><code class="language-python">
+def generator():
+    yield "Hola"
+    yield "Mundo"
+
+def main():
+    f = generator()
+    for x in f:
+        print(x)
+
+main()
+</code></pre>
+<p>Obteniendo como resultado "Hola Mundo". Usar for es la mejor manera de controlar un generador cuando tenemos solamente uno. En general, los generadores tambi&eacute;n funcionar&aacute;n en cualquier funci&oacute;n que trabaje con iteradores, como <strong>itertools.takewhile</strong>.</p>
+<pre><code class="language-python">
+from itertools import takewhile
+
+def fib():
+    a = 0
+    b = 1
+    while True:
+        c = a+b
+        a = b
+        b = c
+        yield c
+
+def main():
+    f = fib()
+    a = takewhile(lambda x: x&lt;100, f)
+    print(list(a))
+
+main()
+</code></pre>
+<p>Este ejemplo, almacena en una lista todos los n&uacute;meros de la secuencia de Fibonacci menores que 100.</p>
+<p>Otra forma de controlar los generadores es a trav&eacute;s de la funci&oacute;n&nbsp;<strong>next</strong>. Una llamada a next ejecuta el generador hasta la siguiente parada y devuelve el contenido de yield.</p>
+<pre><code class="language-python">
+def gen():
+    yield "Hola"
+    yield "Mundo"
+
+def main():
+    f = gen()
+    print(next(f))
+    print(next(f))
+
+main()
+</code></pre>
+<p>Es equivalente al Hola Mundo anterior hecho con for. Usar next es mucho m&aacute;s flexible pero es preferible usar for si podemos.</p>
+<h2>&iquest;Qu&eacute; es una corrutina?</h2>
+<p>Una corrutina es una&nbsp;<strong>funci&oacute;n</strong> que se puede suspender su ejecuci&oacute;n y posteriormente restaurarla. En estas paradas puede haber un intercambio de datos en <strong>ambos sentidos</strong>.</p>
+<p>A diferencia de los generadores, aqu&iacute; hay transmisi&oacute;n de informaci&oacute;n tambi&eacute;n de la funci&oacute;n base a la corrutina. Esto se hace a trav&eacute;s de la funci&oacute;n&nbsp;<strong>send</strong> y el hecho de que <strong>yield</strong> devuelve valores.</p>
+<p>Veamos este sencillo ejemplo.</p>
+<pre><code class="language-python">
+def gen():
+    x = yield "Hola"
+    yield x
+
+def main():
+    f = gen()
+    print(next(f))
+    y = f.send("Mundo")
+    print(y)
+
+main()
+</code></pre>
+<p>Aqu&iacute; podemos ver como el primer yield recibe un dato, que se env&iacute;a a trav&eacute;s de&nbsp;<strong>send</strong>. send es a su vez un next, as&iacute; que el valor de vuelta de send es el de la siguiente parada.</p>
+<p>En Python no llegaron las corrutinas puras hasta Python 3.3, sin embargo, eran casos muy excepcionales los que necesitaban la funcionalidad extra, el <strong>yield from</strong>. El yield from es una sintaxis que permite que la corrutina llame a otraa funciones y sean estas funciones las que se encarguen de hacer el yield. Si no lo indic&aacute;semos, las nuevas funciones ser&iacute;an simplemente corrutinas de las corrutinas, con yield from logramos eliminar eso.</p>
+<pre><code class="language-python">
+def gen():
+    yield from sub()
+
+def sub():
+    yield "Hola Mundo"
+
+def main():
+    f = gen()
+    print(next(f))
+
+main()
+</code></pre>
+<p>Los casos de uso de las corrutinas se solapan mucho con los de los objetos en el mundo OOP, ya que ambos mecanismos nos permiten mantener estado entre dos contextos. En el caso de los objetos, las llamadas a m&eacute;todos permiten "restaurar" la ejecuci&oacute;n, mientras que en las corrutinas, una llamada a next o send.</p>
+<p>Los generadores y corrutinas existen en muchos lenguajes de corte imperativo como Python, Go o Lua y en otros de corte funcional como Scheme y Haskell.</p>
+<p>&iquest;Conoc&iacute;as los generadores y las corrutinas? &iquest;Los has usado alguna vez? Cuenta tu experiencia en los comentarios</p>
+<p>&nbsp;</p>

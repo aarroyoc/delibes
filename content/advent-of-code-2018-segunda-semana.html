@@ -1,0 +1,508 @@
+<p>Segunda semana del Advent of Code. En esta semana ya hemos tenido algunos problemas muy interesantes. Intentar&eacute; comentarlos de la mejor manera posible. <a href="https://github.com/aarroyoc/advent-of-code-2018">Todo el c&oacute;digo est&aacute; aqu&iacute;</a> y en<a href="https://blog.adrianistan.eu/2018/12/07/advent-of-code-2018-primera-semana/"> este otro post coment&eacute; mis soluciones de la primera semana</a>.</p>
+<h2>D&iacute;a 8</h2>
+<p>El d&iacute;a 8 se nos propone un problema de grafos tambi&eacute;n. B&aacute;sicamente se nos define un &aacute;rbol, donde cada nodo puede tener hijos y metadatos. En la primera parte nos piden sumar todos los metadatos.</p>
+<p>Aqu&iacute; al contrario que en el d&iacute;a 7, no voy a usar networkx. Era m&aacute;s dif&iacute;cil adaptar networkx al problema que hacer el &aacute;rbol a mano. Uno de los puntos complicados de este problema es el parseo de la entrada, que hice de forma recursiva. Cada nodo es un diccionario con las propiedades tama&ntilde;o, una lista de metadatos y una lista de nodos hijo.</p>
+<p>En la segunda parte se define el concepto de <strong>valor de nodo</strong> y como calcularlo. Tambi&eacute;n es bastante sencillo de implementar. Finalmente hacemos un recorrido por el &aacute;rbol de tipo primero en anchura (BFS) con una <strong>deque</strong> de Python.</p>
+<pre class="wp-block-code"><code class="language-python">from collections import deque
+def read_node(start,numbers):
+    length = 2
+    child_nodes = numbers[start]
+    metadata_entries = numbers[start+1]
+    children = list()
+    while child_nodes &gt; 0:
+        child_node = read_node(start+length,numbers)
+        children.append(child_node)
+        length += child_node["length"]
+        child_nodes -= 1
+    metadata = list()
+    while metadata_entries &gt; 0:
+        metadata.append(numbers[start+length])
+        length += 1
+        metadata_entries -= 1
+    node = dict([("length",length),("metadata",metadata),("children",children)])
+    return node
+
+def read_file(file):
+    with open(file) as f:
+        line = f.readline()
+    numbers = [int(x) for x in line.split()]
+    G = read_node(0,numbers)
+    return G
+def node_value(N):
+    if len(N["children"]) == 0:
+        return sum(N["metadata"])
+    else:
+        s = 0
+        for i in N["metadata"]:
+            if i-1 &lt; len(N["children"]):
+                s += node_value(N["children"][i-1])
+        return s
+        
+def day8(file):
+    G = read_file(file)
+    to_visit = deque()
+    to_visit.append(G)
+    metadata_sum = 0
+    while len(to_visit) &gt; 0:
+        N = to_visit.popleft()
+        metadata_sum += sum(N["metadata"])
+        to_visit.extend(N["children"])
+    print("METADATA SUM: %d" % metadata_sum)
+    print("NODE VALUE: %d" % node_value(G))</code></pre>
+<h2>D&iacute;a 9</h2>
+<p>Este d&iacute;a fue muy interesante. Se nos explica un juego, que consiste en ir a&ntilde;adiendo canicas en una circunferencia y cuando el n&uacute;mero de canica que a&ntilde;adimos es m&uacute;ltiplo de 23, obtenemos puntos y quitamos una canica 7 puestos por detr&aacute;s.</p>
+<p>Aqu&iacute; tuve una mala decisi&oacute;n de dise&ntilde;o ya que al principio quise hacer esto con una lista de Python (el equivalente a vector en otros lenguajes de programaci&oacute;n). La idea era sencilla y funcionaba hasta que lleg&oacute; la parte 2. La parte 2 te pedr&iacute;a calcular los puntos teniendo en cuenta 100 veces m&aacute;s canicas. Esto fue un grave problema para mi c&oacute;digo. Calculo que tardar&iacute;a 6 horas en calcularlo, pero antes optimic&eacute;. La optimizaci&oacute;n consist&iacute;a en usar una lista circular doblemente enlazada. &iquest;Esto qu&eacute; es? Se trata de una <a href="https://es.wikipedia.org/wiki/Lista_enlazada">lista enlazada</a>, doblemente, porque cada nodo tiene referencia al elemento siguiente y al anterior. Y es circular porque ambos extremos est&aacute;n unidos. Esto permite las inserciones y borrados en O(1). Adem&aacute;s los movimientos relativos (en este problema todos son as&iacute;) son extremadamente sencillos. La implementaci&oacute;n de esta estructura de datos en Python es muy sencilla (en otros lenguajes es m&aacute;s complicado). No me molest&eacute; en hacer funciones que me hiciesen sencilla la vida y las conexiones/desconexiones las hago a mano directamente en el c&oacute;digo del problema.</p>
+<pre class="wp-block-code"><code class="language-python">from collections import defaultdict
+class Marble:
+    def __init__(self,value,left=None,right=None):
+        self.value = value
+        self.left = left
+        self.right = right
+        if self.left == None:
+            self.left = self
+        if self.right == None:
+            self.right = self
+
+def day9(PLAYERS,LAST_MARBLE):
+    SCORE = defaultdict(lambda: 0)
+    player = 0
+    marble = 0
+    current_marble_pos = 0
+    current_marble = None
+    while marble &lt;= LAST_MARBLE:
+        if marble &gt; 0 and marble % 23 == 0:
+            SCORE[player] += marble
+            pivote = current_marble.left.left.left.left.left.left.left
+            SCORE[player] += pivote.value
+            pivote.left.right = pivote.right
+            pivote.right.left = pivote.left
+            current_marble = pivote.right
+        else:
+            if current_marble == None:
+                current_marble = Marble(marble)
+            else:
+                current_marble = Marble(marble,current_marble.right,current_marble.right.right)
+                current_marble.left.right = current_marble
+                current_marble.right.left = current_marble
+        player += 1
+        player = player % PLAYERS
+        marble += 1
+    return max(SCORE.values())</code></pre>
+<p>Curiosamente, en la propia librer&iacute;a de Python <strong>deque</strong> tiene una operaci&oacute;n llamada <strong>rotate</strong> que permite hacer este problema en poqu&iacute;simas l&iacute;neas y de forma muy eficiente. Pero desconoc&iacute;a la existencia de esa funci&oacute;n (que lo que hace es mover la "cabeza" de la lista enlazada que es deque).</p>
+<h2>D&iacute;a 10</h2>
+<p>Este problema es muy interesante. Se nos da una serie de puntos que van movi&eacute;ndose por la pantalla. En un determinado momento estos puntos se juntan y forman un mensaje en pantalla.</p>
+<p>Aqu&iacute; lo interesante no es mover los puntos, eso es trivial, simplemente es sumar la velocidad cada vez las coordenadas. Lo interesante es saber cuando parar. Existen varias ideas:</p>
+<ul>
+<li>Revisi&oacute;n humana de cada iteraci&oacute;n</li>
+<li>Comprobar que no haya puntos separados del resto (con grafos)</li>
+<li>Comprobar que el &aacute;rea de concentraci&oacute;n de puntos es m&iacute;nima</li>
+</ul>
+<p>Y alguna m&aacute;s. Para el ejemplo la primera idea serv&iacute;a. Pero en la prueba real, era m&aacute;s complicado. A m&iacute; se me ocurri&oacute; la tercera opci&oacute;n, la cu&aacute;l es bastante eficiente. En cada iteraci&oacute;n calculamos el &aacute;rea que contiene a todos los puntos, cuando ese &aacute;rea ya no se reduce m&aacute;s, hemos llegado al mensaje.</p>
+<pre class="wp-block-code"><code class="language-python">import re
+def read_file(file):
+    stars = list()
+    p = re.compile("position=&lt;([ -][0-9]+), ([ -][0-9]+)&gt; velocity=&lt;([ -][0-9]+), ([ -][0-9]+)&gt;")
+    with open(file) as f:
+        lines = f.readlines()
+    for line in lines:
+        m = p.match(line.strip())
+        try:
+            pos_x = int(m.group(1))
+        except:
+            print(line)
+        pos_y = int(m.group(2))
+        vel_x = int(m.group(3))
+        vel_y = int(m.group(4))
+        stars.append([pos_x,pos_y,vel_x,vel_y])
+    return stars
+def print_stars(stars):
+    stars = sorted(stars,key=lambda x: x[0],reverse=True)
+    min_width = stars[-1][0]
+    max_width = stars[0][0]
+    min_height = min(stars,key=lambda x: x[1])[1]
+    max_height = max(stars,key=lambda x: x[1])[1]
+    s = str()
+    for j in range(min_height,max_height+1):
+        p = [star for star in stars if star[1] == j]
+        for i in range(min_width,max_width+1):
+            if len(p) == 0:
+                s += "."
+            else:
+                if any(map(lambda star: star[0] == i and star[1] == j,p)):
+                    s += "#"
+                else:
+                    s += "." 
+       s += "\n"
+    return s
+def step(stars):
+    a = map(lambda x: [x[0]+x[2],x[1]+x[3],x[2],x[3]],stars)
+    return list(a)
+# LA RESPUESTA CORRECTA TIENE AREA MINIMA
+
+def area(stars):
+    stars = sorted(stars,key=lambda x: x[0], reverse=True)
+    min_width = stars[-1][0]
+    max_width = stars[0][0]
+    min_height = min(stars,key=lambda x: x[1])[1]
+    max_height = max(stars,key=lambda x: x[1])[1]
+    area = (max_width-min_width)*(max_height-min_height)
+    return area
+def day10(file):
+    stars = read_file(file)
+    a = area(stars)
+    steps = 0
+    while area(step(stars)) &lt; a:
+        stars = step(stars)
+        steps += 1
+        a = area(stars)
+    print_stars(stars)
+    print(steps)</code></pre>
+<p>La parte de dibujado me cost&oacute; y ah&iacute; tuve un fallo que me cost&oacute; media hora aproximadamente en resolver. Una mejor opci&oacute;n, pero que no se me ocurri&oacute;, hubiese sido usar <a href="https://python-pillow.org/">Pillow</a> y crear una imagen. Es mucho m&aacute;s f&aacute;cil que dibujar sobre una terminal (y posiblemente m&aacute;s r&aacute;pido).</p>
+<figure class="wp-block-image"><img class="wp-image-1658" src="https://files.adrianistan.eu/Day10AOC.png" alt="" /></figure>
+<h2>D&iacute;a 11</h2>
+<p>Para este problema hay 3 posibles algoritmos. En la primera parte nos piden que de una matriz extraigamos el cuadrado de 3x3 con mayor valor. La matriz hay que construirla pero es trivial. Yo decido usar un diccionario, con clave la tupla de coordenadas. Vamos recorriendo todas las posiciones y calculamos el valor. Ahora para buscar el cuadrado, simplemente vamos probando todos los posibles cuadrados.</p>
+<p>En la segunda parte nos dicen que bsuquemos el cuadrado m&aacute;ximo pero el tama&ntilde;o puede ser cualquiera. Aqu&iacute; con la fuerza bruta ya tarda demasiado. Mi soluci&oacute;n fue usar <a href="https://blog.adrianistan.eu/2018/03/11/programacion-dinamica-el-problema-de-knapsack/">programaci&oacute;n din&aacute;mica</a>, para ello la clave pasa a tener un valor m&aacute;s, el tama&ntilde;o del cuadrado. Cuando creamos la tabla estamos asignando valor al cuadrado 1x1 de posici&oacute;n X,Y. Representado es la tupla (x,y,1). Seg&uacute;n vamos avanzando hasta 300x300 vamos guardando los resultados intermedios, de modo que podamos reutilizarlos. Por ejemplo, el valor de (x,y,4) solamente es la suma de (x,y,2), (x+2,y,2), (x,y+2,2) y (x+2,y+2,2). Evidentemente esto solo funciona en los tama&ntilde;os pares. En los tama&ntilde;os impares decid&iacute; coger el cuadrado de dimensi&oacute;n inmediatamente menor y calcular los laterales con los cuadrados de tama&ntilde;o 1. Este sistema funciona mucho mejor que la fuerza bruta pero es lento. <a href="https://www.youtube.com/watch?v=TJuYCBAwtEU">Los profesionales</a> usaron el algoritmo <a href="https://en.wikipedia.org/wiki/Summed-area_table">Summed Area Table</a> (del que desconoc&iacute;a su existencia). Este algoritmo es el &oacute;ptimo para este problema.</p>
+<p>&nbsp;</p>
+<pre class="wp-block-code"><code class="language-python">def generate_fuel(x,y,idg):
+    fuel = (((x+10)*y)+idg)*(x+10)
+    fuel %= 1000 
+    fuel = (fuel // 100) - 5
+    return fuel
+def generate_table(idg):
+    fuel = {(x,y,size):0 for x in range(1,301) for y in range(1,301) for size in range(1,301)}
+    for x in range(1,301):
+        for y in range(1,301):
+            fuel[(x,y,1)] = generate_fuel(x,y,idg)
+    return fuel
+def find_best(fuel):
+    max_point = [-1,-1]
+    max_score = -1
+    for x in range(1,301):
+        for y in range(1,301):
+            if x+3 &gt; 301 or y+3 &gt; 301:
+                continue
+            score = fuel[(x,y,1)]+fuel[(x+1,y,1)]+fuel[(x+2,y,1)]+fuel[(x,y+1,1)]+fuel[(x+1,y+1,1)]+fuel[(x+2,y+1,1)]+fuel[(x,y+2,1)]+fuel[(x+1,y+2,1)]+fuel[(x+2,y+2,1)]
+            if score &gt; max_score:
+                max_score = score
+                max_point = [x,y]
+    return max_point[0],max_point[1]
+def find_best_any_size(fuel):
+    max_score = -1
+    max_point = [-1,-1,-1]
+    for size in range(2,300+1):
+        for x in range(1,301):
+            for y in range(1,301):
+                if x+size &gt; 301 or y+size &gt; 301:
+                    continue
+                if size % 2 == 0:
+                    mid = size // 2
+                    fuel[(x,y,size)] = fuel[(x+mid,y,mid)]+fuel[(x,y+mid,mid)]+fuel[(x+mid,y+mid,mid)]+fuel[(x,y,mid)]
+                else:
+                    fuel[(x,y,size)] = fuel[(x,y,size-1)]
+                    for i in range(x,x+size-1):
+                        fuel[(x,y,size)] += fuel[(i,y+size-1,1)]
+                    for j in range(y,y+size-1):
+                        fuel[(x,y,size)] += fuel[(x+size-1,j,1)]
+                    fuel[(x,y,size)] += fuel[(x+size-1,y+size-1,1)]
+                score = fuel[(x,y,size)]
+                if score &gt; max_score:
+                    max_score = score
+                    max_point = [x,y,size]
+    return max_point[0],max_point[1],max_point[2]
+def day11():
+    fuel = generate_table(1133)
+    x,y = find_best(fuel)
+    print("BEST POINT: %d,%d" % (x,y))
+    x,y,size = find_best_any_size(fuel)
+    print("BEST POINT ANY SIZE: %d,%d,%d" % (x,y,size))
+if __name__ == "__main__":
+    day11()</code></pre>
+<h2>D&iacute;a 12</h2>
+<p>El d&iacute;a 12 me trajo recuerdos de un algoritmo con el que me pele&eacute; mucho, el denominado <a href="https://blog.adrianistan.eu/2018/01/20/juego-la-vida-conway-c-interfaz-grafica/">HashLife</a>. El problema es un <a href="https://blog.adrianistan.eu/2017/08/28/automatas-celulares-unidimensionales-python/">aut&oacute;mata celular unidimensional</a>. Las reglas vienen dadas como patrones. La &uacute;nica diferencia es que hay que guardar su posici&oacute;n para luego calcular un n&uacute;mero. La primera parte es bastante sencilla.</p>
+<pre class="wp-block-code"><code class="language-python">import re
+from collections import defaultdict
+
+def read_file(file):
+    rules = defaultdict(lambda: ".")
+    rule_prog = re.compile("([.#]+) =&gt; ([.#])")
+    with open(file) as f:
+        lines = f.readlines()
+    state = lines[0].split(": ")[1].strip()
+    for line in lines[2:]:
+        m = rule_prog.match(line.strip())
+        rules[m.group(1)] = m.group(2)
+    return state,rules
+
+def parse_state(pots):
+    state = dict()
+    for i,p in enumerate(pots):
+        state[i] = p
+    return state
+
+def find(rules,current):
+    if current in rules:
+        return rules[current]
+    else:
+        size = len(current)
+        mid = size // 2
+        left = find(rules,current[0:mid])
+        right = find(rules,current[mid:])
+        rules[current] = left + right
+        return rules[current]
+
+
+def iter(state,rules):
+    new_state = dict()
+    xmin = min(state.keys())
+    xmax = max(state.keys())
+    for x in range(xmin-2,xmax+3):
+        current = ("%c%c%c%c%c" % (
+                    state.get(x-2,"."),
+                    state.get(x-1,"."),
+                    state.get(x,"."),
+                    state.get(x+1,"."),
+                    state.get(x+2,".")
+                    ))
+        new = rules[current]
+        if new == "#" or xmin &lt;= x &lt;= xmax:
+            new_state[x] = new
+    return new_state
+
+def sum_pots(state):
+    n = 0
+    for pot in state:
+        if state[pot] == "#":
+            n += pot
+    return n
+
+def print_state(state):
+    xmin = min(state.keys())
+    xmax = max(state.keys())
+    s = str("XMIN %d : " % xmin)
+    for x in range(xmin-2,xmax+3):
+        s += state.get(x,".")
+    print(s)
+
+
+def day12(file):
+    state,rules = read_file(file)
+    state = parse_state(state)
+    for i in range(20):
+        #print_state(state)
+        state = iter(state,rules)
+    #print_state(state)
+    n = sum_pots(state)
+    return n
+
+if __name__ == "__main__":
+    day12("input.txt")
+</code></pre>
+<figure class="wp-block-image"><img class="wp-image-1659" src="https://files.adrianistan.eu/Day12AOC-1024x392.png" alt="" /></figure>
+<p>La segunda parte nos ped&iacute;a lo mismo pero para el n&uacute;mero &iexcl;50000000000! Inmediatamente pens&eacute; en optimizarlo de forma similar a HashLife. La idea consiste en almacenar patrones mayores a los de las reglas (que son todos de tama&ntilde;o 5), para poder evitar c&aacute;lculos innecesarios.Adem&aacute;s a&ntilde;ad&iacute; un recolector de basura para ir eliminando por la izquierda las celdas in&uacute;tiles.</p>
+<p>No obstante, y aunque es much&iacute;simo m&aacute;s eficiente, sigue sin ser capaz de procesar tal bestialidad de n&uacute;mero en un tiempo razonable.</p>
+<p>Y he aqu&iacute; lo que me ha cabreado, porque no he podido sacarlo. A partir de cierto momento, el dibujo siempre es el mismo pero desplaz&aacute;ndose a la derecha. De modo que el valor del siguiente paso siempre es la suma de una constante. Finalmente modifiqu&eacute; el c&oacute;digo para que buscase una situaci&oacute;n en la que el n&uacute;mero fuese resultado de una suma de una constante. Una vez hecho eso, calcula con una multiplicaci&oacute;n lo que valdr&iacute;a cuando llegase a 50000000000.</p>
+<pre class="wp-block-code"><code class="language-python">import re
+from collections import defaultdict
+
+XMIN = -2
+
+def find(rules,current):
+    if len(current) &lt; 5:
+        return ""
+    if current in rules:
+        return rules[current]
+    elif len(current) == 5:
+        return "."
+    else:
+        size = len(current)
+        left=find(rules,current[0:size-1])
+        right=find(rules,current[size-5:])
+        rules[current] = left+right
+        return rules[current]
+
+def read_file(file):
+    rules = defaultdict(lambda: ".")
+    rule_prog = re.compile("([.#]+) =&gt; ([.#])")
+    with open(file) as f:
+        lines = f.readlines()
+    state = lines[0].split(": ")[1].strip()
+    for line in lines[2:]:
+        m = rule_prog.match(line.strip())
+        rules[m.group(1)] = m.group(2)
+    return state,rules
+
+
+def print_state(state):
+    print(state)
+
+def sum_pots(state):
+    n = 0
+    for i,c in enumerate(state):
+        if c == "#":
+            n += i + XMIN
+    return n
+
+def day12(file):
+    global XMIN
+    state,rules = read_file(file)
+    XMAX = len(state)+1
+    state = "..%s.." % state
+    sums = list()
+    i = 0
+    while len(sums) &lt; 3 or sums[-1]-sums[-2] != sums[-2]-sums[-3]:
+        state = find(rules,"..%s.." % state)
+        if state[0] == "." and state[1] == "." and state[2] == "." and state[3] == ".":
+            state = state[2:]
+            XMIN += 2
+        if state[0] == "#" or state[1] == "#":
+            state = "..%s" % state
+            XMIN -= 2
+        if state[-1] == "#" or state[-2] == "#":
+            state = "%s.." % state
+        sums.append(sum_pots(state))
+        i += 1
+    diff = sums[-1]-sums[-2]
+    missing = 50000000000 - i
+    n = missing*diff + sums[-1]
+
+    return n
+</code></pre>
+<p>Y con esto pude finalmente calcular el resultado.</p>
+<h2>D&iacute;a 13</h2>
+<p>El d&iacute;a 13 ten&iacute;amos unas v&iacute;as de tren. En estas v&iacute;as hab&iacute;a unos trenecitos que se desplazaban siguiendo unas normas. El objetivo en la primera parte era conocer el donde se produc&iacute;a el primer choque.</p>
+<pre class="wp-block-code"><code class="language-python">from PIL import Image
+
+XMAX = 0
+YMAX = 0
+STEP = 0
+
+nextDirection = dict()
+nextDirection["start"] = "left"
+nextDirection["left"] = "center"
+nextDirection["center"] = "right"
+nextDirection["right"] = "left"
+
+def relative_direction(original,movement):
+    print("CROSS")
+    if movement == "center":
+        return original
+    if original == "v":
+        if movement == "left":
+            return "&gt;"
+        else:
+            return "&lt;"
+    elif original == "&gt;":
+        if movement == "left":
+            return "^"
+        else:
+            return "v"
+    elif original == "^":
+        if movement == "left":
+            return "&lt;"
+        else:
+            return "&gt;"
+    else:
+        if movement == "left":
+            return "v"
+        else:
+            return "^"
+
+def day13(file):
+    global XMAX
+    global YMAX
+    global STEP
+    plano = dict()
+    carts = list()
+    with open(file) as f:
+        lines = f.readlines()
+    YMAX = len(lines)
+    XMAX = len(lines[0])
+    for y,line in enumerate(lines):
+        for x,char in enumerate(line):
+            # SI HAY UN CARRITO, DEDUCIR TIPO DE VIA
+            if char == "^" or char == "v" or char == "&lt;" or char == "&gt;":
+                if (x,y-1) in plano:
+                    plano[(x,y)] = "|"
+                else:
+                    plano[(x,y)] = "-"
+                carts.append([x,y,char,"left"])
+            else:
+                plano[(x,y)] = char
+    
+    end = False
+    while not end:
+        carts.sort(key=lambda x: x[1])
+        carts.sort(key=lambda x: x[0])
+
+        for cart in carts:
+            # CHECK CRASH
+            for crt in carts:
+                if cart[0] == crt[0] and cart[1] == crt[1] and id(cart) != id(crt):
+                    print("CRASH AT %d-%d" % (cart[0],cart[1]))
+                    end = True
+            try:
+                x = cart[0]
+                y = cart[1]
+                print(cart)
+                if cart[2] == "&gt;":
+                    if plano[(x+1,y)] == "/":
+                        cart[2] = "^"
+                    elif plano[(x+1,y)] == "\\":
+                        cart[2] = "v"
+                    elif plano[(x+1,y)] == "+":
+                        cart[2] = relative_direction(cart[2],cart[3])
+                        cart[3] = nextDirection[cart[3]]
+                    cart[0] += 1
+                elif cart[2] == "&lt;":
+                    if plano[(x-1,y)] == "/":
+                        cart[2] = "v"
+                    elif plano[(x-1,y)] == "\\":
+                        cart[2] = "^"
+                    elif plano[(x-1,y)] == "+":
+                        cart[2] = relative_direction(cart[2],cart[3])
+                        cart[3] = nextDirection[cart[3]]
+                    cart[0] -= 1
+                elif cart[2] == "^":
+                    if plano[(x,y-1)] == "/":
+                        cart[2] = "&gt;"
+                    elif plano[(x,y-1)] == "\\":
+                        cart[2] = "&lt;"
+                    elif plano[(x,y-1)] == "+":
+                        cart[2] = relative_direction(cart[2],cart[3])
+                        cart[3] = nextDirection[cart[3]]
+                    cart[1] -= 1
+                elif cart[2] == "v":
+                    print()
+                    if plano[(x,y+1)] == "/":
+                        cart[2] = "&lt;"
+                    elif plano[(x,y+1)] == "\\":
+                        cart[2] = "&gt;"
+                    elif plano[(x,y+1)] == "+":
+                        cart[2] = relative_direction(cart[2],cart[3])
+                        cart[3] = nextDirection[cart[3]]
+                    cart[1] += 1
+            except:
+                breakpoint()
+        STEP += 1
+        print_train(plano,carts)
+
+def print_train(plano,carts):
+    im = Image.new("RGB",(XMAX,YMAX))
+    for x,y in plano:
+        if plano[(x,y)] != " ":
+            im.putpixel((x,y),(255,255,255))
+        if plano[(x,y)] == "+":
+            im.putpixel((x,y),(120,120,120))
+    for cart in carts:
+        if cart[2] == "&gt;":
+            im.putpixel((cart[0],cart[1]),(255,0,0))
+        elif cart[2] == "&lt;":
+            im.putpixel((cart[0],cart[1]),(0,255,0))
+        elif cart[2] == "^":
+            im.putpixel((cart[0],cart[1]),(0,0,255))
+        else:
+            im.putpixel((cart[0],cart[1]),(0,120,120))
+
+    im.save("train-%d.png" % STEP,"PNG")
+
+if __name__ == "__main__":

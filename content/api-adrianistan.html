@@ -1,0 +1,36 @@
+<p>Con unos d&iacute;as de diferencia respecto a la<a href="https://blog.adrianistan.eu/ano-nuevo-blog-nuevo"> publicaci&oacute;n del nuevo blog</a>, ha llegado una caracter&iacute;stica muy interesante, la API del blog.</p>
+<p>Se trata de una API sem&aacute;ntica, usando el lenguaje de consulta <a href="https://www.w3.org/TR/sparql11-query/">SPARQL</a>, el cual es una recomendaci&oacute;n de W3C. La API solo permite hacer consultas. Aunque te&oacute;ricamente en SPARQL tambi&eacute;n se pueden modificar datos, no est&aacute; activado por motivos evidentes. La API es de acceso p&uacute;blico y cualquiera puede usarla, adem&aacute;s al ser SPARQL pod&eacute;is combinar las consultas con bases de datos de otros servidores. La API expone una ontolog&iacute;a basada en <a href="https://schema.org/BlogPosting">Schema.org</a>. En esa p&aacute;gina encontrar&eacute;is los nombres de los campos, su formato, etc</p>
+<p>En este corto post voy a demostrar como hacer uso de esta funcionalidad. En este art&iacute;culo no pretendo explicar SPARQL, aunque si veo inter&eacute;s puede ser un futuro tutorial.</p>
+<h2>Una petici&oacute;n simple</h2>
+<p>Para hacer una petici&oacute;n, podemos usar cURL o cualquier programa similar para lanzar una petici&oacute;n a https://blog.adrianistan.eu/api. Hay tres requisitos:</p>
+<ul>
+<li>la petici&oacute;n debe ser POST</li>
+<li>la petici&oacute;n debe declarar su Content-Type como application/sparql-query (tal y como dicta el est&aacute;ndar W3C)</li>
+<li>en el cuerpo debe estar la consulta SPARQL en texto plano</li>
+</ul>
+<p>Veamos un ejemplo sencillo usando cURL</p>
+<pre><code>
+curl -X POST https://blog.adrianistan.eu/api -d "SELECT ?id WHERE { ?id ?b ?c.} LIMIT 5" --header "Content-Type: application/sparql-query"
+</code></pre>
+<p>El resultado es el siguiente:</p>
+<p><img src="https://blog.adrianistan.eu/static/img/SPARQLDiario.png" alt="" width="1354" height="132" /></p>
+<p>El resultado est&aacute; en formato JSON. Actualmente no es configurable el formato de salida.</p>
+<h2>Una petici&oacute;n m&aacute;s compleja</h2>
+<p>Esta primera petici&oacute;n no aportaba gran cosa, simplemente devolv&iacute;a resultados. Ahora vamos a hacer una query seria.</p>
+<p>La query devolver&aacute; las URL de la gente que comenta en el blog:</p>
+<pre><code>
+PREFIX schema: &lt;http://schema.org/&gt;
+PREFIX rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
+
+SELECT DISTINCT ?url 
+WHERE {
+    ?comment rdf:type schema:Comment.
+    ?comment schema:author ?author.
+    ?author schema:url ?url.
+    FILTER(!regex(?url,"adrianistan.eu","i")).
+}
+</code></pre>
+<p>Y si enviamos la query a la API, nos responde con las URL de vuestros comentarios:</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://blog.adrianistan.eu/static/img/SPARQLComentarios.png" alt="" width="729" height="289" /></p>
+<p>Como v&eacute;is, la API es bastante potente y aunque su uso vaya a ser anecd&oacute;tico, quer&iacute;a tener una API de consulta en condiciones.</p>
+<p>&nbsp;</p>

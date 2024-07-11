@@ -1,0 +1,174 @@
+<p>En este blog ya hablamos hace tiempo de ensamblador, en concreto de <a href="https://blog.adrianistan.eu/la-belleza-mips">MIPS</a>. Sin embargo, esta arquitectura está en decadencia. Si bien ha habido algún intento por revivirla, parece claro que el futuro no pasa por MIPS. En cambio, una nueva arquitectura ha surgido, y es tremendamente similar a MIPS: se trata de <a href="https://es.wikipedia.org/wiki/RISC-V">RISC-V</a>.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MangoPiArch.jpg" width="600">
+<br>
+<small>Mi Mango Pi ejecutando Arch Linux RISC-V 64</small>
+</div>
+
+<h2>¿Qué es RISC-V y por qué es importante?</h2>
+<p>RISC-V (risc-five) se trata de una arquitectura tipo RISC diseñada por la Universidad de California en Berkeley en 2010. Se trata de una arquitectura load-store, es decir, las instrucciones se dividen entre instrucciones para acceder a memoria e instrucciones para todo lo demás y que solo operan con registros. A diferencia de otras, tiene un enfoque abierto desde el primer momento, pudiendo cualquier fabricante crear procesadores basados en RISC-V sin pagar regalías. Se trata de una arquitectura con un núcleo pequeño pero extensible por parte de los fabricantes. De hecho, el core de RISC-V 64 bits usa solamente 15 instrucciones y no incluye ni siquiera multipliaciones de enteros. Las instrucciones todas tienen un tamaño de 32 bits mientras que el espacio de direcciones es de 64 bits (con variantes de 32 bits y 128 bits).</p>
+<p>Poco a poco, han ido apareciendo fabricantes que han diseñado procesadores RISC-V, cada vez más útiles e interesantes, algunos de la mano de empresas creadas específicamente para esto como SiFive o StarFive. En particular, yo dispongo de una pequeña placa Mango Pi MQ-PRO, con el procesador Allwinner D1.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MangoPi.jpg" width="300">
+</div>
+
+<p>Además, el software se ha ido adaptando y hoy en día, no hay problema en ejecutar sistemas Linux bajo estos procesadores, más allá de temas de drivers o de boot, que al igual que en ARM, no está estandarizado.</p>
+
+<p>Con estos ingredientes, ¿nos acercamos a ver como es su ensamblador para entender mejor su funcionamiento?</p>
+
+<h2>32 registros de 64 bits</h2>
+<p>Al igual que MIPS, RISC-V dispone de 32 registros, en este caso de 64 bits. Los podemos nombrar como r0, r1, ... hasta r31. Dentro de estos registros, el r0 o zero, va a ser un registro donde no podremos escribir ya que siempre contendrá el valor 0. Los demás son idénticos aunque existe una convención. En la imagen vienen representados los nombres por convención de los registros. Los marcados en amarillo se preservan entre llamadas.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RiscRegisters.png">
+</div>
+
+<p>Esto quiere decir que usaremos los s0..s11 para datos que queramos conservar, t0..t6 para datos temporales, a0..a7 para comunicarnos entre llamadas y ra/sp/gp/tp para sus casos de uso designados. El contador de programa no es accesible.</p>
+
+<h2>Cuatro tipos de instrucciones</h2>
+<p>En su versión más fundamental existen 4 tipos de instrucciones, dependiendo de como se organizan internamente los datos de cada instrucción. Como hemos dicho, todas las instrucciones son de 32 bits, pero existen extensiones que permiten usar instrucciones más pequeñas para dispositivos embebidos.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RiscInstruction.png">
+</div>
+
+<h2>Operaciones básicas</h2>
+<p>La operación más sencilla puede ser la suma de enteros. Para ello se usa la instrucción add. El primer registro casi siempre es el registro de destino de la operación, mientras que los demás son fuente.</p>
+<pre><code>
+// a = b + c
+// sería
+add a, b, c
+// con registros
+add s0, s1, s2
+</code></pre>
+<p>RISC-V también permite introducir inmediatos en las instrucciones, es decir, constantes, pero se usa otra instrucción, normalmente con el sufijo i</p>
+<pre><code>
+// a = b + 1
+// estando a en s0 y b en s1, sería
+addi s0, s1, 1
+</code></pre>
+<p>Podemos usar add y el registro zero para implementar un move</p>
+<pre><code>
+// a = b
+// estando a en s0 y b en s1
+add s0, zero, s1
+</code></pre>
+<p>He aquí un listado de las instrucciones que existen de este tipo:</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RiscArithmetic.png">
+<img src="https://files.adrianistan.eu/RiscLogical.png">
+</div>
+<h2>Branch y jump</h2>
+<p>Para ser capaces de tomar decisiones en un ordenador tenemos que tener alguna forma de ejecutar código de forma condicional. Esa es la magia de los ordenadores. Las operaciones de branch nos permiten evaluar una condición y saltar si se cumple. A nivel de arquitectura existen solamente unas pocas instrucciones de branch que se complementan con pseudoinstrucciones (instrucciones que no existen a nivel de procesador pero sí para el ensamblador y que traducirá en una o más instrucciones reales).</p>
+<pre><code>
+int x = 5;
+do{
+    x--;
+}while(x!=0);
+
+// siendo x s0
+
+.section .text
+main:
+    addi s0, zero, 5
+loop:
+    addi s0, s0, -1
+    bne s0, zero, loop
+</code></pre>
+<p>También podemos hacer saltos, guardando la dirección original de la que venimos en el registro ra. No obstante, aquí recomiendo usar las pseudoinstrucciones de call y j que veremos más adelante.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RiscBranching.png">
+</div>
+<h2>Cargar y guardar en memoria</h2>
+<p>Aquí viene el otro tipo diferente de instrucciones de RISC-V, en las que accederemos a direcciones de memoria. En general hay dos tipos, las load y las store, unas cargan y otras guardan y las dos llevan el mismo orden: primero registro destino/origen, segundo registro con la dirección de memoria y un posible offset.</p>
+<p>Para definir datos en memoria usamos la parte de .data. Allí podemos definir zonas de memoria e inicializarlas. Por ejemplo, con .string podemos inicializar una cadena de caracteres en memoria. Con .word inicializamos uno o varios números de 32 bits (4 bytes), con .dword uno o varios números de 64 bits (8 bytes), etc...</p>
+<p>Posteriormente, podemos cargarlo con ld si es un dword, lw si es un word, lh si es un half, lb si es un byte y los correspondientes sd, sw, sh y sb. Además podemos introducir un offset como ya se ha dicho.</p>
+<pre><code>
+int* x = [1,2,3,4,5];
+int suma = 0;
+for(int i =0;i<4;i++){
+    suma = suma + x[i]
+}
+
+.data
+x: .dword 1,2,3,4,5
+.text
+main:
+	add s0, zero, zero
+	addi t9, zero, 5
+	la t0, x
+bucle:
+	ld t1, 0(t0)
+	add s0, s0, t1
+	addi t0, t0, 8 # cada valor son 8 bytes (64 bits), para ir al siguiente número sumamos 8
+	addi t9, t9, -1
+	bne zero, t9, bucle
+</code></pre>
+<p>Siendo la una pseudoinstrucción que nos permite cargar una dirección de memoria en un registro. En la sintaxis de ld se ha dejado el offset a 0. Si el offset fuese de 8, accederíamos al siguiente elemento del array, etc.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RiscLoadStore.png">
+</div>
+<h2>Fibonacci en RISC-V 64 sobre Linux</h2>
+<p>Finalmente para acabar, vamos a comentar un código que calcula los 12 primeros números de la secuencia de Fibonacci y los imprime por pantalla, en un sistema Linux. Para ello se hacen llamadas al sistema (ecall) y llamadas a la API de C.</p>
+<pre><code>
+.section .data
+fibs: .double 0,0,0,0,0,0,0,0,0,0,0,0
+size: .word 12
+space: .string " "
+head: .string "The Fibonacci numbers are:\n"
+printf_str: .string "%d\n"
+
+.section .text
+.global main
+main:
+    la s0, fibs # cargar direccion de fibs
+    la s5, size # cargar direccion de size
+    lw s5, 0(s5) # cargar el valor de size
+    li s2, 1 # cargar 1 como primer numero de fibonacci
+    sd s2, 0(s0) # guardar el primer número de fibonacci (1)
+    sd s2, 8(s0) # guardar el segundo número de fibonacci (1)
+    addi s1, s5, -2 # iteramos sobre size - 2
+loop:
+    ld s3, 0(s0) # cargamos el numero N -2 
+    ld s4, 8(s0) # cargamos el numero N - 1
+    add s2, s3, s4 # calculamos N
+    sd s2, 16(s0) # almacenamos N
+    addi s0, s0, 8 # movemos el puntero al siguiente numero
+    addi s1, s1, -1 # decrementamos el loop
+    bgtz s1, loop # loop
+    call print # imprimimos la secuencia
+    j exit # salimos
+
+print:
+    mv s11, ra # guardamos la direccion de origen de la llamada
+    la s0, fibs # cargamos la direccion de fibs
+    la s1, size # cargamos la direccion de size
+    lw s1, 0(s1) # cargamos el valor de size
+    la a0, head # cargamos la direccion de head en a0 (lo usa printf)
+    call printf # llamamos a printf
+out:
+    la a0, printf_str # cargamos la direccion printf_str en a0
+    ld a1, 0(s0) # cargamos el numero N en a1 (para printf)
+    call printf # llamamos a printf
+    addi s0, s0, 8 # aumentamos el puntero 8 para ir al siguiente numero
+    addi s1, s1, -1 # decrementamos el loop
+    bgt s1, zero, out # loop
+    jr s11 # volvemos a la direccion original de la llamada
+
+# salir usando la syscall de Linux de exit
+exit:
+    li a7, 93
+    li a0, 0
+    ecall
+</code></pre>
+<p>Se puede compilar con:</p>
+<pre><code>
+gcc -o fib fib.s -static
+</code></pre>
+<p>Y al ejecutarse nos imprime los números correspondientes.</p>
+<p>Las pseudoinstrucciones más comunes son las siguientes:</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/RiscPseudo.png">
+</div>
+<p>Y con esto ya entenderíamos las bases principales del ensamblador de RISC-V. Evidentemente esto es solo el comienzo ya que hay muchas extensiones ya definidas, pero si quieres saciar tu curiosidad es suficiente.</p>
+<p>Me gustaría agradecer a Erik Engheim, autor de <a href="https://files.adrianistan.eu/RISC-V-cheatsheet.pdf">esta cheatsheet de RISC-V</a>, uno de los recursos más sencillos para entender las bases de RISC-V.</p>

@@ -1,0 +1,39 @@
+<p>Responder a una pregunta señalando un mapa. Quizá no todas las preguntas del mundo se puedan resolver mirando a un mapa, pero sí las suficientes como para prestarlas atención. <a href="https://mapaquiz.com">Mapaquiz</a> es una aplicación web para jugar y crear mapaquizs. ¿Qué es un mapaquiz? Un mapaquiz es un juego de preguntas y respuestas donde las respuestas están en el mapa. Además, Mapaquiz es el último proyecto que he estado desarrollando en mi tiempo libre, ¿echamos un vistazo?</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MapaquizWeb.png" width="600">
+</div>
+<h2>Aprender jugando</h2>
+<p>Podemos aprender sobre geografía con los mapaquizs más clásicos. También podemos probar los mapaquizs temáticos sobre Olimpiadas o Famosos del Cine. Jugar es muy simple, simplemente buscamos nuestro mapaquiz, vía página principal o mediante el buscador. Los mapaquizs tiene un idioma, actualmente se soportan dos, inglés y español, aunque en un futuro podría haber más idiomas. Podemos filtrar el idioma en la parte superior.</p>
+<p>Una vez hayamos seleccionado nuestro mapaquiz se nos cargará un mapa y una pregunta a la derecha (en pantallas anchas) o abajo (en pantallas estrechas, tipo móvil). Tenemos una pregunta, un tiempo y una puntuación.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MapaquizOlimpiadas.png" width="600">
+</div>
+<p>A las preguntas que van apareciendo, podemos ir haciendo click en los diferentes territorios del mapa. Si nuestra respuesta es correcta, avanzaremos, si fallamos, se nos restará puntuación y deberemos volverlo a intentar. </p>
+<p>Una vez hayamos acabado se nos mostrará nuestra puntuación final y el tiempo que hemos utilizado. Si has iniciado sesión en ese momento, y tu puntuación es alta, esta se quedará gradaba en el marcador para que el resto admire tu rapidez e inteligencia (o facilidad de buscar en Google).</p>
+<p>Por último, podemos dejar un comentario sobre el mapaquiz en la parte más inferior.</p>
+
+<h2>Creando nuestros propios mapaquizs</h2>
+<p>Si tenemos una cuenta en Mapaquiz (que no requiere datos personales, solo se pide un correo electrónico, un nombre de usuario y una contraseña), podremos crear nuestros propios mapaquizs.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MapaquizDashboard.png" width="600">
+</div>
+<p>Para ello iremos a la sección "Mi Perfil", donde veremos los mapaquizs que hemos creado, así como la opción de crear uno nuevo y editar o borrar uno existente.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MapaquizCreate.png" width="600">
+</div>
+<p>Al crear un mapaquiz deberemos elegir un mapa base en el idioma en el que vayamos a crear el mapaquiz.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MapaquizEditor1.png" width="600">
+<img src="https://files.adrianistan.eu/MapaquizEditor2.png" width="600">
+</div>
+<p>El editor nos permite añadir y eliminar preguntas. En la parte superior tendremos el mapa base. A la derecha introduciremos el texto de la pregunta y sobre el mapa seleccionaremos el territorio que queremos que sea la respuesta. No existe respuesta múltiple de momento. Al hacer click en "Añadir pregunta", añadiremos la pregunta al mapaquiz.</p>
+<p>Abajo podremos ver las preguntas ya añadidas así como borrarlas. También está la sección de Ajustes Generales, que debemos rellenar con una descripción del mapaquiz, así como una foto para la portada.</p>
+<p>Si todo está bien, veremos un botón de "¡Publicar en Mapaquiz!" y el mapaquiz estará disponible para el resto de usuarios.</p>
+<h2>Detalles técnicos</h2>
+<p><i>Muy bien Adrián todo esto que cuentas, pero ¿cómo funciona?</i></p>
+<p>Realmente lo que hay detrás de Mapaquiz es bastante simple, ya que he intentado no añadir complejidad innecesaria. La base de datos es SQLite y allí se guardan los GeoJSON de los mapas base. El framework principal es Django, con alguna API en Django Rest Framework para el código JavaScript. El código JavaScript en realidad está hecho en TypeScript y usa la librería Leaflet para representar los mapas. Para alojar las imágenes se ha usado un Azure Storage Account. Para las búsquedas se usa la librería Lunr.py. Todo esto es empaquetable en Docker listo para usar con un nginx sobre una Raspberry Pi.</p>
+<h2>¿Te gusta lo que ves?</h2>
+<p>Pues comparte con tus amigos, crea mapaquizs, encuentra errores, propón mejoras,... </p>
+<div style="text-align:center">
+<a href="https://mapaquiz.com">Visita Mapaquiz</a>
+</div>

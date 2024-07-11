@@ -1,0 +1,230 @@
+<p>El otro día me llegó una <a href="https://www.starfivetech.com/en/site/boards">VisionFive 2</a>, una de las placas RISC-V con mejor relación calidad/precio del mercado. Sin embargo, antes de entrar en ello. Voy a volver con la Raspbbery Pi 3B un momento y es que, el otro día se corrompió la tarjeta microSD. Es algo muy habitual en estos dispositivos y siempre tengo backups y tarjetas de repuesto. Pero en esta ocasión quería probar algo nuevo. En vez de usar Debian dije, ¿y si uso NixOS?</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/NixOSRPi.png" width="500">
+</div>
+
+<h2>¿Qué es NixOS?</h2>
+<p>Hace ya 3 años le dediqué un artículo a <a href="https://blog.adrianistan.eu/primeros-pasos-nix-linux-funcional">Nix</a>. En aquel artículo instalaba Nix en mi distro de aquella época, Debian, y mostraba partes del lenguaje Nix, de crear paquetes y usar entornos Nix. Sin embargo, esta experiencia de Nix, aunque útil para usar paquetes más modernos en distros más estables, no es la ideal. Donde Nix verdaderamente brilla es en NixOS. NixOS es una distribución Linux que usa para su configuración el lenguaje Nix. Prácticamente toda la configuración del sistema, incluídos los paquetes que se instalan claro, está escrito en Nix.</p>
+
+<p>Todas las ventajas de Nix como rollbacks o la configuración declarativa disponibles a un sistema operativo entero. ¡Veamos como funciona!</p>
+
+<h2>Raspberry Pi 3B</h2>
+<p>La Raspberry Pi 3B tiene un procesador ARM de 64 bits (AArch64) y está soportada oficialmente por NixOS. Otros modelos de Raspberry Pi no tienen la misma suerte, recomiendo revisar la <a href="https://nixos.wiki/wiki/NixOS_on_ARM">wiki de NixOS</a>.</p>
+
+<p>Lo primero que deberemos hacer es descargar una imagen desde Hydra de <a href="https://hydra.nixos.org/job/nixos/release-22.11/nixos.sd_image.aarch64-linux">una compilación de NixOS para AArch64</a>.</p>
+
+<p>Una vez descargada, la descomprimimos y la grabamos en una tarjeta SD de por lo menos 16 GB.</p>
+<pre><code>
+(sudo) dd if=nixos-sd-image-22.11.2979.47c00341629-aarch64-linux.img of=/dev/sdb bs=4M status=progress
+</code></pre>
+<p>Revisar antes de ejecutar dd que efectivamente la tarjeta microSD está en /dev/sdb o si no reemplazar por la ruta que sea.</p>
+
+<p>Con esto ya podremos encender nuestra Raspberry Pi. Primero arrancará U-Boot y después NixOS hará algunas configuraciones iniciales como expandir la partición para usar toda la tarjeta microSD. Esta imagen de NixOS ejecuta un servidor SSH por defecto y tiene dos usuarios creados: root y nixos, sin contraseña los dos. Lo ideal es ejecutar los primeros pasos con teclado. Lo primero será configurar las contraseñas de los usuarios root y nixos.</p>
+
+<p>Para ello entramos como root y ejecutamos los siguientes comandos.</p>
+<pre><code>
+passwd
+passwd nixos
+</code></pre>
+
+<h2>Que empiece la magia Nix</h2>
+<p>Hasta ahora todo es muy parecido a otros sistemas operativos en ARM. A partir de ahora vamos a ver lo que hace NixOS diferente y especial.</p>
+
+
+<p>Lo primer es generar la configuración inicial de NixOS. Para ello usaremos el siguiente comando:</p>
+<pre><code>
+(sudo) nixos-generate-config
+</code></pre>
+<p>Este comando nos generará varios ficheros en <i>/etc/nixos</i>. Esta es la carpeta más importante de NixOS ya que toda la config del sistema residirá ahí. El fichero principal, y que nos habrá creado el comando es <i>/etc/nixos/configuration.nix</i>.</p>
+
+<p>En mi caso me generó este fichero:</p>
+
+<pre><code>
+# Edit this configuration file to define what should be installed on
+# your system.  Help is available in the configuration.nix(5) man page
+# and in the NixOS manual (accessible by running ‘nixos-help’).
+
+{ config, pkgs, ... }:
+
+{
+  imports =
+    [ # Include the results of the hardware scan.
+      ./hardware-configuration.nix
+    ];
+
+  # Use the extlinux boot loader. (NixOS wants to enable GRUB by default)
+  boot.loader.grub.enable = false;
+  # Enables the generation of /boot/extlinux/extlinux.conf
+  boot.loader.generic-extlinux-compatible.enable = true;
+
+  networking.hostName = "nixos"; # Define your hostname.
+  # Pick only one of the below networking options.
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  # networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+
+  # Set your time zone.
+  time.timeZone = "Europe/Amsterdam";
+
+  # Configure network proxy if necessary
+  # networking.proxy.default = "http://user:password@proxy:port/";
+  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+
+  # Select internationalisation properties.
+  # i18n.defaultLocale = "en_US.UTF-8";
+  # console = {
+  #   font = "Lat2-Terminus16";
+  #   keyMap = "us";
+  #   useXkbConfig = true; # use xkbOptions in tty.
+  # };
+
+  # Enable the X11 windowing system.
+  # services.xserver.enable = true;
+
+
+  
+
+  # Configure keymap in X11
+  # services.xserver.layout = "us";
+  # services.xserver.xkbOptions = {
+  #   "eurosign:e";
+  #   "caps:escape" # map caps to escape.
+  # };
+
+  # Enable CUPS to print documents.
+  # services.printing.enable = true;
+
+  # Enable sound.
+  # sound.enable = true;
+  # hardware.pulseaudio.enable = true;
+
+  # Enable touchpad support (enabled default in most desktopManager).
+  # services.xserver.libinput.enable = true;
+
+  # List packages installed in system profile. To search, run:
+  # $ nix search wget
+  environment.systemPackages = with pkgs; [
+    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    wget
+  ];
+
+  # Some programs need SUID wrappers, can be configured further or are
+  # started in user sessions.
+  # programs.mtr.enable = true;
+  # programs.gnupg.agent = {
+  #   enable = true;
+  #   enableSSHSupport = true;
+  # };
+
+  # List services that you want to enable:
+
+  # Enable the OpenSSH daemon.
+  services.openssh.enable = true;
+
+  # Open ports in the firewall.
+  # networking.firewall.allowedTCPPorts = [ ... ];
+  # networking.firewall.allowedUDPPorts = [ ... ];
+  # Or disable the firewall altogether.
+  # networking.firewall.enable = false;
+
+  # Copy the NixOS configuration file and link it from the resulting system
+  # (/run/current-system/configuration.nix). This is useful in case you
+  # accidentally delete configuration.nix.
+  # system.copySystemConfiguration = true;
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "22.11"; # Did you read the comment?
+
+}
+</code></pre>
+<h3>Ajustando la red</h3>
+<p>Lo primero que hice fue ajustar la red. En mi caso quería IPv4 por Ethernet con una IP estática (192.168.1.200). Además cambié la zona horaria a Madrid. Así que añadí/modifiqué estas líneas:</p>
+<pre><code>
+networking.hostName = "raspberry"; # Define your hostname.
+  # Pick only one of the below networking options.
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+  networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
+
+  networking.interfaces.eth0.ipv4.addresses = [ {
+    address = "192.168.1.200";
+    prefixLength = 24;
+  } ];
+  networking.defaultGateway = "192.168.1.1";
+  networking.nameservers = [ "192.168.1.1" ];
+</code></pre>
+<p>Por defecto hay un firewall configurado, le abrí los puertos 80, 443 y 22 (aunque el mero hecho de tener <i>services.openssh.enable</i> a true ya abre el 22</p>
+<pre><code>
+  # Enable the OpenSSH daemon.
+  services.openssh.enable = true;
+
+  # Open ports in the firewall.
+  networking.firewall.allowedTCPPorts = [ 80 443 22 ];
+  # networking.firewall.allowedUDPPorts = [ ... ];
+  # Or disable the firewall altogether.
+  # networking.firewall.enable = false;
+</code></pre>
+
+<h3>Usuarios y paquetes</h3>
+<p>Luego quise crearme un usuario personal, llamado aarroyoc, que estuviese en los grupos "wheel" y "docker" y con algunos paquetes exclusivos para él como <i>git</i> y <i>docker-compose</i>.</p>
+<pre><code>
+users.users.aarroyoc = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" "docker" ]; # Enable ‘sudo’ for the user.
+    packages = with pkgs; [
+      git
+      docker-compose
+    ];
+  };
+</code></pre>
+<p>Si queremos añadir paquetes para todo el sistema, deberíamos añadirlos en la lista de la propiedad <i>environment.systemPackages</i></p>.
+
+<h3>Nginx, Docker y SSL</h3>
+<p>Aplicaciones como Nginx, Docker o Let's Encrypt tienen sus propios módulos de configuración en NixOS que nos hacen la vida más fácil. En ese mismo fichero podemos añadir las siguientes líneas para activar Docker, levantar Nginx de proxy con un VirtualHost y configurarlo con SSL mediante Let's Encrypt</p>
+<pre><code>
+  # Docker
+  virtualisation.docker.enable = true;
+
+  # ACME
+  security.acme.acceptTerms = true;
+  security.acme.defaults.email = "VALID_EMAIL";
+
+  # Nginx
+  services.nginx = {
+    enable = true;
+    recommendedProxySettings = true;
+    recommendedTlsSettings = true;
+
+    virtualHosts."stats.adrianistan.eu" = {
+      enableACME = true;
+      forceSSL = true;
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:8945";
+      };
+    };
+  };
+</code></pre>
+<h3>Aplicando la configuración</h3>
+<p>Ahora es hora de aplicar la configuración. Nix tiene comprobaciones y en muchos casos nos avisará no solo de errores de sintaxis en el fichero de configuración sino de configuraciones incorrectas entre sí.</p>
+<p>El comando mágico para aplicar la configuración es:</p>
+<pre><code>
+(sudo) nixos-rebuild switch
+</code></pre>
+<p>Este comando construye la configuración nueva de NixOS y cambia a ella, aunque puede no reiniciar todos los servicios de forma correcta. Existen otras opciones como <i>nixos-rebuild boot</i> para efectuar el cambio en el siguiente reinicio.</p>
+
+<p>Por supuesto, al tener la configuración centralizada, podemos copiarla, guardárnosla como backup y recrear un sistema idéntico en otro ordenador. Si usamos módulos tal y como hace NixOS por defecto con la configuración específica del hardware de la placa, podemos tener configuraciones compartidas entre sistemas solo en los ficheros que nos interese y además quedará todo muy modular.</p>
+
+<p>Por último, para conseguir actualizaciones podemos ejecutar el siguiente comando, que actualizará los paquetes del sistema (pero no los que los usuarios hayan creado en sus nix-env y nix-shell).</p>
+
+<pre><code>
+(sudo) nixos-rebuild switch --upgrade
+</code></pre>
+
+<p>Por lo demás, el resto de cosas que teníamos en Nix como los comandos nix-shell, nix-env y nix, ¡siguen funcionando!. NixOS ofrece muchísimas opciones de configuración que solo estoy descubriendo a partir de ahora.</p>
+
+<p>Quizá en el futuro experimentaré con pasar los servicios de Docker y Docker Compose a soluciones 100% basadas en Nix.</p>
+

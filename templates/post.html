@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - Adrianistán{% endblock %}
+{% block main %}
+  <h1>{{ title }}</h1>
+  <div class="date">{{ date }}</div>
+  <div class="mainContent">{{ content }}</div>
+  <div class="tags">
+    <b>Tags:</b>
+    {% for tag in tags %}
+    <a class="black-link" href="/tag/{{ tag }}">{{ tag }}</a>
+    {% endfor %}
+  </div>
+{% endblock %}

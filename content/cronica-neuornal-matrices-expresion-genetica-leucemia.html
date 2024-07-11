@@ -1,0 +1,705 @@
+<p>Bienvenidos a un nuevo episodio de la serie <strong>Cr&oacute;nica</strong> <strong>Neuronal</strong>. Hoy vamos a tocar un problema del campo de la bioinform&aacute;tica. En concreto, vamos a usar matrices de expresi&oacute;n gen&eacute;tica para identificar si un paciente de leucemia la tiene de tipo ALL o de tipo AML. <a href="https://www.webmd.com/cancer/lymphoma/leukemia-all-vs-aml#1">Ambas leucemias tienen s&iacute;ntomas muy parecidos</a> y es interesante poder encontrar un modelo de aprendizaje autom&aacute;tico que pueda distinguirlas.</p>
+<h2>&iquest;Qu&eacute; es una matriz de expresi&oacute;n gen&eacute;tica?</h2>
+<p>La expresi&oacute;n gen&eacute;tica es el grado en que un gen se manifiesta en la formaci&oacute;n de una prote&iacute;na, que luego tiene efectos en el organismo. Este grado se mide a trav&eacute;s de la presencia de mRNA, aunque no es exactamente proporcional, suele ser adecuado en muchas ocasiones.&nbsp;&nbsp;</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/MatrizExpresionGenetica.png" alt="" /></p>
+<p>Una matriz de expresi&oacute;n gen&eacute;tica no es m&aacute;s que un conjunto de muestras (samples), donde se analiza la expresi&oacute;n gen&eacute;tica de muchos genes. Cada casilla representa la expresi&oacute;n gen&eacute;tica de un gen en concreto en un individuo en particular. La idea es, con esta informaci&oacute;n, obtener ciertos patrones de genes que nos ayuden y nos den pistas en la investigaci&oacute;n de enfermedades. Tambi&eacute;n nos puede servir para diagnosticar a individuos nuevos enfermedades, as&iacute; como su estado y poder as&iacute; obtener mejores tratamientos.</p>
+<p>En general, este tipo de datos son complejos de analizar por aprendizaje autom&aacute;tico, ya que por lo general existen muy pocos individuos y muchos genes a tener en cuenta. Hay una historia, no demostrada todav&iacute;a, relacionada con las farmac&eacute;uticas que son quienes generan estos ficheros, dice que estas no dan todos los datos que tienen para esforzar a los investigadores a trabajar y luego cuando publican resultados, estas farmac&eacute;uticas los pueden comprobar con mucha m&aacute;s facilidad. Un lugar de donde se pueden conseguir matrices de expresi&oacute;n gen&eacute;tico es el archivo<a href="https://www.ebi.ac.uk/arrayexpress/"> ArrayExpress</a> mantenido por el European Bioinformatics Institute.</p>
+<h2>Vistazo a los datos</h2>
+<p>Para esta cr&oacute;nica neuronal, voy a usar <a href="https://www.cs.waikato.ac.nz/ml/weka/">Weka</a>, el software de aprendizaje autom&aacute;tico de la Universidad de Waikato (Nueva Zelanda). Es un programa hecho en Java que funciona en Windows, MacOS y Linux.</p>
+<p>En este caso, el fichero de datos del que parto ya est&aacute; en formato ARFF (el nativo de Weka, es similar a CSV pero hipervitaminado) y normalizados (escalado). Una inspecci&oacute;n r&aacute;pida nos hace ver que hay 7129 atributos diferentes, sin nombre, solo est&aacute;n numerados (son los genes). Hay una clase, de tipo binario: ALL y AML. Es decir, para cada paciente de leucemia se nos da su expresi&oacute;n gen&eacute;tica de 7129 genes y se nos da su tipo de leucemia real. Solo tenemos 72 pacientes para entrenar.</p>
+<p><img src="https://files.adrianistan.eu/WekaPre.png" alt="" /></p>
+<p>Vamos a usar validaci&oacute;n cruzada con 10 pliegues para el test de los modelos. Vamos a probar los siguientes algoritmos: J48, NaiveBayes, IBK1, Regresi&oacute;n Log&iacute;stica, Perceptr&oacute;n Multicapa con una capa oculta de 10 neuronas y SVM con kernel lineal.</p>
+<p>Si no has usado Weka antes, los pasos para realizar esto son realmente simples. Dir&iacute;gete a la pesta&ntilde;a "Classify". Una vez all&iacute; clica sobre "Choose" y elige el algoritmo de entre las diferentes carpetas.</p>
+<p><img src="https://files.adrianistan.eu/WekaSelect.png" alt="" /></p>
+<p>Si el algoritmo tuviese par&aacute;metros de ajuste, se har&iacute;a clic sobre el nombre del algoritmo en negrita una vez seleccionado.</p>
+<p><img src="https://files.adrianistan.eu/WekaOptions.png" alt="" /></p>
+<p>Pero en la gran mayor&iacute;a de los algoritmos usaremos los ajustes por defecto. Los resultados son los siguientes:</p>
+<table style="border-collapse: collapse; width: 100%;" border="1">
+<tbody>
+<tr>
+<td style="width: 50%;">Algoritmo</td>
+<td style="width: 50%;">Tasa de Acierto</td>
+</tr>
+<tr>
+<td style="width: 50%;">J48</td>
+<td style="width: 50%;">0.7916</td>
+</tr>
+<tr>
+<td style="width: 50%;">NaiveBayes</td>
+<td style="width: 50%;">0.9861</td>
+</tr>
+<tr>
+<td style="width: 50%;">IBK1</td>
+<td style="width: 50%;">0.8472</td>
+</tr>
+<tr>
+<td style="width: 50%;">Regresi&oacute;n Log&iacute;stica</td>
+<td style="width: 50%;">0.9027</td>
+</tr>
+<tr>
+<td style="width: 50%;">MLP (H10)</td>
+<td style="width: 50%;">0.9722</td>
+</tr>
+<tr>
+<td style="width: 50%;">SVM (lineal)</td>
+<td style="width: 50%;">0.9861</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<p>Los mejores resultados los obtienen SVM y NaiveBayes. Esto &uacute;ltimo nos puede decir que no hay muchos genes correlacionados, sino que son independientes entre s&iacute;. Regresi&oacute;n Log&iacute;stica y MLP han tardado considerablemente m&aacute;s que el resto.</p>
+<p>Ahora vamos a ver qu&eacute; atributos son m&aacute;s <strong>importantes</strong>. Es l&oacute;gico pensar que muchos de estos atributos (genes) son superfluos, y no afectan en el diagn&oacute;stico del tipo de leucemia.&nbsp;</p>
+<p>A continuaci&oacute;n vamos a analizar qu&eacute; genes son m&aacute;s relevantes para la tarea de construir un clasificador entre los tipos de leucemia.</p>
+<p>Para ello primero usaremos m&eacute;todos de&nbsp;<strong>filtrado</strong>.</p>
+<h2>Filtrado</h2>
+<p>Los m&eacute;todos de filtrado se basan en diferentes heur&iacute;sticas que nos permiten seleccionar un conjunto de atributos relevantes. La mayor&iacute;a de estas heur&iacute;sticas elaboran un r&aacute;nking, dentro de las cu&aacute;les podemos elegir el n&uacute;mero de atributos que queramos. Los algoritmos para el filtrado que vamos a probar son: Incertidumbre sim&eacute;trica, ReliefF, SVM recursivo y CfsSubset (este &uacute;ltimo no genera ranking).</p>
+<table width="100%" cellspacing="0" cellpadding="4">
+<tbody>
+<tr valign="top">
+<td width="50%">
+<p>Algoritmo</p>
+</td>
+<td width="50%">
+<p>Atributos (4)</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>Incertidumbre sim&eacute;trica</p>
+</td>
+<td width="50%">
+<p>0.74 1834 attribute1834</p>
+<p>0.74 4847 attribute4847</p>
+<p>0.737 1882 attribute1882</p>
+<p>0.734 3252 attribute3252</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>ReliefF</p>
+</td>
+<td width="50%">
+<p>0.26503581944 3252 attribute3252</p>
+<p>0.25909453333 4196 attribute4196</p>
+<p>0.21482608611 1779 attribute1779</p>
+<p>0.19528160278 4847 attribute4847</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>SVM</p>
+</td>
+<td width="50%">
+<p>7129 1882 attribute1882</p>
+<p>7128 1834 attribute1834</p>
+<p>7127 1779 attribute1779</p>
+<p>7126 1796 attribute1796</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>CfsSubset</p>
+</td>
+<td width="50%">
+<p>No se pudo calcular</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Si nos quedamos solo con cuatro atributos, los resultados son los siguientes. Estos resultados se obtienen en Weka en la pesta&ntilde;a de Selecci&oacute;n de Atributos. Eligiendo el algoritmo y un m&eacute;todo de b&uacute;squeda (Ranker, o en su defecto, GreedyStepwise).</p>
+<p><img src="https://files.adrianistan.eu/WekaSelectAttributes.png" alt="" width="1365" height="767" /></p>
+<p>Podemos repetir el procedimiento con 8, 16 y 32 atributos. No os voy a poner los atributos, pero s&iacute; vamos a ver como se comportan.</p>
+<p>Vemos que en general hay genes que se repiten entre m&eacute;todos, como el 1779 o el 4847. Estos genes pueden ser determinantes para diagnosticar los diferentes tipos de leucemia.</p>
+<table width="665" cellspacing="0" cellpadding="4">
+<tbody>
+<tr valign="top">
+<td width="105">
+<p>&nbsp;</p>
+</td>
+<td width="68">
+<p>J48</p>
+</td>
+<td width="87">
+<p>NaiveBayes</p>
+</td>
+<td width="87">
+<p>IBK1</p>
+</td>
+<td width="87">
+<p>Reg. Log</p>
+</td>
+<td width="87">
+<p>MLP (H10)</p>
+</td>
+<td width="86">
+<p>SVM (lineal)</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="105">
+<p>Incertidumbre sim&eacute;trica (4)</p>
+</td>
+<td width="68">
+<p>0.9027</p>
+</td>
+<td width="87">
+<p>0.9444</p>
+</td>
+<td width="87">
+<p>0.9166</p>
+</td>
+<td width="87">
+<p>0.9444</p>
+</td>
+<td width="87">
+<p>0.9305</p>
+</td>
+<td width="86">
+<p>0.9305</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="105">
+<p>Incertidumbre sim&eacute;trica (8)</p>
+</td>
+<td width="68">
+<p>0.8472</p>
+</td>
+<td width="87">
+<p>0.9444</p>
+</td>
+<td width="87">
+<p>0.9305</p>
+</td>
+<td width="87">
+<p>0.9444</p>
+</td>
+<td width="87">
+<p>0.9583</p>
+</td>
+<td width="86">
+<p>0.9305</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="105">
+<p>Incertidumbre sim&eacute;trica (16)</p>
+</td>
+<td width="68">
+<p>0.8472</p>
+</td>
+<td width="87">
+<p>0.9583</p>
+</td>
+<td width="87">
+<p>0.9583</p>
+</td>
+<td width="87">
+<p>0.9583</p>
+</td>
+<td width="87">
+<p>0.9861</p>
+</td>
+<td width="86">
+<p>0.9444</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="105">
+<p>Incertidumbre sim&eacute;trica (32)</p>
+</td>
+<td width="68">
+<p>0.8611</p>
+</td>
+<td width="87">
+<p>0.9583</p>
+</td>
+<td width="87">
+<p>0.9583</p>
+</td>
+<td width="87">
+<p>0.9583</p>
+</td>
+<td width="87">
+<p>0.9722</p>
+</td>
+<td width="86">
+<p>0.9722</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><br /><br /></p>
+<p>Con solo 4 atributos seleccionados por incertidumbre sim&eacute;trica, obtenemos muy buenos resultados con algunos m&eacute;todos: NaiveBayes y Regresi&oacute;n Log&iacute;stica.</p>
+<table width="100%" cellspacing="0" cellpadding="4">
+<tbody>
+<tr valign="top">
+<td width="14%">
+<p>&nbsp;</p>
+</td>
+<td width="14%">
+<p>J48</p>
+</td>
+<td width="14%">
+<p>NaiveBayes</p>
+</td>
+<td width="14%">
+<p>IBK1</p>
+</td>
+<td width="14%">
+<p>Reg. Log</p>
+</td>
+<td width="14%">
+<p>MLP (H10)</p>
+</td>
+<td width="14%">
+<p>SVM (lineal)</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>ReliefF (4)</p>
+</td>
+<td width="14%">
+<p>0.9166</p>
+</td>
+<td width="14%">
+<p>0.9166</p>
+</td>
+<td width="14%">
+<p>0.8888</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>ReliefF (8)</p>
+</td>
+<td width="14%">
+<p>0.8611</p>
+</td>
+<td width="14%">
+<p>0.9722</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.9027</p>
+</td>
+<td width="14%">
+<p>0.9305</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>ReliefF (16)</p>
+</td>
+<td width="14%">
+<p>0.8472</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.9305</p>
+</td>
+<td width="14%">
+<p>0.9305</p>
+</td>
+<td width="14%">
+<p>0.9305</p>
+</td>
+<td width="14%">
+<p>0.9722</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>ReliefF (32)</p>
+</td>
+<td width="14%">
+<p>0.8333</p>
+</td>
+<td width="14%">
+<p>0.9583</p>
+</td>
+<td width="14%">
+<p>0.9305</p>
+</td>
+<td width="14%">
+<p>0.9583</p>
+</td>
+<td width="14%">
+<p>0.9722</p>
+</td>
+<td width="14%">
+<p>0.9722</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><br /><br /></p>
+<p>En este caso con 4 y 32 atributos se obtienen resultados similares al m&eacute;todo anterior. No obstante, los algoritmos con buen desempe&ntilde;o son diferentes.</p>
+<table width="100%" cellspacing="0" cellpadding="4">
+<tbody>
+<tr valign="top">
+<td width="14%">
+<p>&nbsp;</p>
+</td>
+<td width="14%">
+<p>J48</p>
+</td>
+<td width="14%">
+<p>NaiveBayes</p>
+</td>
+<td width="14%">
+<p>IBK1</p>
+</td>
+<td width="14%">
+<p>Reg. Log.</p>
+</td>
+<td width="14%">
+<p>MLP (H10)</p>
+</td>
+<td width="14%">
+<p>SVM (lineal)</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>SVM (4)</p>
+</td>
+<td width="14%">
+<p>0.9166</p>
+</td>
+<td width="14%">
+<p>0.9722</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>SVM (8)</p>
+</td>
+<td width="14%">
+<p>0.9166</p>
+</td>
+<td width="14%">
+<p>0.9722</p>
+</td>
+<td width="14%">
+<p>0.9861</p>
+</td>
+<td width="14%">
+<p>0.9861</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>SVM (16)</p>
+</td>
+<td width="14%">
+<p>0.875</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>SVM (32)</p>
+</td>
+<td width="14%">
+<p>0.8472</p>
+</td>
+<td width="14%">
+<p>0.9861</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p><br /><br /></p>
+<p>La selecci&oacute;n por SVM es excelente, ya que con solo 4 genes, logra tasas de acierto del 100% en 4 m&eacute;todos diferentes. Seguramente estos 4 genes tengan la relaci&oacute;n m&aacute;s directa con la enfermedad.</p>
+<h2>Envoltorio</h2>
+<p>Otro m&eacute;todo de selecci&oacute;n de atributos es el m&eacute;todo del envoltorio. Aqu&iacute; se elige un algoritmo de clasificaci&oacute;n y seg&uacute;n su desempe&ntilde;o se van descartando atributos irrelevantes. Idealmente, el mismo algoritmo envuelto es el que luego se usa en clasificaci&oacute;n, pero aqu&iacute; probaremos todos con todos.</p>
+<table width="100%" cellspacing="0" cellpadding="4">
+<tbody>
+<tr valign="top">
+<td width="50%">
+<p>Algoritmo</p>
+</td>
+<td width="50%">
+<p>Atributos</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>J48</p>
+</td>
+<td width="50%">
+<p>Selected attributes: 4847 : 1</p>
+<p>attribute4847</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>NaiveBayes</p>
+</td>
+<td width="50%">
+<p>Selected attributes: 6,461,760,6615 : 4</p>
+<p>attribute6</p>
+<p>attribute461</p>
+<p>attribute760</p>
+<p>attribute6615</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>IBK1</p>
+</td>
+<td width="50%">
+<p>Selected attributes: 28,1834,3258,3549 : 4</p>
+<p>attribute28</p>
+<p>attribute1834</p>
+<p>attribute3258</p>
+<p>attribute3549</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>Reg. Log.</p>
+</td>
+<td width="50%">
+<p>Selected attributes: 202,1882,6049 : 3</p>
+<p>attribute202</p>
+<p>attribute1882</p>
+<p>attribute6049</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>MLP (H10)</p>
+</td>
+<td width="50%">
+<p>Selected attributes: 1796,1834,2288 : 3</p>
+<p>attribute1796</p>
+<p>attribute1834</p>
+<p>attribute2288</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="50%">
+<p>SVM (lineal)</p>
+</td>
+<td width="50%">
+<p>Selected attributes: 162,1796,2111,3252 : 4</p>
+<p>attribute162</p>
+<p>attribute1796</p>
+<p>attribute2111</p>
+<p>attribute3252</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>En general la mayor&iacute;a de envoltorios se decantan por 3 o 4 atributos, pero muchas veces diferentes. J48 se decanta por solo un &uacute;nico atributo.</p>
+<table width="100%" cellspacing="0" cellpadding="4">
+<tbody>
+<tr valign="top">
+<td width="14%">
+<p>&nbsp;</p>
+</td>
+<td width="14%">
+<p>J48</p>
+</td>
+<td width="14%">
+<p>NaiveBayes</p>
+</td>
+<td width="14%">
+<p>IBK1</p>
+</td>
+<td width="14%">
+<p>Reg. Log.</p>
+</td>
+<td width="14%">
+<p>MLP (H10)</p>
+</td>
+<td width="14%">
+<p>SVM (lineal)</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>WrapJ48</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.9305</p>
+</td>
+<td width="14%">
+<p>0.9166</p>
+</td>
+<td width="14%">
+<p>0.9305</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.8611</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>WrapNB</p>
+</td>
+<td width="14%">
+<p>0.9166</p>
+</td>
+<td width="14%">
+<p>0.9861</p>
+</td>
+<td width="14%">
+<p>0.8333</p>
+</td>
+<td width="14%">
+<p>0.9583</p>
+</td>
+<td width="14%">
+<p>0.9583</p>
+</td>
+<td width="14%">
+<p>0.8194</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>WrapIBK1</p>
+</td>
+<td width="14%">
+<p>0.8888</p>
+</td>
+<td width="14%">
+<p>0.9861</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.8888</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>WrapRegLog</p>
+</td>
+<td width="14%">
+<p>0.9583</p>
+</td>
+<td width="14%">
+<p>0.9861</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>1</p>
+</td>
+<td width="14%">
+<p>0.9722</p>
+</td>
+<td width="14%">
+<p>0.8333</p>
+</td>
+</tr>
+<tr valign="top">
+<td width="14%">
+<p>WrapSVM</p>
+</td>
+<td width="14%">
+<p>0.8888</p>
+</td>
+<td width="14%">
+<p>0.9305</p>
+</td>
+<td width="14%">
+<p>0.9166</p>
+</td>
+<td width="14%">
+<p>0.9444</p>
+</td>
+<td width="14%">
+<p>0.9861</p>
+</td>
+<td width="14%">
+<p>0.9722</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>En general el comportamiento es bueno con el m&eacute;todo que hizo de envoltorio, y peor en el resto. Sorprende MLP (H10) que logra resultados muy decentes con todas las selecciones y SVM, que da resultados muy mediocres salvo con su envoltorio.</p>
+<p>Si comparamos m&eacute;todos de filtro con m&eacute;todos de envoltorio, nos encontramos con que hemos visto m&eacute;todos de filtro muy superiores como SVM, si bien el m&eacute;todo de envoltorio con el mismo algoritmo en ambas etapas es tambi&eacute;n una opci&oacute;n muy interesante.</p>
+<p>Por norma general, los m&eacute;todos de envoltorio son mejores pero tambi&eacute;n mucho m&aacute;s costosos de ejecutar. Es por ello, que ante las selecciones de filtrado obtenidas antes, normalmente nos quedar&iacute;amos con esos atributos. En este caso, y por mera curiosidad, hemos continuado con los m&eacute;todos de envoltorio, mucho m&aacute;s lentos.</p>
+<p>Si tuvi&eacute;semos que construir un sistema hoy para detectar entre los tipos de leucemia, la opci&oacute;n ser&iacute;a eliminar atributos mediante SVM recursivo y construir el clasificador bien con SVM o con otro de los algoritmos que aciertan siempre, ya que no tenemos otros criterios todav&iacute;a para discernir.</p>
+<p>Espero que os haya gustado este episodio de Cr&oacute;nica Neuronal. En este caso, no he usado Python sino que he usado Weka, pero espero que aporte perspectiva y ayude a la gente a conocer por un lado los arrays de expresi&oacute;n gen&eacute;tica, y por otro, los algoritmos de selecci&oacute;n de atributos relevantes, sin entrar en el detalle de como funcionan.</p>
+<p>&nbsp;</p>

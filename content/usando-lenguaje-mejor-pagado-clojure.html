@@ -1,0 +1,115 @@
+<p>Hace unas semanas salieron <a href="https://survey.stackoverflow.co/2022/">los resultados de la encuesta de StackOverflow</a>. Se trata de una encuesta que puede rellenar cualquier programador, sea cuál sea su nivel (estudiante, junior, etc) y de ahí se pueden intentar sacar algunas conclusiones. Una de ellas es que el lenguaje más amado es Rust, mientras que los más odiados son el trío calavera de COBOL, Matlab y VBA.</p>
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/StackOverflowPays.png">
+</div>
+
+<p>No obstante, vivimos en un mundo capitalista y por ello, una pregunta muy interesante es, ¿con cuál cobraré más? La respuesta real sería compleja, ya que existen muchas empresas, con diferentes modelos de negocio, experiencia tanto técnica como en el dominio, saber moverse, país de trabajo, ... Pero StackOverflow, simplificando todo a un lenguaje de programación nos da dos respuestas claras a nivel mundial: Clojure ($106.644) y Erlang ( $103.000 ) (y ya, a más diferencia, F#).</p>
+
+<p>Erlang ya lo trataremos en otro momento. Así que vamos a probar Clojure y ver si podemos empezar a amasar billetes :)</p>
+
+<p>Lo primero es ver qué tipo de lenguaje es Clojure. Se trata de un lenguaje funcional de la familia Lisp, especialmente diseñado para ser interoperable con Java y demás lenguajes de la JVM. Es dinámico y prioriza un estilo de programación basado en el REPL. Además de Java, existe una variante llamada ClojureScript que compila a JavaScript.</p>
+
+<h2>Hola Mundo</h2>
+<p>Habrá que empezar <a href="https://blog.adrianistan.eu/problema-hello-world">un Hola Mundo como manda la tradición.</a></p>. Creamos una carpeta para el proyecto, a continuación creamos una carpeta src y dentro metemos un fichero llamado hello.clj. Su contenido es el siguiente:</p>
+<pre><code class="language-clojure">
+(ns hello)
+
+(defn run [opts]
+  (println "Hello world!"))
+</code></pre>
+
+<p>Básicamente estamos creando una función run que llama a println. Se trata de un lenguaje Lisp claramente, donde en cada paréntesis lo primero es la función y después van los argumentos. A parte de paréntesis tenemos otros símbolos como corchetes. Esto es porque ciertos tipos de datos como los vectores usan otros caracteres. Clojure es famoso por sus estructuras de datos inmutables, pero eficientes, así como la simpleza en la sintaxis de estas (listas con paréntesis, vectores con corchetes, maps con llaves, ...).</p>
+<p>Lo podemos ejecutar con:</p>
+<pre><code>
+clj -X hello/run
+</code></pre>
+<p>También podríamos haber generado un JAR como cualquier otro lenguaje de la JVM.</p>
+
+<h2>Una calculadora RPN</h2>
+<p>El ejemplo que he elegido para ver si me empiezan a llover billetes es una pequeña calculadora en <a href="https://www.glc.us.es/~jalonso/exercitium/notacion-polaca-inversa/">notación polaca inversa (RPN)</a>. Soportará solo las operaciones más básicas (suma, resta, multiplicación y división).</p>
+
+<p>Para ello vamos a coger una línea de entrada, vamos a dividir la línea por espacios y cada "palabra" la vamos a intentar reconocer, ya sea si es símbolo o si es un número. Para esto último hacemos la función <i>parse-token</i></p>
+<pre><code class="language-clojure">
+(defn parse-token [word]
+  (cond
+    (= word "+") :sum
+    (= word "-") :sub
+    (= word "*") :mul
+    (= word "/") :div
+    :else (try
+            (Integer/parseInt word)
+	    (catch Exception e (println (str "Input " word " ignored!")) nil))))
+</code></pre>
+<p>En esta función tenemos un argumento y un cond (similar a Switch pero con una expresión diferente en cada línea. Para los símbolos devolvemos un átomo que representa cada símbolo. Para los números llamamos a la clase de Java Integer y en concreton al método estático parseInt. Como este método puede devolver una excepción, la capturamos. Si el usuario introduce algo que no sabemos lo que es, se lo avisaremos y devolveremos nil.</p>
+
+<pre><code class="language-clojure">
+(defn exec-token [stack token]
+  (if (number? token)
+    (conj stack token)
+    (let [len (count stack)]
+      (if (> len 1)
+        (let [a (nth stack (- len 1))
+	      b (nth stack (- len 2))
+	      stack1 (pop (pop stack))]
+          (conj stack1
+            (case token
+              :sum (+ a b)
+	      :sub (- a b)
+	      :mul (* a b)
+	      :div (/ a b))))
+        (do
+	  (println (str "Not enough numbers in the stack to apply " token))
+	  stack)))))
+</code></pre>
+<p>La siguiente función que vamos a escribir es la que ejecuta un token. Esta función toma un stack inicial y un token, y devuelve un nuevo stack. Si el token es un número, simplemente se añade al stack. Si es un símbolo se comprueba que haya suficientes números en el stack para la operación, se obtienen los números y se aplican las operaciones según el átomo. Usamos case como un cond simplificado. conj nos permite añadir un elemento al final de un vector. pop nos elimina el último elemento de un vector. nth nos permite acceder a un elemento por su posición del vector. Al ser vectores y no listas, esta operación sí es rápida (en otros Lisp con listas por defecto, no sería tan sencillo).</p>
+
+<pre><code class="language-clojure">
+(defn calc-step [stack]
+  (print "=>")
+  (flush)
+  (if-let [line (read-line)]
+    (let [words (str/split line #" ")
+          tokens (filter some? (map parse-token words))
+          new-stack (reduce exec-token stack tokens)]
+      (println new-stack)
+      new-stack)
+    (System/exit 0)))
+
+
+(defn run [opts]
+  (println "Welcome to Clojure RPN")
+  (loop [stack []]
+    (recur (calc-step stack))))
+</code></pre>
+
+<p>Las últimas dos funciones son las que controlan el flujo. Una función run que se ejecuta en bucle indefinidamente (usamos loop y recur para optimizar la recursión) y una función calc-step que muestra la línea de pedir datos, lee los datos, si no hay datos se sale, y si los hay, obtiene las palabras, las tokeniza, filtra los nulos y finalmente ejecuta los tokens uno a uno para obtener un nuevo stack (lo hacemos con reduce), el cuál imprimimos y devolvemos.
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/ClojureRPN.png">
+</div>
+
+<pre><code>
+aarroyoc@adrianistan ~/d/b/clojure-rpn (master)> clj -X main/run
+Welcome to Clojure RPN
+=>12 13 + 2 *
+[50]
+=>12
+[50 12]
+=>/
+[6/25]
+=>1
+[6/25 1]
+=>+
+[31/25]
+=>hola
+Input hola ignored!
+[31/25]
+=>hola 12 13
+Input hola ignored!
+[31/25 12 13]
+=>+ +
+[656/25]
+=>
+</code></pre>
+<p>Con esto, hemos hecho un vistazo rápido por Clojure. No hemos podido entrar en las capacidades de concurrencia y STM que dispone el lenguaje, aunque si veo interés se puede buscar un ejemplo donde se vean ambos usos.</p>
+

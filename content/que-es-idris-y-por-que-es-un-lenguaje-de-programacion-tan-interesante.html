@@ -1,0 +1,121 @@
+<p><a href="https://www.idris-lang.org/">Idris</a> es un lenguaje de programación funcional donde los tipos tenían envidia de las funciones, de primer orden en un lenguaje funcional, y se convirtieron en elementos de primer orden también. Se trata de uno de los primeros lenguajes con soporte a tipos de primer orden. De esta forma podemos implementar <i>dependent types</i> y <i>quantitative types</i>, todo ello con una sintaxis muy limpia inspirada por Haskell. Quizá Idris no sea el próximo lenguaje que debas aprender, solo te lo recomendaría si estás suficientemente interesado, pero las cosas que propone pueden acabar llegando a otros lenguajes de programación en el futuro, y eso es lo verdaderamente interesante.</p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/Idris.png">
+</div>
+<p>La versión de Idris al momento de escribir esto es Idris2 0.2.1 y no se recomienda usar en nada serio. Idris está escrito en Idris y genera código nativo a través de Chez Scheme o Racket. También puede compilar a JavaScript. Sin embargo, vamos a ignorar como se instala, ya que al ser experimental, puede cambiar mucho. Si estáis interesados, decídmelo en los comentarios. Aquí nos vamos a fijar simplemente en como funciona.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IdrisCli.png">
+</div>
+<h2>Hola Mundo</h2>
+<p>Para no perder las costumbres empezaremos con el típico Hola Mundo en Idris.</p>
+<pre><code class="language-haskell">
+main : IO ()
+main = putStrLn "¡Hola mundo desde Idris!"
+</code></pre>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IdrisHelloWorld.png">
+</div>
+<p>Si conoces Haskell seguro que te resulta familiar el código (con una pequeña variación, : en vez de ::, es exactamente igual). Para los que no conozcan Haskell, la idea es muy simple. En la primera línea definimos una función main cuyo tipo es IO (), es decir, instrucciones para realizar entrada/salida. No toma ningún parámetro de entrada. En la segunda línea implementamos la función, llamamos a putStrLn que es una función compatible con IO () y que nos deja imprimir un texto por pantalla. En la foto se ve como se puede ejecutar el código desde el intérprete y desde el código nativo.</p>
+<p>Un ejemplo más avanzado sería el siguiente código, que obtiene datos de teclado:</p>
+<pre><code class="language-haskell">
+module Main
+
+main : IO ()
+main = do
+    putStr "¿Cuál es tu nombre?: "
+    x <- getLine
+    putStrLn ("¡Hola " ++ x ++ "!")
+</code></pre>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IdrisHelloInput.png">
+</div>
+<p>Al igual que en Haskell, cuando queremos combinar varias funciones que devuelven IO () (mónadas en general), combinadas con otras funciones si queremos, podemos usar la sintaxis do. Básicamente se convierte todo en una especie de función grande que combina en orden todas las llamadas a funciones que pongamos debajo. Usaremos el operador <- para obtener un valor de una función que devuelva una mónada (como IO ()), siempre dentro de la sintaxis do. En funciones que no son mónadas, podemos usar el operador let ... = </p>
+
+<p>Vamos a ver como se definen las funciones sin mónadas. En Idris es obligatorio marcar el tipado de la función, y a continuación la implementación. Los dependent types no se pueden inferir, por tanto deberemos escribirlos siempre. Los tipos de los argumentos se separan mediante -> y el último es el tipo del valor de retorno. Para llamar a una función se escribe su nombre y separado por espacios sus argumentos. Todas las funciones en Idris devuelven algo. Podemos usar if/else, pero a diferencia de otros lenguajes, el else es obligatorio, y ambas sentencias deben devolver un valor.</p>
+<p>Veamos un ejemplo con la función longer. Esta función nos devuelve la longitud de la cadena de texto más larga. La longitud de una cadena de texto se calcula mediante la función length.</p>
+<pre><code class="language-haskell">
+longer : String -> String -> Nat
+longer str1 str2
+	= let len1 = length str1
+	      len2 = length str2 in
+	  if len1 > len2 then len1 else len2
+</code></pre>
+<p>String es el tipo de las cadenas de texto, Nat el de los números naturales.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IdrisLonger.png">
+</div>
+<p>Tip: podemos usar :t en la consola para obtener el tipo de una función.</p>
+<p>Con esto espero que entiendas, de forma básica, la parte no-novedosa de Idris, antes de entrar en la parte innovadora.</p>
+<h2>Dependent Types</h2>
+<p>¿Qué es un dependent type? Un dependent type es un tipo que depende del valor concreto que traiga consigo para poder ser completo. El ejemplo más fácil de ver es con listas. En muchos lenguajes tenemos un tipo para listas dinámicas. En Idris también, se llama List. Con este tipo sabemos cuando hacemos una función que vamos a tener una lista de un tipo en concreto, pero podríamos ir más allá y expresar en el tipo la longitud de la lista. Esto no quiere decir que la lista esté fijada a un tamaño, sino que en un determinado momento el tamaño de una lista puede ser n, y al salir de la función debe ser n+1. Veamos un ejemplo</p>
+<pre><code class="language-haskell">
+module Main
+
+add : List Int -> Int -> List Int
+add list new = new :: list
+</code></pre>
+<p>La función add, toma una lista de enteros, un entero, y devuelve un entero. El código es muy simple, simplemente usa el operador :: para añadir un nuevo elemento enfrente de la lista, y devuelve la lista.</p>
+<p>Este código funciona, los tipos cuadran y el compilador no se queja. Sin embargo este código también funciona:</p>
+<pre><code class="language-haskell">
+module Main
+
+add : List Int -> Int -> List Int
+add list new = list
+</code></pre>
+<p>La filosofía detrás de Idris es que los tipos que usemos deben ser lo más precisos posible para reducir el número de bugs que pasan desapercibidos. Además, normalmente es más sencillo definir una relación de tipos que buscar una implementación que cumpla con ello.</p>
+<p>Este ejemplo tonto lo podríamos resolver con dependent types, usando Vect:</p>
+<pre><code class="language-haskell">
+module Main
+
+import Data.Vect
+
+addV : Vect n Int -> Int -> Vect (1+n) Int
+addV list new = new :: list
+</code></pre>
+<p>El tipo Vect se compone de la longitud de la lista y del tipo de la lista. Fíjate como en la lista de entrada la longitud de la lista es n, y en la lista de salida es 1+n. Realmente podemos introducir cualquier expresión que devuelva un número positivo (Nat) ahí, ya que, los tipos son elementos de primer orden, y como tal estos pueden ejecutar código, llamar a otras funciones, etc con tal de construir el tipo definitivo.</p>
+<p>Con este tipado, ya es imposible cometer el fallo de antes:</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IdrisDependentTypes.png">
+</div>
+<p>Fíjate como en el código que he intentado compilar, ambas implementaciones son iguales, pero solo la que usa Vect falla al compilar.</p>
+<p>Hemos dicho que los tipos pueden llamar a funciones que definan los tipos, ya que los tipos son elementos de primer orden. Veamos un ejemplo:</p>
+<p>Imagina que tenemos código para manipular sobre posiciones GPS. Estas son solamente una tupla de números decimales, la latitud y la longitud.</p>
+<pre><code class="language-haskell">
+module Main
+
+getHomePlace : (Double, Double)
+getHomePlace = (42.0, -4.0)
+</code></pre>
+<p>Esto sería totalmente válido, pero ¿podríamos hacer una función que nos devolviese (Double, Double) directamente? Por supuesto, ya que las funciones pueden devolver el tipo maestro Type. Estas funciones se suelen empezar por mayúsculas a diferencia de las demás.</p>
+<pre><code class="language-haskell">
+module Main
+
+Position : Type
+Position = (Double, Double)
+
+getHomePlace : Position
+getHomePlace = (42.0, -4.0)
+
+sumPositions : Position -> Position -> Position
+sumPositions (x1, y1) (x2, y2) = (x1 + x2, y1 + y2)
+</code></pre>
+<p>Pero esto solo es una parte de las posibilidades que nos abren los tipos dependientes. Otra cosa que podemos hacer es funciones con argumentos ilimitados, ya que el tipo se genera en función de lo que se encuentra el compilador. Sin entrar en muchos detalles, este código genera una función el cual el primer argumento es el número de argumentos que vas a sumar. Luego una primera variable (la cero) y luego tantos argumentos como hayamos indicado. Si algo falla, el código no compilará</p>
+<pre><code class="language-haskell">
+module Main
+
+AdderType : Nat -> Type
+AdderType Z = Int
+AdderType (S k) = Int -> AdderType k
+
+sumar : (numargs: Nat) -> Int -> AdderType numargs
+sumar Z acc = acc
+sumar (S k) acc = \next => sumar k (next + acc)
+</code></pre>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IdrisSumar.png">
+</div>
+<p>Con un poco más de trabajo pueden llegar a implementarse funciones como printf, con argumentos variables dependientes de una cadena de texto, de forma totalmente tipada.</p>
+<h2>Esto no es todo</h2>
+<p>Ya hemos visto bastante cosas interesantes. Esto no pretende ser un tutorial sobre Idris, que es un lenguaje grande, sino una introducción a alguna de las cosas novedosas que trae. En Idris 2 se han añadido los quantitative types, que viene a ser como representar mediante tipos las veces que se puede usar un valor. Por ejemplo, si tenemos una función que toma un valor cuyo tipo dice que solo se puede usar una vez, y lo usamos, ya no podremos usarlo más adelante, muy útil para, por ejemplo, gestionar ficheros o sockets.</p>
+<p>Si queréis saber más sobre Idris, visitad su página y/o leed el libro <i>Type Driven Development with Idris</i>, que explica de forma muy didáctica el lenguaje.</p>
+

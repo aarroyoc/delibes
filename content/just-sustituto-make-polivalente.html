@@ -1,0 +1,285 @@
+<p>Make es una herramienta común en los entornos UNIX. Se trata de una herramienta originalmente diseñada como un sistema de construcción de programas, principalmente en C, aunque lo suficientemente flexible para adaptarse a cualquier otro entorno. Y ese es uno de sus problemas, aunque sea muy poderoso, está pensado principalmente para construir programas y existen multitud de variantes (no es lo mismo GNU Make que BSD Make). Muchas veces no queremos eso, si no un command runner, donde tenemos comandos con dependencias entre ellos. Aunque Make soporta esto mediante targets PHONY, <a href="https://just.systems">Just</a> está diseñado desde el principio para esto.</p>
+
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/Just.png">
+</div>
+
+<h2>Justfile</h2>
+<p>Si en Make el punto de entrada es un Makefile, en Just es un Justfile. Cada recipe tiene un nombre y se compone de N comandos. Los comandos se imprimen por pantalla antes de ser ejecutados salvo que se inicien con @. También podemos poner @ delante del nombre del recipe para aplicar a todos los comandos. En sistemas UNIX los comandos son comandos de SH por defecto aunque es posible cambiar a otros lenguajes como Python y JavaScript. En Windows salvo que tengamos algún tipo de Bash instalado seguramente tengamos que recurrir a PowerShell.</p>
+<p>Los recipes se pueden listar con <i>just -l</i> y ejecutar con <i>just NOMBRE_TARGET</i>. Si no especificamos ningún recipe se ejecutará el primero del fichero.</p>
+
+<pre><code>
+hello:
+	echo "Hello"
+bye:
+	@echo "Bye"
+</code></pre>
+<p>Con ese fichero justfile, las siguientes interacciones tienen lugar</p>
+<pre><code>
+aarroyoc@adrianistan ~/d/b/just (master)> just -l
+Available recipes:
+    bye
+    hello
+aarroyoc@adrianistan ~/d/b/just (master)> just
+echo "Hello"
+Hello
+aarroyoc@adrianistan ~/d/b/just (master)> just hello
+echo "Hello"
+Hello
+aarroyoc@adrianistan ~/d/b/just (master)> just bye
+Bye
+</code></pre>
+<p>Cada recipe puede tener dependencia en uno o más recipes.</p>
+<pre><code>
+hello: world
+	echo "Hello"
+bye:
+	@echo "Bye"
+world:
+	echo "World"
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just hello
+echo "World"
+World
+echo "Hello"
+Hello
+</code></pre>
+<p>Podemos crear alias dentro de un fichero justfile.</p>
+<pre><code>
+alias h := hello
+
+hello: world
+	echo "Hello"
+bye:
+	@echo "Bye"
+@world:
+	echo "World"
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master) [1]> just -l
+Available recipes:
+    bye
+    hello
+    h     # alias for `hello`
+    world
+aarroyoc@adrianistan ~/d/b/just (master)> just h
+World
+echo "Hello"
+Hello
+</code></pre>
+<p>Los recipes pueden tener argumentos. Y podemos definir variables.</p>
+<pre><code>
+name := "Adrián"
+
+@say word:
+	echo {{ word }}
+        echo {{ name }}
+---
+aarroyoc@adrianistan ~/d/b/just (master)> just say Hola
+Hola
+Adrián
+</code></pre>
+<p>Los comentarios (con #) encima de un recipe son comentarios de documentación que aparecen en <i>just -l</i>.</p>
+<pre><code>
+name := "Adrián"
+
+# Write a text and add author
+@say word:
+	echo {{ word }}
+	echo {{ name }}
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just -l
+Available recipes:
+    say word # Write a text and add author
+</code></pre>
+<p>Just soporta cargar variables desde ficheros <i>.env</i>. Para ello hay que añadir la directiva: <i>set dotenv-load</i>. Por ejemplo:</p>
+<pre><code>
+DATABASE_PORT=1337
+
+---
+
+set dotenv-load
+name := "Adrián"
+
+# Write a text and add author
+@say word:
+	echo {{ word }}
+	echo {{ name }}
+	echo $DATABASE_PORT
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just say Hola
+Hola
+Adrián
+1337
+</code></pre>
+<p>Por defecto en Just un comando fallido hace fallar el recipe. Si queremos que no ocurra, podemos añadir un - delante del comando. Las variables en Just soportan el operador / para trabajar con paths.</p>
+<pre><code>
+file := "a" / "b"
+
+read-file:
+	-cat {{ file }}
+	echo "Done!"
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just
+cat a/b
+cat: a/b: No existe el fichero o el directorio
+echo "Done!"
+Done!
+</code></pre>
+<p>Just viene equipado con una serie de funciones predefinidas detalladas en <a href="https://just.systems/man/en/chapter_30.html">su manual</a>. Una de las más interesantes son <i>env_var</i> y <i>env_var_or_default</i>.</p>
+<pre><code>
+home := env_var("HOME")
+timezone := env_var_or_default("TIMEZONE", "UTC")
+
+foo:
+	echo {{ home }}
+	echo {{ timezone }}
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just
+echo /home/aarroyoc
+/home/aarroyoc
+echo UTC
+UTC
+</code></pre>
+<p>Los recipes pueden tener atributos que modifican su funcionamiento. Existen <i>[linux], [macos], [unix], [windows], ...</i> para que esa recipe solo se ejecute en un determinado sistema operativo.</p>
+<p>Podemos guardar el resultado de un comando en una variable.</p>
+<pre>code>
+system := `uname -r`
+
+[linux]
+foo:
+	echo "Linux "{{ system }}
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just
+echo "Linux "6.2.12-arch1-1
+Linux 6.2.12-arch1-1
+</code></pre>
+<p>Just soporta condicionales de tipo if/else. Así mismo dentro de un if podemos comprobar mediante Regex. Podemos lanzar errores con la función <i>error</i>.</p>
+<pre><code>
+distro_id := `lsb_release -i`
+package_manager := if distro_id =~ "Arch" { "pacman" } else { error("System not supported") }
+
+[linux]
+@foo:
+	echo "Package manager: "{{ package_manager }}
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just
+Package manager: pacman
+</code></pre>
+<p>Las variables que creamos en Just se pueden sobreescribir desde la invocación externa.</p>
+
+<pre><code>
+year := "2023"
+month := "1"
+
+show:
+	cal {{ month }} {{ year }}
+---
+aarroyoc@adrianistan ~/d/b/just (master)> just
+cal 1 2023
+     enero 2023     
+lu ma mi ju vi sá do
+                   1
+ 2  3  4  5  6  7  8
+ 9 10 11 12 13 14 15
+16 17 18 19 20 21 22
+23 24 25 26 27 28 29
+30 31               
+aarroyoc@adrianistan ~/d/b/just (master)> just year=1990
+cal 1 1990
+     enero 1990     
+lu ma mi ju vi sá do
+ 1  2  3  4  5  6  7
+ 8  9 10 11 12 13 14
+15 16 17 18 19 20 21
+22 23 24 25 26 27 28
+29 30 31   
+</code></pre>
+<p>Podemos exportar variables para los comandos que se van a ejecutar con Just con export  (aplica a todo el fichero) o con $ (aplica solo a la recipe).</p>
+<pre><code>
+export ENVVAR := "hello"
+
+default:
+	echo $ENVVAR
+
+override $ENVVAR="bye":
+    echo $ENVVAR
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just
+echo $ENVVAR
+hello
+aarroyoc@adrianistan ~/d/b/just (master)> just override
+echo $ENVVAR
+bye
+</code></pre>
+
+<p>Finalmente acabamos con un ejemplo del manual donde podemos ver como ejecutar comandos en diferentes lenguajes.</p>
+<pre><code>
+polyglot: python js perl sh ruby nu
+
+python:
+  #!/usr/bin/env python3
+  print('Hello from python!')
+
+js:
+  #!/usr/bin/env node
+  console.log('Greetings from JavaScript!')
+
+perl:
+  #!/usr/bin/env perl
+  print "Larry Wall says Hi!\n";
+
+sh:
+  #!/usr/bin/env sh
+  hello='Yo'
+  echo "$hello from a shell script!"
+
+nu:
+  #!/usr/bin/env nu
+  let hello = 'Hola'
+  echo $"($hello) from a nushell script!"
+
+ruby:
+  #!/usr/bin/env ruby
+  puts "Hello from ruby!"
+
+---
+
+$ just polyglot
+Hello from python!
+Greetings from JavaScript!
+Larry Wall says Hi!
+Yo from a shell script!
+Hola from a nushell script!
+Hello from ruby!
+</code></pre>
+<p>¡Podemos incluso ejecutar Emacs Lisp!</p>
+<pre><code>
+emacs:
+  #!/usr/bin/env -S emacs --script
+  (princ "Hello World from Emacs Lisp\n")
+
+---
+
+aarroyoc@adrianistan ~/d/b/just (master)> just emacs
+Hello World from Emacs Lisp
+</code></pre>
+
+<p>¿Y tú? ¿Qué opinas de Just? ¿Crees que es una herramienta interesante?</p>

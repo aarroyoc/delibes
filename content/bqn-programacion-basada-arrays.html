@@ -1,0 +1,187 @@
+<p>Hoy vamos a ver un lenguaje de programación reciente pero con raíces en los años 60. Si has leído el título, se trata de <a href="https://mlochbaum.github.io/BQN/index.html">BQN</a>. Un lenguaje orientado a arrays. Dirás: "pero Adrián, prácticamente todos los lenguajes tienen arrays" y es cierto. Pero este lenguaje lo lleva a otro nivel. Además el lenguaje destaca por usar multitud de símbolos fuera del estándar ASCII, lo que dificulta un poco el aprendizaje. A mí me gusta ver BQN como una calculadora hipervitaminada.</p>
+
+<div style="text-align:center">
+<img width="300" src="https://files.adrianistan.eu/BQN_logo.png">
+</div>
+
+<h2>Historia</h2>
+<p>BQN es un lenguaje que desciende de APL. APL (A Programming Language) fue un lenguaje diseñado por Kenneth Iverson en 1962 para IBM. La idea era basarse en la notación matemática. De esta forma APL tiene una sintaxis especialmente breve y tersa y tiene muchas facilidades para trabajar con matrices.</p>
+<p>APL también usaba símbolos fuera de ASCII (hay que tener en cuenta que la primera versión de ASCII es ya en 1963, un año más tarde) y era necesario usar teclados especiales. Con el tiempo surgió una variante llamada J que, entre otras cosas, no usa símbolos fuera de ASCII. Otro descendiente notable de APL es K. K es un lenguaje de código cerrado usado con cierto éxito en distintos campos como las finanzas o la Fórmula 1 (de hecho la empresa de K patrocina al equipo Alpine). K se suele usar de forma conjunta a la base de datos kdb.</p>
+
+<p>Por último, BQN es un intento de revitalizar APL, mejorando los aspectos más "anticuados" pero manteniendo la esencia. Además la principal implementación es open source y con un rendimiento prometedor</p>
+
+<h2>Primeros pasos</h2>
+<p>A diferencia de otros lenguajes, aquí vamos a tener que empezar por como escribir los caracteres. Esta tabla te servirá de referencia</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/BQNKeyMap.png">
+</div>
+
+<p>Si instalas <a href="https://github.com/dzaima/CBQN">CBQN</a> al ejecutar el comando <i>bqn</i> tendrás acceso a un REPL donde podrás escribir los caracteres especiales introduciendo la barra invertida seguida de el caracter a la izquierda de la siguiente tabla. Es decir, si quiero introducir el círculo pequeño debería escribir \ y después la letra j minúscula.</p>
+<p>Existen plugins para diferentes editores (yo uso el de Emacs) que permiten escribir de la misma forma los programas más largos.</p>
+<p>En la tabla se ve que no todos los caracteres tienen los mismos colores, esto es porque son cosas diferentes en el lenguaje. Los verdes son funciones, los amarillos son 2-modificadores, los morados son 1-modificadores y lo negro son sujetos. Lo veremos a su debido tiempo.</p>
+
+<p>Vamos ahora a escribir el código más simple que podemos hacer. Usar la función × para multiplicar números.</p>
+<pre><code class="language-apl">
+    3 × 4
+12
+</code></pre>
+<p>Bastante simple. En verdad, la función × soporta un uso más simple, con un solo número.</p>
+<pre><code class="language-apl">
+   × ¯1
+¯1
+   × 3
+1
+</code></pre>
+<p>En este caso en vez de hacer la multiplicación, ejecuta la función signo. Esto ocurre porque en BQN las funciones pueden ser monádicas o diádicas. Es decir, con un argumento o con dos. Solo existen esas dos opciones. Y muchos símbolos ejecutan cosas bastantes diferentes dependiendo de si son llamadas de forma monádica o diádica.</p>
+
+<p>Otro ejemplo, √ de forma monádica será la raíz cuadrada de un número. De forma diádica será la raíz N de un número.</p>
+<pre><code class="language-apl">
+   √25 
+5
+   3√25 
+2.924017738212866
+</code></pre>
+<p>Como veis, tampoco es necesario dejar un espacio entre función y argumentos.</p>
+<h2>Orden de evaluación</h2>
+<p>El orden de evaluación de las funciones es algo que normalmente se da por sentado en la mayoría de lenguajes. Sin embargo en BQN merece la pena detenerse puesto que las funciones aritméticas no cumplen las reglas matemáticas tradicionales. En BQN todas las funciones se tratan de la misma forma y se evalúan de derecha a izquierda. Podemos introducir paréntesis para cambiar el orden de evaluación.</p>
+
+<pre><code class="language-apl">
+   2×2+2
+8
+   (2×2)+2
+6
+</code></pre>
+
+<h2>Modificadores</h2>
+<p>Los modificadores afectan al comportamiento de las funciones. Por ejemplo, existe un 1-modificador, llamado ˜ que tiene dos funciones. Aplicada a una función monádica, repite el argumento de la parte derecha en la parte izquierda y llama a la función diádica correspondiente. Aplicada a una función diádica, cambia el orden de los argumentos. Veamos algunos ejemplos:</p>
+<pre><code class="language-apl">
+   ×˜5
+25
+   0 - 40
+¯40
+   0-˜40
+40
+</code></pre>
+<p>En el primer caso el modificador repite el número 5 al lado izquierdo de modo que se hace la operación 5x5. En el segundo y tercer caso vemos el caso de los argumentos intercambiados.</p>
+
+<p>Veamos un ejemplo de 2-modificador. Podemos usar el círculo pequeño para aplicar composición de funciones. Es decir, se va a ejecutar primero la función diádica de la derecha, con dos argumentos y posteriormente el resultado se pasa a una función monádica de la izquierda.</p>
+
+<pre><code class="language-apl">
+   2 -∘× 5
+¯10
+</code></pre>
+<p>En este caso primero se realiza 5*2 y luego se convierte en negativo el resultado.</p>
+
+<h2>Arrays</h2>
+<p>Hemos dicho que BQN era un lenguaje orientado a arrays pero todavía no los hemos presentado. Vamos a empezar con arrays unidimensionales, llamados listas.</p>
+
+<p>Existen dos sintaxis para listas:</p>
+<pre><code class="language-apl">
+   ⟨1, 2, 3⟩
+⟨ 1 2 3 ⟩
+   1‿2‿3
+⟨ 1 2 3 ⟩
+</code></pre>
+<p>Las listas funcionan como los números para la mayoría de funciones.</p>
+<pre><code class="language-apl">
+   ⟨1, 2, 3⟩ × 2
+⟨ 2 4 6 ⟩
+   ⟨1,2,3⟩ × ⟨1,2,3⟩
+⟨ 1 4 9 ⟩
+</code></pre>
+<p>Vamos a introducir algunas funciones específicas para trabajar con listas: ⋈ ∾ ⌽</p>
+<p>⋈ de forma monádica crea una lista con un elemento, con dos crea una lista de elementos.</p>
+<p>∾ une dos listas</p>
+<p>⌽ con un argumento invierte la lista y con dos argumentos rota la lista N posiciones</p>
+<pre><code class="language-apl">
+   ⋈ 1
+⟨ 1 ⟩
+   ⋈ 42
+⟨ 42 ⟩
+   12 ⋈ 42
+⟨ 12 42 ⟩
+   1‿2 ∾ 3‿4
+⟨ 1 2 3 4 ⟩
+   ⌽ 1‿2‿3‿4
+⟨ 4 3 2 1 ⟩
+   2 ⌽ 1‿2‿3‿4
+⟨ 3 4 1 2 ⟩
+</code></pre>
+<p>Existen modificadores específicos para listas: ¨ aplica la función a cada elemento. Similar a un map de programación funcional. ´ aplica la función de forma iterativa para obtener un único valor. En ese sentido es similar a un foldl o reduce de programación funcional.</p>
+<pre><code class="language-apl">
+   ⌽ ¨ "abcd"‿"ABCDEF"‿"01"
+⟨ "dcba" "FEDCBA" "10" ⟩
+   +´ ⟨50, 60, 70⟩
+180
+   ⋈¨ 1‿2‿3
+⟨ ⟨ 1 ⟩ ⟨ 2 ⟩ ⟨ 3 ⟩ ⟩
+   "ABC" ⋈¨ "abc"
+⟨ "Aa" "Bb" "Cc" ⟩
+</code></pre>
+
+<h2>Programación tácita</h2>
+<p>Un estilo de programación que BQN promueve es la programación tácita. La idea es programar con el menor número posible de variables (que de hecho no hemos explicado). Para que esto pueda funcionar tenemos que añadir más modificadores que permitan expresar más patrones, los combinadores.</p>
+<p>El primer combinador ya lo hemos usado, el círculo pequeño. Ahora veremos el círculo grande, ○. La diferencia entre el círculo pequeño y el grande es que el pequeño aplica la función diádica con dos argumentos y el resultado se pasa a la función monádica mientras que el grande aplica una función monádica a los argumentos y luego aplica una función diádica al resultado.</p>
+<p>Por ejemplo, ≠ como función monádica devuelve la longitud de la lista y = como función monádica si son iguales. Para comparar si dos listas tienen la misma longitud:</p>
+<pre><code class="language-apl">
+   1‿2‿3 =○≠ 1‿2‿3
+1
+   1‿2‿3 =○≠ 1‿2‿3‿4
+0
+</code></pre>
+<p>Además tenemos los combinadores Before y After. Estos aplican una función de preprocesado hacia tanto al argumento izquierdo y al argumento derecho.</p>
+<p>En esta imagen vemos los combinadores más importantes y como funcionan.</p>
+<div style="text-align:center">
+<img width="500" src="https://files.adrianistan.eu/BQNCombinators.png">
+</div>
+<h2>Variables</h2>
+<p>Las variables se declaran con el operador ←. Las variables según la nomenclatura con la que se llama pueden actuar como sujetos, funciones, 1-modificares y 2-modificadores.</p>
+<pre><code class="language-apl">
+   msg ← "Hola"
+"Hola"
+   msg ∾ " Mundo"
+"Hola Mundo"
+   Msg
+"Hola"
+</code></pre>
+<p>Las variables se pueden modificar con ↩.</p>
+<pre><code class="language-apl">
+   msg ← "Hola"
+"Hola"
+   msg ∾⟜"Mundo"↩
+"HolaMundo"
+</code></pre>
+<h2>Ejemplo real</h2>
+<p>Vamos a ver como resolver el ejercicio del día 1 del Advent of Code de 2022. Lo primero que se nos pide es entre cada bloque de número, hacer las sumas de los bloques y obtener el máximo. La segunda parte es coger los 3 máximos y sumarlo. Primero veamos el código que he programado:</p>
+<pre><code class="language-apl">
+data ← •Import "sample.bqn"
+solution1 ← ⊑∨+´¨ data
+solution2 ← +´3⊸↑∨+´¨ data
+•Show solution1 ⋈ solution2
+</code></pre>
+<p>Me he tomado la licencia de adaptar el fichero original para que ya esté directamente con listas sin tener que procesar el texto en BQN.</p>
+<pre><code>
+⟨
+⟨
+1000,
+2000,
+3000,
+⟩,⟨
+4000,
+⟩,⟨
+5000,
+6000,
+⟩,⟨
+7000,
+8000,
+9000,
+⟩,⟨
+10000,
+⟩
+⟩
+</code></pre>
+<p>Hay algunas funciones extra que no he comentado. ⊑ en modo monádico coge el primer elemento de la lista. ∨ ordena la lista. ↑ coge los N primeros elementos de una lista. De esta forma, de forma super breve, hemos resuelto el problema.</p> 
+
+
+<p>Con esto concluimos esta introducción a un lenguaje completamente diferente, BQN. Nos hemos dejado muchas cosas en el tintero. Yo mismo me sigo considerando novato en este paradigma que espero que os haya despertado la curiosidad.</p>

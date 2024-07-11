@@ -1,0 +1,215 @@
+<p>This is a continuation <a href="/scryer-prolog-meetup-2023-notes">of the previous post</a>. In this post, we'll see the talks that happened on day 2.</p>
+
+<div style="text-align:center">
+<img width="400" src="https://files.adrianistan.eu/IMG_20231110_145516.jpg">
+</div>
+
+<h2>Verifying safety properties in dose escalation trial design with Prolog - David C. Norris</h2>
+<p>David Norris works in medical research. In particular, he works on finding the right amount of a new drug for patients. This was a joint work with Markus Triska.</p>
+<p>When new drugs are introduced in oncology a dose-finding trial is needed with humans. They need to be done with unhealthy patients because they're too toxic. Also, we can't repeat the experiments with the same patients as the use of the drug modifies the condition of the patient itself.</p>
+<p>Both purposes: therapeutic for patients where actual drugs are not working, and scientifically to learn about the correct doses. After 4 weeks, a binary decision. Have we reached Dose-Limiting Toxicity? (DLT)</p>
+<p><i>Only the dose makes the poison</i> - Paracelsus</p>
+<p>Scientists like to use the 3+3 method. A simple but underspecified method for dose escalation. Difficult to find a precise description. We can find papers with errors implementing the method.</p>
+<p>He implemented a trial workflow with DCGs. Also using constraints. It can generate all possible paths for a trial. With all paths, we can calculate exact properties without Monte Carlo statistical errors... EscRisk app. precautionary package (available for R)</p>
+<div style="text-align:center">
+<img width="400" src="https://files.adrianistan.eu/IMG_20231110_105516.jpg">
+</div>
+<p>Problems with this first version: not generalizable, lacks depth (doesn't explain previous trials)</p>
+<p>Rewrote it to be more general and start from the point of view of making decisions incrementally and how many patients regret taking that dose</p>
+<p>Use of reified predicates for decision making. Are they infeasible? Are they regrettable?</p>
+<p>After we have this, and a DCG for running and generating paths. We can verify the safety properties of (all) trials and their recommended dose. Backward and forward reasoning thanks to monotonic constraints enables in <code>clpz</code>.</p>
+<p>There's a problem with trial design in 3+3. Patients need to wait for other patients to reach the same status to proceed. Wasting time is not optimal. They added extra predicates to allow cohorts of size less than 3.</p>
+<p>Current studies show a lot of fine print when doing 3+3 trials. But David can trust his results without needing fine print thanks to LP and the abstractions available in Scryer.</p>
+<p>Q&A: A main concern was to model every possible case and not lose any correct solution. So we used clpz, reif, ... But reviewers complained that it (proving there are no mistakes) was slow. Different priorities :)</p>
+<p>When declaring reified predicates, it's recommended to add _t to mark it's a reified predicate</p>
+
+<h2>Meta-predicates for the answer constraint semantics and constraint-based modelling in Prolog - Dr. François Fage</h2>
+<p>He started doing Prolog with an internship about unification in equational theories by Term Rewriting Systems in Prolog I.</p>
+<p>Later worked on unification of finite and infinite terms (meet Prolog II team!)</p>
+<p>Reactive programming with condition-action rules: ASP and semantics of Prolog with negation</p>
+<p>Developed Meta(F) finite domain constraint library using <code>freeze/frozen/setarg</code></p>
+<p>Polymorphic subtyping with Prolog using CHR</p>
+<p>Developed at INRIA a biological system with 2 languages and 4 semantics at the same time</p>
+
+<div style="text-align:center">
+<img width="400" src="https://files.adrianistan.eu/IMG_20231110_111317.jpg">
+</div>
+
+<p>But he talks about teaching Prolog. Several courses on CLP at École Polytechnique some years ago. But now resumed teaching Prolog. For the subject Constraint-Based Modeling & Algorithms for Decision-Making</p>
+
+
+<p>They first used MiniZinc for modeling + Python for toy solvers</p>
+<ul>
+<li>Pro: MiniZinc is a declarative language with mathematical variables and constraints</li>
+<li>Pro: Very efficient solvers. MiniZinc is designed independent of the solvers.</p>
+<li>Con: Difficult to debug (multiple transformations, black-box solver)</li>
+<li>Con: It only supports solutions, you can't get constraint answers like Prolog</li>
+<li>Con: No way to manually do search, you can only set some options that are send to the solvers</li>
+<li>Con: Had to use Python for toy solvers. A different language.</li>
+</ul>
+
+<p>So, they moved to Prolog in 2023.</p>
+<ul>
+<li>same language for modeling and programming</li>
+<li>libraries written in Prolog -> good error messages and better debugging</li>
+<li>constraint answers</li>
+<li>we can program search, do meta-interpreters</li>
+</ul>
+
+<p>Some abstractions are not as nice: lots of focus on recursion and list-oriented constructs, no indexed mathematical variables.</p>
+<p>Some Prolog metapredicates were defined before constraints and they have bugs or the way the work is not specified.</p>
+<p>Some terminology is inherited and may not be the best one today</p>
+
+<p>Some examples cited:</p>
+<p>Bug in <code>frozen/2</code> in SWI so they had to implement constraints using attr var</p>
+<p>Abstractions like foreach loops lose constraints! Maybe add an error if you try to use it with attr var to signal it is not intended to work with it.</p>
+<p>Predicates like <code>bagof/3</code> duplicate constraints (both SWI and Scryer). Should we fix <code>bagof/3</code>, fix <code>clpz</code> or create a correct <code>list_of</code> predicate? Some systems like CHR and SMT simplify their constraints but clpz does not.</p>
+
+<p>So, he developed a for_all library to express loops in a more declarative way using a DSL.</p> <p>Introduces also a let predicate to allow functional expressions inside but 
+it would be nice to have a mechanism to define functions in Prolog without needing an aux predicate.</p>
+<p>He also developed an array library compatible with the for_all library.</p>
+
+<p>He also developed a MiniZinc library which is a MiniZinc parser but solves the problem in Prolog -> useful for debugging.</p>
+
+<p>In the Q&A section, it was debated that maybe the missing key abstraction in Prolog are List Comprehensions.</p>
+
+<h2>Prolog for Verification, Analysis and Transformation tools - Prof. Dr. Michael Leuschel</h2>
+<p>He didn't like Prolog at the beginning. However now we uses Prolog in ProB, a validation tool for high level specs. Like B, Z, Event-B, TLA+, Alloy, CSP, XTL (Prolog). Used in the industry.</p>
+
+<p>B is a language based on set theory. You can execute ProB in a Jupyter notebook.</p>
+
+<p>B uses Unicode symbols. Problems like Send More Money and N-Queens can be solved in B with intersections, set comprehensions, existential operators, etc</p>
+
+<p>There's also a UI and models can run in real-time</p>
+
+<p>Lots of industrial users in train systems.</p>
+
+<p>He uses different ways of interfacing with other languages: C FFI API for Z3, ZeroMQ and sockets for Java UI, Java B code parser, ... Linda (SICSstus) was much slower than ZeroMQ.</p>
+
+<p>They use coroutines extensively: <code>freeze/2</code>, <code>when/2</code> and <code>block</code> declarations (SICStus). Blocks are less expressive than when but faster and less intrusive.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IMG_20231110_130036.jpg" width="400">
+</div>
+
+<p>They're important to implement determinism first propagation (first solve deterministic stuff to reduce search space). Solvers combined via reification.</p>
+
+<p>Process Algebras CSP (Tony Hoare) can be applied to Prolog very closely to formal language.</p>
+
+<p>B requires Type Inference and it's easily encoded in Prolog.</p>
+
+<p>B requires classical negation, not negation as failure. He implements constructive negation by having two interpreters, one for finding solutions, other for finding counter examples.</p>
+
+<p>He showed a comparison between Java and Prolog in TLA+ Translators. Prolog code is much shorter and readable than the equivalent Java code.</p>
+
+<p>Why not Prolog?</p>
+<ul>
+<li>No static type checker</li>
+<li>Few standard libraries</li>
+<li>Limited support for parallel execution</li>
+<li>Performance: some key algorithms are implemented in C++ instead.</li>
+<li>Limited IDE support (especially outside Emacs. He uses a BBEdit plugin).</li>
+</ul>
+
+<p>Why Prolog?</p>
+<li>Nondeterminism and unification for encoding semantic/translation rules</li>
+<li>Coroutines</li>
+<li>Constraints</li>
+<li>Tabling (although it doesn't work well with constraints)</li>
+</ul>
+<p>Q&A: Trains don't run B when they're in production. There's a code generator from B to B0 and later to Ada, C, ... But as we can't prove the code generation is fine, trains run more than 1 system generated differently and they work in tandem.</p>
+
+<h2>Prolog and algebra - Dr. David Stewart</h2>
+<p>David Stewart is a mathematician from Manchester. He has been working together with David Cushing and George Stagg on several math papers where they use Prolog to help with the proofs.</p>
+<p>Thanks to CLP they could explore extremely big math objects. While other systems are just brute forcing, their use of CLP makes it work faster.</p>
+<p>The most famous paper they published with this strategy was: <a href="https://arxiv.org/pdf/2307.12430.pdf">You need 27 tickets to guarantee a win on the UK National Lottery.</a>It reached pop science websites and even appeared on the news. NBC television, for example, showed this "interesting" title while discussing the paper and their use of Prolog.</p>
+<div style="text-align:center">
+<img width="400" src="https://files.adrianistan.eu/IMG_20231110_145516.jpg">
+</div>
+<p>In the National Lottery you have to guess 6 numbers of 59. To win something you need to guess at least 2. With 27 you can do it. But with 26 not. The difficult thing is trying to prove that wth 26 it was not possible and they used Prolog for that.</p>
+<p>He also discussed the paper: <a href="https://arxiv.org/abs/2207.01094">A Prolog assisted search for new simple Lie algebras</a>. He then started to explain what a <a href="https://en.wikipedia.org/wiki/Lie_algebra">Lie algebra</a> is and what is a <i>simple</i> Lie algebra</p>
+<p>He later shared his wishes about Prolog</p>
+<p>First, he wanted to have a matrix multiplication constraint. Right now, there's no matrix multiplication constraint. There's a scalar product constraint but it's not usable for their use case. It was discussed whether a specialized constraint in the library would yield more performance or not than than a naive custom one.</p>
+<p>David also said that better term rewriting would be useful as Some equations can be simplified a lot by doing the right variable substitution but CLP doesn't apply it.</p>
+<p>On the Q&A it was said that the lottery ticket scheme is perfect for money laundering</p>
+
+<h2>Grants4Companies: A logic-based AI application in the public sector - Dr. Markus Triska</h2>
+<p>Markus Triska is the author of <a href="https://www.metalevel.at/prolog">The Power of Prolog</a> book and YouTube channel. He also works for the Austrian government in a department for digital government. They don't develop directly software, however.</p>
+<p>He presents a project developed by the Austrian government that checks which grants apply to each company.</p>
+
+<p>First, he starts recommending two books:</p>
+<p>The Collapse of Complex Societies by Joseph Tainter. TL;DR societies collapse because of bureaucracy. At some point they reach a level of diminishing benefits</p>
+<p>Le Règne de la Quantité et les Signes des Temps. René Guénon. We're always oscillating between quantity and quality. And now we're in a quantity system.</p>
+
+<p>The use of AI in the administration must satisfy the three following properties.</p>
+<ul>
+<li>transparency</li>
+<li>traceability</li>
+<li>predictability</li>
+</ul>
+<p>They cannot guess patterns (like statistical AI) since everything we do must be backed by some explanation according to the law.</p>
+
+<p>They also try to use the minimum needed data and publicly available data (to prevent misuse). They ask for permission before doing any calculation.</p>
+
+<p>Grants are translated from natural language to a machine-interpretable language. They mix company data and the AI shows applicable grants (and why not to other grants). They use Scryer Prolog although the format of the grants is similar to Lisp.</p>
+
+<p>As it was contracted work they could not choose everything by themselves./p>
+
+<p>Current work: adding more grants, more data sources, explaining results, analysis of grants, UX improvements,...</p>
+
+<p>Grants are not applied automatically since they depend on other entities.</p>
+
+<p>They're very interested in ISO conforming systems since it's important for the government. We're also using Scryer to explore relations between grants (find contradictions, find subsets/supersets, ...)</p>
+
+<p>They're very interested in how the system explains why a grant could be applicable or not. He hopes in the future explainability could be more important and even required if a catastrophe in IT happens. The system right now is able to do it, marking in different colors the exact reason why a grant may be rejected</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IMG_20231110_160459.jpg" width="400">
+</div>
+
+<p>They use Three Valued Logic (an unknown value) because they might not have the data (Strong Kleene Logic K3)</p>
+
+<h2>Law as Code: Applying logic programming to formalize and analyze laws and regulations - Dr. Björn Lellmann</h2>
+<p>Björn also works in the Austrian government like Markus, but his project is more general. He repeats the same stuff about what a public administration needs for its AI.</p>
+
+<p>A law in itself could be a publicly available logic program, with clearly defined semantics, and follows a formalized, logic-based, executable rule representation.</p>
+
+<p>>Right now, lots of laws are translated into IT systems by IT persons that are not experts and they can introduce mistakes. Ideally, both versions should be defined in parallel to reduce translation bugs. We can use the help of LLM to help translate the current legal texts into logic programs. But always verifying the output.</p>
+
+<p>Possible applications: Business grants (G4C), checking evidence requirements (Single Digital Gateway), HR processes, ...</p>
+<p>The aim of the project is to create a basis for technical implementation of laws based on Logical Programming.</p>
+<p>In the showcase they used a Rules Engine provided by Unisys. He shows the UI, it's like a table, very flat difficult to see the hierarchy and the relations of the rules.</p>
+
+<p>But they have another UI that shows the rules compared to the text. It allows working in parallel with the legal text and the logic program. Also allows exporting to RuleML and Prolog.</p>
+
+<p>The project is not about having a precise representation of the laws yet. It's more about a proof of concept and the technical environment.</p>
+
+<p>Using Law as Code while drafting the laws could enable:</p>
+<ul>
+<li>Check logical inconsistencies</li>
+<li>Check inconsistencies with other legal texts</li>
+<li>Suggest rules from natural language</li>
+<li>Suggest natural language words from rules (creating the law in a simpler, standardized language)</li>
+<li>Check for suitability for digitalization (which is a requirement for all new laws in Austria)</li>
+</ul>
+
+<p>The end goal is not about removing judges and making everything automatic. The human factor needs to stay. Also, some laws are ambiguous as a feature and they do not intend to change that.</p>
+
+<p>Why Prolog?</p>
+<ul>
+<li>We need a language that is predictable and standardized</li>
+<li>Accessibility. Rules can be used by citizens and systems from different authorities</li>
+<li>Vendor-independence: No contract with a single vendor is required for evaluating legal texts</li>
+</ul>
+
+<p>In the Q&A people asked about Catala, a language with similar goals. However, in their (small) experience, Catala was not as easy as Prolog to reason about the laws and rules (and not just executing something).</p>
+
+<h2>End words</h2>
+
+<p>Additionally, Dr. Tomas Veloz could not attend the meeting but he left a recording of his talk, so everyone can see it.</p>
+
+<div style="text-align:center">
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/6kMB7lRoEw4?si=CXfpW7i0CIEOjgh6" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</div>
+
+<p>And that's it! Those were my notes from the Scryer Prolog Meetup. Later we had more offline conversations and we tried the delicious Altbier from Düsseldorf. I hope you find them interesting and I hope there will be more meetups in the future.</p>

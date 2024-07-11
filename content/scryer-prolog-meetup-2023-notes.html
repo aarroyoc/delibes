@@ -1,0 +1,235 @@
+<p>The 9th and 10th of November was the Scryer Prolog Meetup 2023 in Düsseldorf. As a <a href="https://www.scryer.pl">Scryer Prolog</a> user and contributor, I was very excited to go to this meeting. Now, I'm back at home and I can write here a report of what happened in this event with the notes I've taken.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IMG_20231109_095022.jpg" height="400">
+</div>
+
+<p>But before starting with the talks, let's understand why this event took place. Officially, it is considered that Prolog, as a programming language, was born in 1972. That marked 2022 as a special year since it was its 50 anniversary! Several things were organized, a <a href="https://link.springer.com/book/10.1007/978-3-031-35254-6">book was released</a> and <a href="https://arxiv.org/abs/2201.10816">several papers were published</a> on the matter. But the big celebration was the Prolog Day Symposium, which took place on November 10th in Paris. For some people like me, it was a special event in which we were surrounded by lots of the names behind what Prolog is. Several Scryer Prolog developers met there and after the good experience, we agreed it was a good idea to hold a meetup for Scryer Prolog on similar dates the next year.</p>
+
+<p>And it happened! Thanks to <a href="https://de.wikipedia.org/wiki/Christian_Jendreiko">Christian Jendreiko</a>, a professor in <a href="https://www.hs-duesseldorf.de/">Hochschule Düsseldorf<a>; <a href="https://www.metalevel.at/">Markus Triska</a> and the association <a href="https://www.prolog-heritage.org/">Prolog Heritage</a>, the event took place. Many thanks to them!</p>
+
+<p>And now, let's start with the first day:</p>
+
+<h2>Current developments in Scryer Prolog - Mark Thom</h2>
+<p><a href="https://files.adrianistan.eu/scryer_prolog_meetup_talk.pdf">Link to presentation</a></p>
+<p>Mark is the main developer of Scryer Prolog. In this talk, he talks about the past and future of Scryer Prolog. First, Mark wants to thank all contributors for their work in the past year. He also wants to mention that Scryer has now <a href="https://www.scryer.pl">a proper webpage</a>. Also, now there's a playground that, although limited, allows people to try Scryer Prolog without the need to install anything. This playground is based on the WASM work by @rujialiu. This WASM port also required several changes to support 32 bit targets.</p>
+
+<p>Since last year, two releases of Scryer happened (v0.9.2 and v0.9.3). They include lots of changes compared to v0.9.1. The main ones are:</p>
+<ul>
+<li>Atom table concurrency (thanks to @Skgland). This will allow multithreading in the future.</li>
+<li>clpz improvements (@notoria, @triska, etc)</li>
+<li>CI improvements by @infogulch</li>
+<li>HTTP improvements and foreign function interface basic support by @aarroyoc</li>
+<li>Djot and documentation for most libraries by @aarroyoc and @triska</li>
+<li>Moved from GMP to dashu thanks to @fayeed and @lucksus</li>
+<li>The ability to use Scryer as a library by @fayeed and @lucksus</li>
+<li>dif/2 improvements by @bakaq</li>
+<li><code>#scryer</code> IRC channel on Libera Chat by @rikardlang</li>
+<li>Minor fixes and test cases (@gruhn, @UWN, @pmoura, @infradig, @flexoron, @haijinSk, @josd, @rujialiu, @triska, ...)</li>
+</ul>
+
+<p>He has been working on the following items:</p>
+<ul>
+<li>Improved ISO standard conformance</li>
+<li>call/N goal expension caching</li>
+<li>Much better compilation of disjunctions</li>
+<li>Lookahead indexing</li>
+<li>Introduction of stackless iterators</li>
+<li>Many bug fixes</li>
+<li><a href="https://github.com/mthom/scryer-prolog/wiki/Flying-Roll-%231:-instructions.rs-and-the-Dispatch-Loop">Golden Roll #1</a> (a technical doc showing how Scryer Prolog internals work)</li>
+</ul>
+
+<p>He has also been working on several items that require a little bit more explanation:</p>
+
+<h3>Garbage Collection</h3>
+<p>He wanted to add it for 3 years already, but he was held back a little by Rust's youngness. The algorithm is based on two-finger mark+compactation from the paper <a href="https://dl.acm.org/doi/pdf/10.1145/62959.62968">Garbage Collection for Prolog Based on WAM</a>. Some changes are required since, for example, Scryer Prolog features "partial strings". Partial strings are a response to some Prolog's inefficient use of strings. Partial strings were inspired by Lisp and provide a similar interface to lists while being stored more compactly.</p>
+<p>Arena allocation will follow a BiBoP scheme, collected in tandem with the heap.</p>
+<p>All these things will make it easier to track resources at the cost of being more verbose.</p>
+<p>Some obstacles that he found with Rust are the imposed RAII. It would be nice to slot a custom allocator abstraction into common Rust data structures, like Vec<T, MyAllocator>. That would leave us with more flexible options, which are required for a garbage collector.</p>
+<p>However, the <code>allocator_api</code> for Rust is not stable and only available on nightly releases.</p>
+<p>Also some data types will require finalization when freed.</p>
+<p>At this point, he is implementing some data structures from scratch to be able to continue working on the GC.</p>
+<p>Last but not least, Prolog allows dynamic modification of the program, so a GC should be added to the code space too.</p>
+
+<h3>Partial String Heap Section</h3>
+<p>Regarding partial strings, as mentioned, there must be some changes in how they work. This started a discussion about the trade-offs of different designs. Right now, partial strings are not freed on backtracking (most other data types do), so GC is the only option here. Adding support for free-on-backtracking will make choicepoints bigger in memory, though. Also, the current code needs to know in lots of places if we're dealing with a partial string or not.</p>
+
+<h3>WAM Heap Cells Optimization</h3>
+<p>Atoms that use 6 bytes or less are going to be stored in heap cells directly, without being written to the atom table. This is an optimization found in several programming languages and it'll make more sense now that the atom table is thread-safe and there's some synchronization overhead.</p>
+<p>Also, the tag space has been revised and now they use fewer bits. Most data types in the WAM go from 6 bits to 4 bits.</p>
+
+<h3>JIT / AOT</h3>
+<p>Current plan is to compile WAM using Cranelift. However, GC must be done first. Maybe Prolog in the future could be used to analyze Prolog programs and produce optimizations (Prolog compiler in Prolog?)</p>
+
+<h3>Compilation speed-ups</h3>
+<p>There's a bottleneck translating between heap terms and Term (eliminate Term). Making Instruction data type smaller.</p>
+<p>Compilation of Scryer itself is becoming a concern with Rust compiler taking more time and using more memory.</p>
+
+<h3>Other improvements</h3>
+<p>There's an effort to push for multithreaded Prolog. But still a lot of questions are unanswered. How to coordinate threads? Which concurrency model should we support?</p>
+<p>An even better disjunction compilation was also proposed for several cases.</p>
+<p>Inlining common predicates was also being worked on since a lot of WAM inefficiencies come from shuffling HeapCellValues around in registers. Some ISO predicates already have this inlining implemented like <code>var/1</code>.</p>
+<p>Writing more Golden Rolls as they serve both as reference documents and incite people to contribute. Open to subjects!</p>
+<p>Scryer Prolog is not cache friendly. Clobbering the most common sequences of instructions into a single instruction could help.</p>
+<p>Arithmethic performance can be improved even without native compilation</p>
+
+<p>Some questions were asked to Mark. To the question of how he keeps doing the project, he just replied he feels he's doing more meaningful work here than in other places. About benchmarks, he replied that Scryer still doesn't have any automatic benchmark suite. Also, it was remembered in the room that we should not trade off correctness for performance. About coroutines, it was said that Scryer supports <code>freeze/2</code> and <code>dif/2</code> (one of the few systems with a correct dif). But <code>when/2</code> and <code>block</code> declarations are still missing.</p>
+
+<h2>Foreign Function Interface - Adrián Arroyo Calle</h2>
+<p>Since this talk was given by me I didn't take any notes :). You can still download the <a href="https://files.adrianistan.eu/The%20Outside%20World-1.pdf">presentation</a></p>
+<div style="text-align:center">
+<img width="400" src="https://files.adrianistan.eu/FotoScryerPrologMeetup1.jpg">
+<img width="400" src="https://files.adrianistan.eu/FotoScryerPrologMeetup3.jpg">
+</div>
+
+<h2>How we use Prolog in ADAM and the Synergy Engine - Nicolas Luck</h2>
+<p>Nicolas is the co-founder of the DAO Coasys. Coasys current products are three: Flux, ADAM and the Synergy Engine.</p>
+<div style="text-align:center">
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/qOhIW23eZcY?si=jwfgWzAvODHEG6kW" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+</div>
+<p>ADAM is actually the most important thing. It's a layer upon new applications can be built. When you build your application on top of ADAM, all the communications are abstracted and you just focus on creating data and querying data, in the form of knowledge graphs.</p>
+
+<p>Flux is an app built using ADAM, a chat platform similar to Discord and Slack. It serves as a proof-of-concept for ADAM.</p>
+
+<p>Unlike other approaches with knowledge graphs like semantic web, ADAM takes an agent-centric perspective, since it's the only way data can scale to civilization levels. In today's society, companies need to host the information, and that makes them not objective by definition. Blockchains can solve some issues here but they're slow. With the agent-centric approach, each agent is responsible of their own knowledge.</p>
+
+<p>Each agent has its own data. Each agent can choose to define its data with their own ontologies. The data units for an agent are expressions, which can be expressed in different "languages" (different technical backends, like IPFS, blockchain, Twitter, ...) and are cryptographically signed.</p>
+
+<p>"Perspectives" are how we associate expressions between them.</p>
+<p>When we move this from just one agent to several ones, we have neighborhoods, which are perspectives shared by more than one agent. Those perspectives have a social DNA which we can use to interact and understand the data. This social DNA is Prolog code, although there are DSLs in other languages to generate these queries.</p>
+
+<p>Apps in ADAM take a perspective or a neighborhood and their respective social DNA and then they represent the data</p>
+
+<p>Apart from the ORM, there's also an editor to define classes in Prolog. There's also an LLM system to help people create the Prolog code from natural language.</p>
+
+<p>So, what is Synergy Engine? It's a search engine built on top of ADAM. User writes a query, the query gets translated via LLM to Prolog code, and it's executed on the local graph or a remote one trying to find an answer. When a node finds an answer that generates the correct information (this is cryptographically checked, so it's the right answer), it gets an optional reward, if the user set it at the beginning</p>
+
+<h2>50 years of Prolog - A few things to keep in mind - Guy Narboni</h2>
+<p>Guy worked in Prologia, in the team that developed Prolog IV. Now, he has a consultancy called <a href="https://https://implexe.eu">Implexe</a> and it's also the president of Prolog Heritage.</p>
+
+<p>At the beginning there were no numbers in Prolog. One could only symbolically express numbers, using Peano's arithmetic. Nowadays we can express integers using <code>#=</code> from <code>clpz</code> while preserving all logic features.</p>
+
+<p>However, it only works for integers. We need all numbers covered cleanly. That's where Relational Interval Arithmetic enters.</p>
+<p>It makes possible calculations with guaranteed precision, safe pruning deductions in logic and interval constraints generalize <code>clpz</code>.</p>
+
+<p>Computation that has Interval Arithmetic is compatible with logic and it's safe. That was the idea pushed by Prolog IV.</p>
+
+<p>Also, it was pushed that both <code>=/2</code> and <code>dif/2</code> should work for every data type, even if they're numbers. Using <code>dif/2</code> is very useful since it often removes the need for cuts.</p>
+
+<p>Rationals, decimals, integers,... were numbers but also they were treated as trees</p>
+
+<p>Now we can get some of the benefits of Prolog IV with <code>#=</code> but in Prolog IV, that was normal unification. Guy presents the Perfect Rectangle Case Study from Prolog III</p>
+<div style="text-align:center">
+<img width="400" src="https://files.adrianistan.eu/IMG_20231109_143333.jpg">
+</div>
+<p>It shows that a simple syntactic change like replacing H0 with 0 in the head would make different results, because unification in Prolog III, unlike in IV, doesn't support all datatypes.</p>
+
+<p>Prolog IV worked with several types. All of them can be thought as a tree, but they're handled differently. There's a preunification table for types.</p>
+
+<p>In Prolog IV reals are approximated by intervals. Every numerical value is represented by a rational with infinite precision where integers are as big as necessary.</p>
+
+<p>Since dif/2 is a generic constraint, you have to deal with open and closed intervals</p>
+
+<p>Prolog IV was a beautiful PoC. Industrializing Prolog IV would be a rich idea! Even more powerful than clpz</p>
+
+<p>Marseille Prolog benefitted from WAM-Prolog line, but WAM-Prolog line ignored Marseille Prolog line!</p>
+
+<p>Eclipse has some parts of Interval Arithmetic</p>
+
+<p>Guy's wishlist</p>
+<ul>
+<li>Interval solver</li>
+<li>Linear solver</li>
+<li>Research issues: enhanced LP / IA communications</li>
+</ul>
+
+<h2>Art, Design and DCGs: The generative power of Prolog - Prof. Christian Jendreiko</h2>
+
+<p>I came from a different perspective. I'm not an engineer, or a mathematician. I studied Media Theory. I liked logic to understand medieval thinkers.</p>
+
+<p>In Systems Design. We try to work on interdisciplinary teams. I'm happy we can bring together artists and engineers. I think is important that also artists understand a little bit of how computers work.</p>
+
+<p>I teach Prolog to young artists and designers.</p>
+
+<p>Two reasons: helpful tool to understand your own ways of reasoning and it's a great tool to step into logical things. So they can use it in the creative process
+Get students to get in touch with the fundamental concepts of CS (graphs, search, permutations, ...) from a solid logic ground.</p>
+
+<p>From a didactic point of view: with Prolog you can deep dive into the big topics of CS without any distraction.</p>
+
+<p>I also use it for electronic art. The computer changes the status quo of the artist in society and changes how communication happens. (Max Bense Programmierung Des Schönen)</p>
+
+<p>Paul Klee: "making art of any kind means to think in sequences in order to create patterns". Context of the time: shaky grounds in physics, maths
+"Prolog was made to describe sequences"</p>
+
+<p>Together with the students we learn how to teach Prolog. What are the good ways to communicate Prolog to people?</p>
+
+<p>The course is not about using tools created by other people like Midjourney but about creating their own programs. And to really understand what programming really means.</p>
+
+<p>Prolog also helps thinking in backward reasoning in the arts: Michel Angelo (you have a goal). And differentiate it from forward reasoning: Miró. He went to the beach and out of the pieces he found he constructed his art</p>
+
+<p>When you're taking a photo, in what mode are you thinking? Backward or forward?</p>
+
+<p>Let artists work systematically, without resorting to drugs</p>
+
+<p>Now that there's a browser version, it's going to be very helpful for students since they have trouble setting up.</p>
+
+<p>I want to migrate to Scryer. We're using SWI.</p>
+
+<p>We also want to use the predicate format_/2 which is a big improvement.</p>
+
+<p>Example of poems generated by DCG. A DCG is like a casting mold.</p>
+
+<p>He wants with the help of the students create a database from the Pattern Poetry book. With all patterns in the database, we could start experiments, mixing, recombination,... We would use the great power of generation of Scryer Prolog.
+Also, we want to abstract the shape of the output. </p>
+
+<p>There were some questions:</p>
+<p>LLMs get boring because they all. They all recombine the same. You need to get into the basics, the structure to avoid boringness.</p>
+<p>You only use format_? Have you tried going 2D canvas or a 3D space? Yes we are trying with Tau because it can access JS and acccess to MIDI, graphics, ... I hope with Scryer web version we could also use that in a future. We also really want a MIDI interface to play with music format.</p>
+
+<h2>ISO Prolog, a basis for Prolog extensions - Prof. Dr. Ulrich Neumerkel</h2>
+<p>He's the convener of ISO standardization.</p>
+<p>Prolog systems often are interested in ISO but later they get creative and they break. One of the systems that has kept ISO Prolog conformance is Scryer Prolog. Even with "weird" examples.</p>
+<p>Then Ulrich starts to go over the history of Prolog:</p>
+<ul>
+<li>05/1972 Before Prolog existed: système OEdipe, not yet Prolog, first dif/2 (almost no documentation)</li>
+<li>1972 Prolog 0 with dif/2, boum/2 (similar to atom_chars/2), occurs-check option, many cut-like constructs (very obscure feature).</li>
+<li>1975 (date of manual, probably 1973) Prolog I, no constraints, but errors, cut</li>
+<li>1977 DEC 10, better syntax, no errors, mostly silent failure instead very influential, basis for ISO, started (deadly) speed race where systems tried to be faster and faster.</li>
+<li>1981 FGCS. They used Hungarian MProlog at the beginning, but later they went to committed choice languages. The decision to use MProlog was controversial (Iron Wall) so ESPRIT project started, and many Prolog systems were developed. Take into account Prolog systems were very expensive systems. For example, IF/Prolog cost 20.000 Deutsche Marks at their time. Need for standardization</li>
+<li>1984 BSI with Roger Scowen started standardization with BS6154</li>
+<li>1987 Proposal accepted to ISO, begin of WG17</li>
+<li>1995 ISO/IEC 13211-1 published</li>
+</ul>
+<p>Some of the highlights of the standard:</p>
+<ul>
+<li>disambiguated DEC10 syntax (first systems worked fine but their docs were bad so other systems later did it wrong)</li>
+<li>unification defined for the first time NSTO. But STO is not defined. Because there were problems with rational trees that should also be there.</li>
+<li>multi octet character set handling (MOCSH). Bytes and characters are not the same</li>
+<li>clean error system, separates between instantiation errors and type/domain errors (this was very controversial at the time, as lots of people liked silent failure approaches)</li>
+<li>no modules, later another standard was developed (13211-2:2000) but it's weak and accepts lots of interpretations</li>
+<li>no constraints, but... allows extension mechanism (5.5.11)</li>
+</ul>
+<p>Extensions are only allowed if there's a strictly conforming mode without it. Most things can be done with modules (constraints, builtins, ...) but some are more difficult (syntax extensions, ...). Constraints are allowed then!</p>
+<p>What was the state of the art of constraints at that time?</p>
+<p>First, <code>freeze/2</code> and <code>frozen/2</code>. consistency only via labeling. Then in 1988, meta-structures but very unusable. Attr vars were created in 1990 as "better meta-structures" but it was module based! So couldn't join ISO because there was no place in the standard for modules.</p>
+
+<p>AttrVars are present in SICStus and Scryer and to a lesser degree Ciao, SWI. They have different models. Markus Triska says for library developers it's easier the SICStus/Scryer interface while probably it's more costly for the Prolog system too.</p>
+
+<p>What's the current WG17 work?</p>
+<ul>
+<li>DCG (yes, still)</li>
+<li>No work on attr var as it's too hard to specify them mechanically. So we prefer to work on a higher level with things like dif/2</li>
+<li>dif/2 only works without bugs on three systems: Prolog IV, SICStus, and Scryer.</li>
+<li>Unicode support</li>
+<li>Prolog prologue - things like length/2. Still very surprising how very different behaviors are observed with these simple predicates.</li>
+<li>clpfd/clpz. Far from finishing it</li>
+<li>STO unification but rational trees originate problems again</li>
+<li>Queries using answer descriptions (quad). First for documents, and later for tests.</li>
+<li>Conformity testing. Continuous work</li>
+</ul>
+<p>Suggestions are welcome!</p>
+
+<p>That was the end of day 1. <a href="/scryer-prolog-meetup-2023-notes-day2">See the following post for day 2</a> where we'll see how Prolog helps in oncology, automated train systems, and the Austrian government.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/IMG_20231109_140816.jpg" width="400">
+</div>

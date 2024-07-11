@@ -1,0 +1,228 @@
+<p><a href="https://clipsrules.net/">CLIPS</a>, no confundir con LISP, es un sistema diseñado para la creación de sistemas expertos y otros programas que requieran de una solución heurística. Fue programado por la <a href="https://www.nasa.gov/">NASA</a> entre 1985 y 1996, año en que pasó a dominio público. Se trata de un lenguaje dentro de la familia de la programación lógica, al igual que <a href="https://blog.adrianistan.eu/supertutorial-prolog">Prolog</a>, <a href="https://blog.adrianistan.eu/minikanren-programacion-logica">miniKanren</a>, <a href="https://blog.adrianistan.eu/mercury-prolog-haskell-bebe">Mercury</a> o <a href="https://blog.adrianistan.eu/logtalk-prolog-orientado-objetos">Logtalk</a>. La diferencia fundamental es que todos los anteriores se pueden categorizar como <em>backward chaining</em> mientras que CLIPS es <em>forward chaining</em>. Además, veremos que a nivel de sintaxis y operación, hay algunas diferencias.</p>
+
+<div style="text-align:center">
+<img width="300" src="https://files.adrianistan.eu/clipslogo.png">
+</div>
+
+<h1>Esencia de CLIPS</h1>
+
+<p>El concepto más importante de CLIPS son las reglas o <em>rules</em>. Las reglas se añaden al programa CLIPS, bien mediante archivo o mediante el REPL. Posteriormente se definen hechos o <em>facts</em>. Estos facts pueden hacer disparar una o más reglas, que se ejecutarán cuando ejecutemos el proceso de resolución de CLIPS. Estas reglas a su vez pueden añadir a su vez más facts a la base de datos. Así hasta que ya no queden reglas que disparar. Además de reglas y facts, CLIPS dispone de funciones, métodos, objetos y bastantes más cosas. Pero esto es lo principal.</p>
+
+<p>La diferencia principal respecto a Prolog y los sistemas <em>backward chaining</em> es que en Prolog estamos tratando de probar un hecho yendo hacia atrás, reconstruyendo los pasos  hasta llegar a ver si hay algo que hace que cuadre y lo que hayamos puesto sea verdad o sea verdad mediante alguna sustitución de variable. En CLIPS, empezamos con unos hechos y simplemente se van derivando todos los hechos que pueden salir con la aplicación de las reglas, aunque algún hecho en particular no nos interese.</p>
+
+<h1>Tipos de datos en CLIPS</h1>
+<p>CLIPS dispone de 8 tipos de datos básicos: integer, float, string, symbol, external-address, fact-address, instance-name e instance-address. Estos últimos son únicos de CLIPS y los veremos más adelante. Los números integer y float funcionan de forma similar a otros lenguajes. Los strings van siempre con comillas dobles y los symbol sin similares a los atom de Prolog.</p>
+
+<h1>REPL y aritmética</h1>
+<p>Uno de los modos fundamentales de usar CLIPS es mediante su REPL. Aquí podremos escribir código CLIPS y ver el resultado inmediato.</p>
+<p>Al principio he dicho que no hay que confundir CLIPS con LISP (del que existe una implementación llamada CLISP). Esta confusión puede crecer ya que el código CLIPS se parece mucho al código LISP, con sus paréntesis y sus s-expresiones. La idea de las s-expresiones es que las cosas que están entre paréntesis se evalúan teniendo en cuenta el primer elemento como función y el resto como parámetros de esta función.</p>
+<p>Así, <code>(+ 5 10)</code> significa: llama a la función + con los argumentos 5 y 10. El resultado de evaluar ese código es 15.</p>
+<p>Para salir del REPL, usaremos <code>(exit)</code></p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ClipsREPL.png">
+</div>
+
+<h1>Definiendo facts</h1>
+<p>Los facts en CLIPS se componen de un nombre seguido de N argumentos. Existen dos tipos de facts: ordenados y desordenados. En los ordenados, a cada argumento solo le podemos hacer referencia por su orden dentro del argumento. Mientras que los desordenados podemos referirnos a cada argumento por un nombre.</p>
+<pre><code>
+// ordenado
+(point 3 4)
+// desordenado
+(point (x 3) (y 4))
+</code></pre>
+<p>Intentaremos usar facts desordenados salvo en casos muy concretos. Para poder crear facts desordenados necesitamos usar deftemplate, y definir la estructura del fact. Además podemos indicar valores por defecto, tipo, valores admitidos, etc. Una cosa que tendremos que indicar sí o sí es si nuestro campo es slot o multislot. slot es cuando solo admitiremos un valor por regla, mientras que en el multislot admitimos una conjunto de valores en ese campo dentro de la misma regla. Podemos usar <code>(facts)</code> para consultar los facts actuales.</p>
+
+<pre><code>
+CLIPS>   
+(deftemplate point
+  (slot x)        
+  (slot y (type INTEGER))
+  (slot id (default-dynamic (gensym*))))  
+CLIPS> (assert (point (x 5) (y 10)) 
+</code></pre>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ClipsFacts.png">
+</div>
+
+<p>Otro ejemplo:</p>
+<pre><code>
+CLIPS>
+(deftemplate person
+  (slot name
+    (type STRING))
+  (slot age
+    (type INTEGER)
+    (default 30))
+  (slot blood-type
+    (type SYMBOL)
+    (allowed-values a b ab '0'))           
+  (multislot brothers)))
+CLIPS> (assert (person (name "Homer Simpson") (blood-type ab) (brothers herb)))
+<Fact-1>
+CLIPS> (assert (person (name "Marge Simpson") (age 29) (blood-type '0') (brothers paty selma)))
+<Fact-2>
+CLIPS> (facts)
+f-1     (person (name "Homer Simpson") (age 30) (blood-type ab) (brothers herb))
+f-2     (person (name "Marge Simpson") (age 29) (blood-type '0') (brothers paty selma))
+For a total of 2 facts.
+</code></pre>
+<p>Cuando invocamos <code>(reset)</code>, los facts, parte del estado de CLIPS se limpia. Una forma de tener facts siempre predefinidos es usar <code>deffacts</code>. De este modos, ciertos facts se cargarán siempre al resetear al estado.</p>
+<pre><code>
+(deffacts simpsons-family "Simpsons Family"
+  (person (name "Homer Simpson") (blood-type ab) (brothers herb)) 
+  (person (name "Bart Simpson") (age 12) (blood-type ab) (brothers lisa maggie))
+  (person (name "Marge Simpson") (age 29) (blood-type '0') (brothers paty selma)))
+</code></pre>
+<h1>Reglas</h1>
+<p>Como hemos explicado antes. Las reglas son la esencia de CLIPS. Estan reglas verifican si ciertos hechos se cumplen, y en su caso, ejecutar algo.</p>
+<p>Las reglas se definen con <code>defrule</code>. En primera instancia, definimos un nombre de regla, después ponemos como debe ser los hechos que disparan la regla. Se trata de un pattern matching, donde podemos poner variables para capturar datos o ignorar ciertos aspectos de la regla.</p>
+<p>Una vez tengamos las reglas, podemos consultar la agenda, para ver si alguna regla puede aplicarse. En las reglas podemos usar variables, que empiezan con ? normalmente.</p>
+<p>También podremos ejecutar las reglas, con <code>(run)</code>.
+<pre><code>
+(deftemplate person
+  (slot name)
+  (multislot parents))
+
+(deffacts village "Village of Imaginary"
+  (person (name "Marta") (parents "Julio" "María"))
+  (person (name "María") (parents "Emilio" "Sacarina"))
+  (person (name "Luis") (parents "Alfonso" "Julia"))
+  (person (name "Alfonso") (parents "Bernardo" "Milagros"))
+  (person (name "Juan Carlos") (parents "Bernardo" "Milagros")))
+
+(defrule say-hello
+  (person (name ?name))
+=>
+  (println "Hola: " ?name "!"))
+</code></pre>
+<p>Ejecutamos <code>(reset)</code> y ya podemos consultar la agenda de activaciones. Ejecutamos con <code>(run)</code></p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/ClipsSayHello.png">
+</div>
+<pre><code>
+CLIPS> (agenda)
+CLIPS> (reset)
+CLIPS> (agenda)
+0      say-hello: f-5
+0      say-hello: f-4
+0      say-hello: f-3
+0      say-hello: f-2
+0      say-hello: f-1
+For a total of 5 activations.
+CLIPS> (run)
+Hola: Juan Carlos!
+Hola: Alfonso!
+Hola: Luis!
+Hola: María!
+Hola: Marta!
+</code></pre>
+<p>Una regla más interesante, será por ejemplo, sacar un listado de personas que son padres:</p>
+<pre><code>
+(defrule is-parent
+  (person (name ?name))
+  (person (parents $? ?name $?))
+=>
+  (assert (parent ?name)))
+</code></pre>
+<p>Aquí vemos como podemos añadir varios facts para disparar la regla. Además vemos el operador, similar a ?, salvo que $? capturar 0 o más valores.</p>
+<p>Además vemos en este ejemplo como podemos añadir facts nuevos a la base de datos, que a su vez podrían disparar más reglas.</p>
+<p>Con esta regla, una vez ejecutado, tendríamos dos facts nuevos:</p>
+<pre><code>
+(parent "María")
+(parent "Alfonso")
+</code></pre>
+<p>Que son las únicas personas listadas que sabemos que son padres.</p>
+<p>También podemos sacar los hermanos.</p>
+<pre><code>
+(defrule brother
+  (person (name ?a) (parents $?parents))
+  (person (name ?b&:(neq ?a ?b)) (parents $?parents))
+=>
+  (assert (brothers ?a ?b)))
+</code></pre>
+<p>En este caso, para asegurarnos que no estamos cogiendo la misma persona las dos veces, añadimos una restricción de que ?b debe ser diferente a ?a. Esto es mediante la sintaxis de VARIABLE&:(test). Esta otra sería equivalente, sería mediante una pseudoregla llamada test.</p>
+<pre><code>
+(defrule brother2
+  (person (name ?a) (parents $?parents))
+  (person (name ?b) (parents $?parents))
+  (test (neq ?a ?b))
+=>
+  (assert (brothers ?a ?b)))
+</code></pre>
+<p>Aun así, veremos si ejecutamos esto, que los dos únicos hermanos que hay generan dos facts con esta regla, una donde uno va antes que el otro y la contraria.</p>
+<p>Algunas cosas útiles que nos pueden venir bien son las funciones bind (para asignar un valor a una variable) y read, que nos permite leer de teclado. También podemos comparar el valor que aparece en una regla con la evaluación de una función con =(). Juntando esto, podemos construir el siguiente ejemplo, sacado directamente de la documentación oficial:</p>
+
+<pre><code>
+CLIPS> (clear)
+CLIPS>
+(defrule ask-question
+  =>
+  (bind ?length (random 1 10))
+  (bind ?width (random 1 10))
+  (println "A rectangle has length " ?length " and width " ?width)
+  (print "What is the area of this rectangle? ")
+  (assert (response ?length ?width (read))))
+CLIPS>
+(defrule correct-area
+  (response ?length ?width =(* ?length ?width))
+  =>
+  (println "You are correct!"))
+CLIPS>
+(defrule incorrect-area
+  (response ?length ?width ~=(* ?length ?width))
+  =>
+  (println "You are incorrect!"))
+CLIPS> (run)
+A rectangle has length 8 and width 10
+What is the area of this rectangle? 80
+You are correct!
+CLIPS> (reset)
+CLIPS> (run)
+A rectangle has length 4 and width 4
+What is the area of this rectangle? 8
+You are incorrect!
+CLIPS>
+</code></pre>
+<p>Por último, una cosa que nos puede resultar interesante es como eliminar facts de la base de datos. Para ello usaremos el operador <- para obtener un objeto tipo fact. Estos objetos se pueden usar para comparar entre ellos o para usarlos en retract y eliminarlos de la base de datos. Un ejemplo muy tonto, también sacado de la documentación oficial:</p>
+<pre><code>
+CLIPS> (clear)
+CLIPS>
+(defrule print-grocery-list
+  ?f <- (grocery-list $?items)
+  =>
+  (retract ?f)
+  (println "groceries: " (implode$ ?items)))
+CLIPS> (assert (grocery-list milk eggs cheese))
+<Fact-1>
+CLIPS> (run)
+groceries: milk eggs cheese
+CLIPS> (facts)
+CLIPS>
+</pre></code>
+<h1>Funciones</h1>
+<p>Brevemente comentaremos que en CLIPS podemos crear nuestras propias funciones. No voy a explicar en detalle la sintaxis, pero será similar para la gente que haya usado LISP.</p>
+<pre><code>
+CLIPS> (clear)
+CLIPS>
+(deffunction factorial (?a)
+  (if (or (not (integerp ?a)) (< ?a 0))
+  then
+    (println "Factorial Error!")
+  else
+    (if (= ?a 0)
+    then 1
+    else (* ?a (factorial (- ?a 1))))))
+CLIPS> (factorial 1)
+1
+CLIPS> (factorial 2)
+2
+CLIPS> (factorial 3)
+6
+CLIPS>
+</code></pre>
+
+<h1>Conclusión</h1>
+<p>CLIPS es un lenguaje muy completo, que no se puede explicar en un simple post, pero espero que os haya descubierto otra herramienta dentro de la programación funcional. No hemos visto muchas de las funciones predefinidas, funciones genéricas, el sistema de clases, forall, y otros detalles. <a href="https://clipsrules.net/documentation/v640/bpg640.pdf">La documentación oficial es muy extensa y con muchos ejemplos</a>. También existen varios libros como el clásico <a href="https://amzn.to/3Df1u26">Expert Systems: Principles and Programming</a> o el nuevo <a href="https://amzn.to/3gDFhTA">Adventures in Rule-based Programming</a>.

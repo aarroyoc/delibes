@@ -1,0 +1,101 @@
+<p>Otro d&iacute;a de verano y otro d&iacute;a de <strong>Cr&oacute;nica Neuronal</strong>. Hoy he elegido un dataset m&eacute;dico, se trata de<a href="https://www.kaggle.com/uciml/indian-liver-patient-records"> Indian Liver Patients Record</a>, o lo que es lo mismo, <em>Registro de pacientes de h&iacute;gado en la India</em>. Las enfermedades relacionadas con el h&iacute;gado han ido en aumento en los &uacute;ltimos a&ntilde;os: el alcohol, la poluci&oacute;n, la comida en mal estado, las drogas y los pepinillos son algunas de las causas de este aumento. En el dataset, originalmente de UCI y bajo licencia Creative Commons Zero, tenemos datos m&eacute;dicos de varias personas y si deben recibir tratamiento para el h&iacute;gado o no. El objetivo es identificar, dado un paciente nuevo, si deber&iacute;a iniciar un tratamiento del h&iacute;gado o si por el contrario, est&aacute; sano.</p>
+<p><img src="https://files.adrianistan.eu/Liver.jpg" alt="" /></p>
+<h2>An&aacute;lisis de datos</h2>
+<p>Las variables o features del dataset son las siguientes:</p>
+<ul>
+<li><strong>Age</strong>: edad de la persona</li>
+<li><strong>Gender</strong>: sexo de la persona</li>
+<li><strong>Total Bilirubin</strong>: <a href="https://es.wikipedia.org/wiki/Bilirrubina">bilirrubina</a> total en el h&iacute;gado en mg/dL. Es la suma de la bilirrubina directa y la indirecta</li>
+<li><strong>Direct Bilirubin</strong>: bilirrubina directa en mg/dL.</li>
+<li><strong>Alkaline Phosphotas</strong>: fosfatasa alcalina en IU/L</li>
+<li><strong>Alanina aminotransferasa</strong>: enzima conocida tambi&eacute;n como transaminasa glut&aacute;mico pir&uacute;vica, en IU/L</li>
+<li><strong>Aspartate Aminotransferas</strong>: enzima conocida tambi&eacute;n como aspartato transaminasa, en IU/L</li>
+<li><strong>Total Protiens</strong>: prote&iacute;nas totales, en g/dL</li>
+<li><strong>Albumin</strong>: <a href="https://es.wikipedia.org/wiki/Alb%C3%BAmina">alb&uacute;mina</a>, una prote&iacute;na que se genera en la sangre, en g/dL</li>
+<li><strong>Albumin and Globulin Ratio</strong>: ratio de alb&uacute;mina por gl&oacute;bulos en sangre</li>
+<li><strong>Dataset</strong>: si necesitan tratamiento o no</li>
+</ul>
+<p>Vamos a entrar m&aacute;s en detalle de las variables usando&nbsp;<strong>Seaborn</strong>.</p>
+<pre><code class="language-python">
+import pandas as pd
+import numpy as np
+import seaborn as sns
+
+data = pd.read_csv("indian_liver_patient.csv")
+
+data.describe()
+
+sns.countplot(data["Gender"])
+
+sns.countplot(data["Dataset"])
+
+sns.distplot(data["Total_Bilirubin"])
+</code></pre>
+<p>Hay solo dos variables categ&oacute;rica en este dataset: la clase y Gender. La clase no hace falta transformarla, ya que ya son dos n&uacute;meros. Vamos a analizar Gender, con <strong>countplot</strong>, que tendremos que transformar con <strong>OneHotEncoder</strong>:</p>
+<p><img src="https://files.adrianistan.eu/IndianLiverSex.png" alt="" /></p>
+<p>Tenemos much&iacute;simos m&aacute;s datos de hombres que de mujeres. En una predicc&oacute;n real har&iacute;a falta tener m&aacute;s datos de mujeres. Puede ser que esto no influya o puede que s&iacute; (como en muchas enfermedades, un caso muy evidente, el c&aacute;ncer de mama) o incluso puede que se deba factores culturales. Pero de cara a un diagn&oacute;stico deber&iacute;amos poder tener datos equilibrados.&nbsp;</p>
+<p><img src="https://files.adrianistan.eu/IndianLiverDataset.png" alt="" /></p>
+<p>En el caso de la clase, tambi&eacute;n vemos que est&aacute; desequilibrada, con muchos m&aacute;s datos de gente que deber&iacute;a recibir tratamiento (1) de los que no (2). A la hora de realizar el test del algoritmo deberemos <strong>estratificar</strong>, para asegurarnos que se incluye esta misma proporci&oacute;n en los conjuntos de entrenamiento reducidos.</p>
+<p>Podemos analizar la distribuci&oacute;n de alguna variable continua, con <strong>distplot</strong>, pero no he encontrado nada relevante aqu&iacute; (parece obvio que hay un &uacute;nico valor mayoritario).</p>
+<p><img src="https://files.adrianistan.eu/IndianLiverBilirubin.png" alt="" /></p>
+<p>Usando <strong>jointplot</strong> en Seaborn podemos ver correlaciones variable a variable. Usando <strong>pairplot</strong>, podemos ver todas de golpe.</p>
+<p><img src="https://files.adrianistan.eu/IndianLiverPairplot.png" alt="" /></p>
+<p>As&iacute; a priori no observo valores demasiado extra&ntilde;os, as&iacute; que de momento, mantendremos todos los valores.</p>
+<p>Analizando los datos compruebo que existen 4 valores no existentes en la columna Albumin_and_Globulin_Ratio. Procedo a rellenarlos con una media de valores. Hacemos el OneHotEncoding:</p>
+<pre><code class="language-python">
+data.isna().sum()
+
+data["Albumin_and_Globulin_Ratio"] = data["Albumin_and_Globulin_Ratio"].fillna(data["Albumin_and_Globulin_Ratio"].mean())
+
+data = pd.get_dummies(data)
+
+X = data.drop(columns=["Dataset"])
+Y = data["Dataset"]
+</code></pre>
+<p>A continuaci&oacute;n, probamos diferentes algoritmos de la familia de &aacute;rboles: DecisionTree y RandomForest. Prob&eacute; el criterio de entrop&iacute;a (ID3, C4.5 y similares) y el de Gini. Y Gini era m&aacute;s estable, as&iacute; que es mi elecci&oacute;n.</p>
+<pre><code class="language-python">
+from sklearn.model_selection import train_test_split
+
+
+train_x, test_x, train_y, test_y = train_test_split(X,Y,test_size=1/3,stratify=Y,random_state=0)
+
+from sklearn.tree import DecisionTreeClassifier
+
+tree = DecisionTreeClassifier(criterion="gini", max_depth=3, min_samples_split=4, max_features=4)
+tree.fit(train_x, train_y)
+predict_y = tree.predict(test_x)
+
+np.sum(predict_y == test_y)/test_y.shape[0]
+
+from sklearn.ensemble import RandomForestClassifier
+
+tree = RandomForestClassifier(criterion="gini", max_depth=None, min_samples_split=4, max_features=4, n_estimators=100)
+tree.fit(train_x, train_y)
+predict_y = tree.predict(test_x)
+
+np.sum(predict_y == test_y)/test_y.shape[0]
+</code></pre>
+<p>Con DecisionTreeClassifier y el criterio de Gini, lo tune&eacute; con max_depth=3, min_samples_split=4 y max_features=4. Todo ello para que no haga sobreajuste, t&iacute;pico en &aacute;rboles. Este max_features es interesante. Podr&iacute;amos haberlo hecho antes, pero con los &aacute;rboles da igual. B&aacute;sicamente si dos variables est&aacute;n muy correlacionadas, aportan pr&aacute;cticamente la misma informaci&oacute;n, ser&aacute;n ignoradas en la construcci&oacute;n del modelo, reduciendo el sobreajuste. El resultado es un 70% de acierto.</p>
+<p>Con RandomForest he conservado los ajustes de max_features y de min_samples_split pero he desactivado la profundidad m&aacute;xima. Consistentemente se obtiene un 73-74% de acierto.</p>
+<p>Por &uacute;ltimo, para XGBoost, que era la primera vez que lo usaba, le met&iacute; en un bucle que va modificando valores, probando muchas configuraciones posibles. Esto llev&oacute; un rato, pero consigui&oacute; una configuraci&oacute;</p>
+<pre><code class="language-python">
+import xgboost as xgb
+
+res = dict()
+
+for d in range(1,10):
+    for l in range(1,9):
+        for m in range(1,5):
+            for g in range(0,10):
+                tree = xgb.XGBClassifier(max_depth=d, learning_rate=l/100, n_estimators=100, objective="binary:logistic", booster="gbtree", n_jobs=4, min_child_weight=m, gamma=g/10)
+                tree.fit(train_x, train_y)
+                predict_y = tree.predict(test_x)
+
+                res[(d,l,m,g)] = np.sum(predict_y == test_y)/test_y.shape[0]
+                print(res[(d,l,m,g)])
+max(res, key=res.get)
+</code></pre>
+<p>El valor &oacute;ptimo fue profundidad m&aacute;xima de 7, learning_rate de 0.08, min_child_weight de 3 y gamma de 0.3. Estos valores fueron lo mejor que pude encontrar para este holdout espec&iacute;fico. Pero al cambiar el random_state del Holdout, estos aciertos se desmoronaron hasta llegar al 64%. Los par&aacute;metros no son buenos, simplemente hab&iacute;a coincidido que iban muy bien. Con esta tragedia, es un buen momento para recordar uno de los m&eacute;todos alternativos a Holdout: <strong>validaci&oacute;n cruzada</strong>, que sin duda usar&eacute; en otro dataset de otra Cr&oacute;nica Neuronal.</p>
+<h2>Conclusi&oacute;n</h2>
+<p>Hemos obtenido f&aacute;cilmente modelos con m&aacute;s del 70% de acierto de forma consistente, con RandomForest y xgboost. Prob&eacute; tambi&eacute;n K-Vecinos, con resultados parecidos pero m&aacute;s lento y el perceptr&oacute;n multicapa, sin poder igualar resultados. Espero que este dataset os haya gustado, espero vuestros aportes en los comentarios.</p>
+<p>&nbsp;</p>

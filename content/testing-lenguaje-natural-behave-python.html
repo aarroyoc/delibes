@@ -1,0 +1,170 @@
+<p>El testing es fundamental para asegurar que nuestras aplicaciones cumplen con unos requisitos de calidad mínimos. Existen muchos tipos de test y formas de hacer tests. En este artículo vamos a ver el Behavior Driven Development y como lo podemos aplicar en Python con <a href="https://behave.readthedocs.io">Behave.</a></p>
+<h2>Behavior Driven Development</h2>
+<p>El BDD es una técnica que surge a raíz del TDD (Test Driven Development). La esencia del TDD es que tenemos que escribir los tests antes que el propio código. BDD va un paso más allá, tenemos que hacer tests que sirvan para describir las especificaciones en un lenguaje que pueda editar un no-programador. La idea es que pueda haber alguien de producto, que defina las especificaciones y que a su vez son tests de aceptación.</p>
+<p>El lenguaje más usado en BDD es <a href="https://cucumber.io/docs/gherkin/">Gherkin</a>, cuya base son las sentencias Given, When y Then. Una de las implementaciones de Gherkin en Python más usadas es Behave. Con Given debemos añadir todos los pasos necesarios para llegar hasta el punto donde queremos realizar el test. En When realizamos un estímulo, lo que se prueba. Idealmente sería una única sentencia. Con Then comprobamos que el resultado del estímulo es el esperado. Veamos un ejemplo. Todos ellos admiten combinaciones mediante And y But</p>
+
+<pre><code>
+Feature: comments
+
+Scenario: add a comment in blog post
+Given a post page is loaded
+When I add a comment
+Then the page is reloaded
+And the page shows a confirmation message
+And the comment is registered in the database
+
+Scenario: approve comment
+Given the comment is registered in the database
+And I can't see the comment in the post page
+When I approve the comment
+Then I can see the comment in the post page
+</code></pre>
+
+<p>Cada paquete de Give/When/Then se denomina escenario y una feature o característica se compone de varios escenarios. Las features se guardan en un fichero .feature dentro de la carpeta features. Dentro de la carpeta features, si usamos Behave, tendremos una carpeta llamada steps que tendrá dentro código Python para implementar los tests correctamente. Para ello usamos el decorador step. Las funciones admiten un parámetro siempre, llamado context, que es propio de Behave y que puede usarse para mover estado entre steps.</p>
+<pre><code class="language-python">
+from behave import *
+
+@step("a post page is loaded")
+def post_page_load(context):
+    pass
+
+@step("I add a comment")
+def add_comment(context):
+    pass
+
+@step("the page is reloaded")
+def page_reloaded(context):
+    assert True is True
+
+@step("the page shows a confirmation message")
+def page_shows_confirmation_message(context):
+    assert True
+
+@step("the comment is registered in the database")
+def comment_registered_in_database(context):
+    assert not False
+
+@step("I can't see the comment in the post page")
+def cant_see_comment(context):
+    assert True
+
+@step("I can see the comment in the post page")
+def can_see_comment(context):
+    assert True
+
+@step("I approve the comment")
+def approve_comment(context):
+    assert True
+</code></pre>
+<p>En este caso vamos a dejar los tests vacíos, pero aquí habría que implementar una lógica real de test, por ejemplo, con Selenium para interactuar con la web y comprobar que efectivamente la funcionalidad está implementada y funciona tal cual se ha especificado.</p>
+<p>Para ejecutar los tests, escribimos behave</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Behave.png">
+</div>
+<h2>Variables y tablas</h2>
+<p>Estos steps deben describir en lenguaje natural las precondiciones, la interacción y las postcondiciones pero puede que queramos reutilizar steps o parametrizarlos. Para ello tenemos variables y tablas</p>
+<p>Las variables se definen en el step rodeadas de llaves y en la función del step aparecen como una variable más en los argumentos de entrada. Por ejemplo podemos modificar el siguiente escenario para añadir un texto de ejemplo.</p>
+<pre><code>
+Scenario: add a comment in blog post
+Given a post page is loaded
+When I add a comment with text "your post looks insteresting"
+Then the page is reloaded
+And the page shows a confirmation message
+And the comment is registered in the database with text "your post looks interesing"
+</code></pre>
+<p>Y en los steps: </p>
+<pre><code class="language-python">
+@step("I add a comment with text \"{text}\"")
+def add_comment(context, text):
+    pass
+
+@step("the comment is registered in the database with text \"{text}\"")
+def comment_registered_in_database(context, text):
+    assert not False
+</code></pre>
+<p>Sin embargo si nuestro texto es muy grande podemos añadirlo de forma adjunta y accesible a través de la variable <code>context.text</code></p>
+<pre><code>
+Scenario: add a comment in blog post
+Given a post page is loaded
+    """
+    Lorem Ipsum
+    """
+When I add a comment 
+Then the page is reloaded
+And the page shows a confirmation message
+And the comment is registered in the database
+</code></pre>
+<pre><code class="language-python">
+@step("a post page is loaded")
+def post_page_load(context):
+    print(context.text)
+</code></pre>
+
+<p>También existen tablas, que son accesibles a través de la variable <code>context.table</code></p>
+<pre><code>
+Scenario: add a comment in blog post
+Given a post page is loaded
+When I add a comment 
+    | text | username |
+    | Hey! | aarroyoc |
+    | Bye! | marlogui |
+Then the page is reloaded
+And the page shows a confirmation message
+And the comment is registered in the database with text "your post looks interesing"
+</code></pre>
+<pre><code class="language-python">
+@step("I add a comment")
+def add_comment(context):
+    for row in context.table:
+        print(row["text"])
+</code></pre>
+
+<h2>Environment, context, tags y hooks</h2>
+<p>Podemos controlar el entorno a través del fichero <code>environment.py</code> que tiene que estar en la carpeta features. En este fichero podemos definir hooks, que son funciones que se ejecutan antes o después de un determinado paso/escenario/feature. Pueden servirnos para realizar tareas de limpieza o de setup.</p>
+<pre><code class="language-python">
+class WebClient:
+    def __init__(self):
+        pass
+    def stop(self):
+        pass
+
+def before_all(context):
+    context.client = WebClient()
+
+def after_all(context):
+    context.client.stop()
+</code></pre>
+<p>Los hooks disponibles son before_{all, step, scenario, feature} y after_{all, step, scenario, feature}.</p>
+<p>Tanto en los hooks como en los steps vemos la variable context siempre. Se trata de una variable controlada por Behave que puede servirnos para pasar información entre los steps y los hooks. Podemos crear por ejemplo, un cliente web con un hook y luego acceder a él en el step gracias a la variable context. O entre distintos steps, pasar información más precisa que no se define en el fichero con Gherkin. Además, context tiene algunas variables predefinidas, como los tags.</p>
+<p>Los tags son anotaciones que se ponen sobre los steps, escenarios o features. Si bien en general son texto libre, algunos tienen efecto sobre Behave</p>
+<pre><code>
+Feature: comments
+
+@data-1
+Scenario: add a comment in blog post
+Given a post page is loaded
+When I add a comment 
+Then the page is reloaded
+And the page shows a confirmation message
+And the comment is registered in the database
+
+@wip
+Scenario: approve comment
+Given the comment is registered in the database
+And I can't see the comment in the post page
+When I approve the comment
+Then I can see the comment in the post page
+</code></pre>
+<p>En el primer caso de tag (data-1), es algo que me he inventado, en un hook podemos comprobar los tags y actuar en consecuencia. En este caso, este tag quiere decir que para este escenario carguemos en la base de datos el conjunto de prueba 1.</p>
+<pre><code class="language-python">
+def before_scenario(context, scenario):
+    if "data-1" in context.tags:
+        # Load Data-1
+        pass
+</code></pre>
+<p>En el segundo caso, el tag wip es reconocido por Behave y sirve para marcar tests que estamos probando. Estos los podemos ejecutar por separado indicando <code>-w</code>  al llamar a Behave.</p>
+<pre><code>
+behave -w
+</code></pre>
+<p>¡Con esto ya tenemos lo suficiente para ir desarrollando tests al estilo BDD! Por supuesto, existen frameworks similares en otros lenguajes, como Cucumber en Java, pero dependiendo de los test que queramos hacer no será necesario usar el mismo lenguaje que la propia aplicación (podemos usarlo para testear desde fuera, por ejemplo, a través una API REST o desde una web).</p>
+

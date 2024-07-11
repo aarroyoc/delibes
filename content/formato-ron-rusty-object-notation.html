@@ -1,0 +1,149 @@
+<p>Hace poco he tenido la necesidad de refactorizar un código muy repetitivo y con un alto número de constantes. Este es un caso ideal para usar un formato externo, definido por nosotros, y donde vamos a conseguir separar el código "real" de la repetición.</p>
+<div style="text-align: center">
+<img width="400" src="https://files.adrianistan.eu/RustRon.png">
+</div>
+<p>Existen muchos formatos de serialización de datos: JSON, XML y YAML son los más conocidos. JSON en particular es muy usado para comunicar entre procesos (ya sea mediante una API REST o cualquier otro sistema) mientras que YAML es bastante usado como formato para representar configuraciones (Kubernetes, Spring Boot, Docker, ...). Ninguno de estos formatos es idóneo, pero crear un formato de la nada y esperar interoperabilidad es complicado.</p>
+<p>Afortunadamente en este caso no necesito interoperabilidad, ya que mi programa iba a ser el único que iba a leer estos ficheros, así que, ¿por qué no probar algo mejor?</p>
+<p>Y aquí llegamos a Serde. <a href="https://blog.adrianistan.eu/leer-escribir-json-rust-serde">De esta crate ya hemos hablado en el blog</a>, y es el estándar para serializar/deserializar en Rust. Soporta una gran cantidad de formatos, pero entre ellos hay uno especial, uno diseñado específicamente para trabajar con Rust de la forma más parecida posible a este: RON, Rusty Object Notation.</p>
+<p>El objetivo de RON es tener un formato que se parezca mucho a como se expresan los datos dentro de Rust soportando además todas las características de Serde.</p>
+<h2>Sintaxis de RON</h2>
+<p>En RON tenemos structs, que son una equivalencia directa de los struct de Rust, con su comprobación de miembros estricta. Usaremos los paréntesis y un nombre opcional de struct. También tendremos mapas, que nos permiten añadir claves dinámicas. Esto es una diferencia respecto a JSON, donde la diferencia entre una claves fija y una clave que es un dato no es posible a simple vista. Para los mapas usaremos llaves y las claves deberán ir entre comillas. Por último también tenemos arrays con corchete. El resto es muy parecido a la sintaxis Rust, misma sintaxis de comentarios, soporte para trailing commas, tuplas, enums, etc.</p>
+<pre><code class="language-rust">
+/* Este es un fichero RON de ejemplo */
+
+[
+    // los nombres de los struct son opcionales 
+    Place(
+        name: "Academia de Caballería",
+        position: Position(
+            lat: 0.0,
+            lon: 0.0,
+        ),
+        photos: [],
+        urls: {
+            "facebook": "https://www.facebook.com/Academia"
+        }
+    ),
+    (
+        name: "Archivo de Simancas",
+        position: (
+            lat: 15.0,
+            lon: 12.0,
+        ),
+        photos: [
+            (
+                title: "Foto de la sala de lectura",
+                url: "https://imgur.com/55555"
+            ),
+            (
+                title: "Foto de la torre",
+                url: "https://imgur.com/55555666"
+            )
+        ],
+        urls: {}
+    )
+]
+</code></pre>
+<h2>Lectura y escritura usando Serde</h2>
+<p>RON está diseñado para ser muy cómodo de usar con Rust, así que la lectura y escritura desde Serde es extremadamente simple y evidente.</p>
+<p>Para leer un archivo, debemos declarar las estructuras que lo componen y añadir el trait <i>serde::Deserialize</i>. Podemos usar otras estructuras, Vec, HashMap, ... Finalmente para leer usamos <i>ron::from_str</i> y el tipo al que queremos convertir ese texto:
+<pre><code class="language-rust">
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::prelude::*;
+
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct Place {
+    name: String,
+    position: Position,
+    photos: Vec<Photo>,
+    urls: HashMap<String, String>
+}
+
+#[derive(Deserialize)]
+struct Position {
+    lat: f64,
+    lon: f64,
+}
+
+#[derive(Deserialize)]
+struct Photo {
+    title: String,
+    url: String,
+}
+
+fn main() {
+    let mut file = File::open("places.ron").expect("file doesn't exist");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).expect("can't read file");
+
+    let places: Vec<Place> = ron::from_str(&contents).expect("malformed file");
+    for place in places {
+        println!("Place name: {}", place.name);
+        println!("Number of photos: {}", place.photos.len());
+    }
+}
+</code></pre>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/RonReader.png">
+</div>
+<p>Para la escritura deberemos usar el trait <i>serde::Serialize</i> y la función <i>ron::to_string</i>:
+<pre><code class="language-rust">
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::prelude::*;
+
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
+struct Place {
+    name: String,
+    position: Position,
+    photos: Vec<Photo>,
+    urls: HashMap<String, String>
+}
+
+#[derive(Serialize, Deserialize)]
+struct Position {
+    lat: f64,
+    lon: f64,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Photo {
+    title: String,
+    url: String,
+}
+
+fn main() {
+    let mut file = File::open("places.ron").expect("file doesn't exist");
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).expect("can't read file");
+
+    let places: Vec<Place> = ron::from_str(&contents).expect("malformed file");
+    for place in &places {
+        println!("Place name: {}", place.name);
+        println!("Number of photos: {}", place.photos.len());
+    }
+    
+    let places_str = ron::to_string(&places).expect("can't convert to RON");
+    println!("{}", places_str);
+}
+</code></pre>
+<p>Hay que tener en cuenta que al pasar leer y guardar perdemos los comentarios por el camino (ya que no se pueden representar dentro de los struct de Rust). Además el formato de salida es mínimo, sin espacios ni nombres de struct.</p>
+<pre><code>
+[(name:"Academia de Caballería",position:(lat:0,lon:0),photos:[],urls:{"facebook":"https://www.facebook.com/Academia"}),(name:"Archivo de Simancas",position:(lat:15,lon:12),photos:[(title:"Foto de la sala de lectura",url:"https://imgur.com/55555"),(title:"Foto de la torre",url:"https://imgur.com/55555666")],urls:{})]
+</code></pre>
+<h2>Campos opcionales</h2>
+<p>Una cosa que no resulta del todo evidente, al menos en la versión actual de RON, es el manejo de campos opcionales dentro de los struct. Actualmente cuando definimos un campo como de tipo Option, el campo tiene que existir en RON, aunque su valor sea None. Este comportamiento puede cambiar con el tiempo pero para la versión de RON 0.6.4 podemos usar la crate serde_with y anotar los atributos que queramos marcar como opcionales así:
+<pre><code>
+#[derive(Serialize, Deserialize)]
+struct Photo {
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "::serde_with::rust::unwrap_or_skip")]
+    title: Option<String>,
+    url: String,
+}
+</code></pre>
+<p>Ahora os quiero hacer una pregunta, ¿le veis futuro a RON? ¿creéis que podrá ser usado en otros lenguajes en el futuro o no aporta demasiado respecto a otros formatos?</p>

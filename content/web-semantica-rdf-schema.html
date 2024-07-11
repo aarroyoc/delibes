@@ -1,0 +1,44 @@
+<p>En el art&iacute;culo anterior comentamos la piedra angular de la web sem&aacute;ntica, el modelo de datos RDF. RDF es muy flexible y potente, pero &iquest;c&oacute;mo conseguimos dar significado a las relaciones? Al fin y al cabo, las tripletas no dejan de ser tuplas de strings de cara al ordenador. Tiene que haber un componente, que permita hacer de intermediario entre el significado humano y la m&aacute;quina. Esto son las <strong>ontolog&iacute;as</strong>. Las ontolog&iacute;as definen el sentido sem&aacute;ntico de los recursos de RDF. RDF Schema nos permite dise&ntilde;ar ontolog&iacute;as de forma sencilla. Como veremos, a&ntilde;ade operadores que podemos usar en RDF para definir las ontolog&iacute;as. Por tanto, RDF Schema no es comparable a XML Schema o JSON Schema, que sirven para validar que un documento sigue una estructura, sino que sirve para dotar de significado a la informaci&oacute;n.</p>
+<p><img src="https://files.adrianistan.eu/RDFSchemaWiki.png" alt="" width="500" /></p>
+<h2>Clases</h2>
+<p>El primer concepto clave de RDF Schema son las clases. Los recursos pueden pertenecer a una clase. La clase de un recurso se especifica con la propiedad ya vista anteriormente de <strong>rdf:type</strong>. Las clases se relacionan entre s&iacute; mediante propiedades. Aqu&iacute; se pueden definir dos conceptos: <strong>rango</strong> y&nbsp;<strong>dominio</strong>. Su significado es similar al de las funciones matem&aacute;ticas. El rango representa los conjuntos de valores que puede tomar un atributo. Y el dominio, los recursos sobre los que tiene sentido aplicar ese atributo. Por tanto en una tripleta que use una propiedad, el recurso deber&aacute; estar dentro del dominio y el valor dentro del rango. Mencionar que las propiedades son tambi&eacute;n recursos, en esencia.</p>
+<p>Adem&aacute;s se definen relaciones de herencia entre clases, de tal modo que existen subclases y superclases, como en programaci&oacute;n orientada a objetos. Las subclases heredan los atributos de su superclase y adem&aacute;s son tambi&eacute;n superclase. La herencia que soporta RDF Schema es <strong>herencia m&uacute;ltiple</strong>, donde una clase puede tener varias superclases. Tambi&eacute;n existe herencia de atributos, habiendo subatributos y superatributos. Si tenemos un atributo A, y un subatributo B se entiende que usar el atributo B implica el atributo A para el mismo objeto y valor.</p>
+<p>Sin embargo, a diferencia de la POO, aqu&iacute; las clases son conceptos abiertos y podemos integrar nuevas propiedades sobre la marcha, modificando clases ya existentes. Esta flexibilidad es necesaria, para que funcione en un mundo tan heterog&eacute;neo como es la web.</p>
+<h3>Clases predefinidas por RDF Schema</h3>
+<ul>
+<li><strong>rdfs:Class</strong>: La superclase absoluta. Toda clase es hija de esta</li>
+<li><strong>rdfs:Resource</strong>: La clase que de la que heredan todos los recursos (las propiedades tambi&eacute;n son recursos)</li>
+<li><strong>rdfs:Literal</strong>: La clase de la que heredan todos los valores at&oacute;micos o literales</li>
+<li><strong>rdf:Property</strong>: La clase de la que heredan todas las propiedades</li>
+</ul>
+<h3>Propiedades predefindas por RDF Schema</h3>
+<ul>
+<li><strong>rdfs:range</strong>: Para indicar el rango de una propiedad</li>
+<li><strong>rdfs:domain</strong>: Para indicar el dominio de una propiedad</li>
+<li><strong>rdfs:subPropertyOf</strong>: Para indicar que una propiedad hereda de otra</li>
+<li><strong>rdfs:subClassOf</strong>: Para indicar que una clase hereda de otra</li>
+<li><strong>rdfs:comment</strong>: Descripci&oacute;n en formato humano de un recurso</li>
+<li><strong>rdfs:label</strong>: El nombre en formato humano de un recurso</li>
+<li><strong>rdfs:isDefinedBy</strong>: Para indicar que recurso define a otro</li>
+<li><strong>rdfs:seeAlso</strong>: Informaci&oacute;n adicional sobre el recurso</li>
+<li><strong>rdfs:member</strong>: Miembro del recurso</li>
+<li><strong>rdf:type</strong>: La clase de un recurso</li>
+</ul>
+<p>Ahora veamos un ejemplo de ontolog&iacute;a en formato XML.</p>
+<p><img src="https://files.adrianistan.eu/RDFClass.png" alt="" /></p>
+<p>Aqu&iacute; se definen dos clases: animal y horse. Y horse se define como subclase de animal. Por tanto un recurso de la clase horse es a la vez de la clase animal.</p>
+<p><img src="https://files.adrianistan.eu/RDFSchema.png" alt="" /></p>
+<p>Esta ontolog&iacute;a es m&aacute;s completa, porque define propiedades tambi&eacute;n</p>
+<h2>Inferencia</h2>
+<p>Una caracter&iacute;stica de las ontolog&iacute;as es que podemos realizar inferencias a trav&eacute;s de ellas. Inferir algo es generar informaci&oacute;n nueva aplicando reglas l&oacute;gicas. Veamos un ejemplo. Bas&aacute;ndonos en la ontolog&iacute;a de la &uacute;ltima foto vamos a tener dos tripletas:</p>
+<ol>
+<li>("Matem&aacute;tica Discreta","isTaughtBy","Grigoris Antoniu")</li>
+<li>("isTaughtBy","rdfs:range","Miembro Acad&eacute;mico")</li>
+</ol>
+<p>Entonces podemos deducir que:</p>
+<ul>
+<li>("Grigoris Antoniu","rdf:type","Miembro Acad&eacute;mico")</li>
+</ul>
+<p>Ya que Grigoris est&aacute; admitido en el rango de isTaughtBy y el rango de isTaughtBy solo admite "Miembro Acad&eacute;mico".</p>
+<p>Con esto ya tenemos lo b&aacute;sico para dise&ntilde;ar ontolog&iacute;as. Actualmente existen muchas ontolog&iacute;as: Schema.org (colaboraci&oacute;n entre Google, Bing, Yandex, recursos web principalmente), Dublin Core (recursos digitales), DOAP (describir proyectos de software), FOAF (personas y actividades), SIOC (comunidades online), SKOS (para describir diccionarios, tesauros, conceptos).</p>
+<p>RDF Schema es simple y f&aacute;cil de entender, pero poco potente. Para solventar algunos de los problemas de RDF Schema se dise&ntilde;&oacute; OWL. En el siguiente art&iacute;culo veremos algo ya mucho m&aacute;s pr&aacute;ctico, realizar consultas en SPARQL sobre recursos RDF.</p>

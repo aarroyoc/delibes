@@ -1,0 +1,73 @@
+body {
+    font-family: "IBM Plex Serif", serif;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+body:before {
+    content: "";
+    background-image: url("map.webp");
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0.6;
+    z-index: -1;
+}
+
+h1 {
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 700;
+}
+
+pre, code {
+    font-family: "IBM Plex Mono", monospace;
+    overflow: scroll;
+}
+
+header, aside, main, footer {
+    background-color: white;
+    max-width: min(48rem, 85vw);
+    padding-left: 1rem;
+    padding-right: 1rem;
+    border: 1px solid black;
+}
+
+header  {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    width: 30rem;
+    font-family: "IBM Plex Mono";
+
+    margin-top: 0.4rem;
+    margin-bottom: 2rem;
+}
+
+.title {
+    font-size: 3.5rem;
+    text-decoration: none;
+}
+
+nav {
+    margin: 0.25rem;
+}
+
+footer {
+    margin-top: 2rem;
+}
+
+img {
+    max-width: min(48rem, 85vw);
+    height: auto;
+}
+
+.black-link {
+    color: black;
+}

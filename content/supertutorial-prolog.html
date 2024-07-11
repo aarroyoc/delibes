@@ -1,0 +1,326 @@
+<p>Si estás aquí es porque has decidido aprender <a href="https://es.wikipedia.org/wiki/Prolog">Prolog</a> o por lo menos, te ha entrado la curiosidad sobre este lenguaje del paradigma lógico. ¡Sabia elección! En este artículo y los siguientes (enlazados al final) podrás aprender todo lo básico de Prolog.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/SWIPrologLogo.png">
+</div>
+<p>Antes de nada, avisar que ya tenía <a href="https://blog.adrianistan.eu/introduccion-a-prolog-tutorial-en-espanol">un tutorial de Prolog aquí</a>, sin embargo, creo que comete varias malas prácticas. En vez de editarlo, prefiero empezar de cero y además explicar más cosas.</p>
+<h2>Hola Mundo</h2>
+<p>Antes de entrar en la teoría, abre tu editor y copia/pega lo siguiente a un fichero llamado socrates.pl:</p>
+<pre><code class="language-prolog">
+human(socrates).
+mortal(X) :- human(X).
+</code></pre>
+<p>La explicación es sencilla. En la primera línea afirmamos que socrates es humano, en la segunda afirmamos que para que X sea mortal, antes tiene que ser humano. Todo esto lo detallaré más adelante.</p>
+<p>Ahora necesitarás un intérprete de Prolog. El más popular y el que actualmente recomiendo es <a href="https://www.swi-prolog.org/">SWI-Prolog</a> disponible para Windows, Mac, Linux y más.
+<p>Con SWI-Prolog instalado ejecuta desde un terminal:</p>
+<pre><code>
+swipl socrates.pl
+</code></pre>
+<p>Ahora podemos realizar consultas. Prolog es un lenguaje inicialmente diseñado en base a consultas lógicas. Vamos a pedir a Prolog que nos diga si socrates es humano.</p>
+<pre><code>
+?- human(socrates).
+true.
+</code></pre>
+<p>A lo que responde true, es decir, es cierto, socrates es humano.</p>
+<p>¿socrates es mortal?</p>
+<pre><code>
+?- mortal(socrates).
+true.
+</code></pre>
+<p>¿Y adrian?</p>
+<pre><code>
+?- mortal(adrian).
+false.
+</pre></code>
+<p>¿Cuántos humanos hay?</p>
+<pre><code>
+?- human(X).
+   X = socrates.
+</code></pre>
+<p>Solo socrates. ¿Y cuantos mortales?</p>
+<pre><code>
+?- mortal(X).
+   X = socrates.
+</code></pre>
+<p>Y si queremos un hola mundo más clásico, podemos usar write y nl.</p>
+<pre><code>
+?- write('Hola Mundo'), nl.
+Hola Mundo
+   true.
+</code></pre>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/PrologHelloWorld.png">
+</div>
+<h2>Historia de Prolog</h2>
+<p>Prolog (PROgrammation en LOGique) nació en 1972 en la Universidad de Provenza en la ciudad francesa de Marsella (mismo año que C). Diseñado por Alan Colmerauer y Philip Roussel para trabajar en inteligencia artificial, siempre ha estado ligado a este campo. En 1995 fue estandarizado, bajo ISO (como C++, Ada o Fortran). Durante este tiempo se han creado muchas implementaciones. Algunas las puedes ver en <a href="">Universo Prolog</a></p>
+<h2>Sintaxis de Prolog</h2>
+<p>La sintaxis de Prolog es muy simple. Solo existen tres elementos:</p>
+<ul>
+<li>Términos</li>
+<li>Comentarios</li>
+<li>Quasiquotes</li>
+</ul>
+<p>Los dos últimos son elementos excepcionales. Un comentario empieza por el símbolo <code>%</code> seguido del comentario. Los comentarios son textos que se eliminan al procesar la entrada y son útiles para anotar cosas. Los quasiquotes son elementos que permiten introducir sintaxis diferente a la de Prolog en Prolog (HTML, JSON, LISP, JavaScript, ...) pero es algo bastante avanzado.</p>
+<p>Los términos, son entonces, el 95% del código Prolog. Estos llevan un punto al final si no forman parte de ningún otro término de forma recursiva. Los términos se dividen a su vez en:</p>
+<ul>
+<li>Constantes</li>
+<li>Variables</li>
+<li>Compuestos</li>
+</ul>
+<p>Los constantes son términos que pueden ser átomos, números (y en algunas implementaciones también hay strings). Los átomos son cadenas de texto que empiezan por letra minúscula o llevan comillas simples. Los átomos son elementos inmutables que representan algo. La cualidad del átomo es que solo pueden ser iguales a ellos mismos. Los números son bastante explicativos, cadenas de texto compuestas de dígitos. Prolog no distingue entre ints, floats, etc y muchas implementaciones disponen de precisión arbitraria en los números. Los strings empiezan por comillas dobles y representan cadenas de texto "manipulables". Saber donde se usa string y donde atom en sistemas que usan ambos elementos es algo que se aprende con la práctica.</p>
+<p>Las variables son cadenas de texto que empiezan por una letra mayúscula. El funcionamiento de las variables es ligeramente diferente al de los lenguajes de programación tradicionales. Una variable puede entenderse como la solución de un problema (que será un término). Al principio del programa, cuando todavía no se han recorrido condiciones del problema, la variable no estará ligada, eso querrá decir, que puede ser cualquier cosa todavía. Según vaya avanzando el programa, Prolog unificará (más adelante esto) la variable con algún otro término y puede que la variable acabe ligada, es decir, a partir de ese momento, se comporta como si fuese el otro término. Esto sería, en esencia, añadir una restricción sobre la solución.</p>
+<p>En el apartado de unificación veremos esto más en detalle.</p>
+<p>Los compuestos son términos recursivos, se componen de un átomo, que llamaremos functor, y entre paréntesis y separados por comas, más términos. Esto puede parecer una llamada a una función, pero no. En Prolog no hay funciones. Simplemente es un término compuesto varios términos dentro de él.</p>
+<pre><code class="language-prolog">
+% Un comentario
+socrates. % Un átomo
+15. % Un número
+libro(don_quijote, cervantes). % Un compuesto. libro es functor, don_quijote y cervantes son los otros términos.
+Variable. % Una variable
+serie('Los Simpson', autor(Nombre, Apellido)). % Un compuesto más complejo
+</code></pre>
+<p>Al conjunto de compuestos con el mismo functor se le llama predicado y tiene una aridad, que es el número de términos que tiene entre paréntesis.</p>
+<p>Además de esto, los términos pueden llevar asociado un cuerpo. El cuerpo es un conjunto de predicados que tienen que ser verdaderos para poder afirmar que el término es verdadero. A esto se le llama regla. Si el término no lleva cuerpo, se dice que es un hecho y es verdadero siempre.</p>
+<pre><code class="language-prolog">
+human(socrates). % Afirmamos que socrates es humano (hecho)
+mortal(X) :- human(X). % Afirmamos que para que X sea mortal, antes tiene que ser humano (regla)
+% Otra forma de verlo, todos los humanos son mortales
+</code></pre>
+<h2>Semántica de Prolog</h2>
+<p>Al revisar la sintaxis ha surgido un poco algo de la semántica, es decir, ¿qué significa lo que hacemos? Los programas Prolog son una base de conocimiento (como una base de datos pero más potente). Esta base de conocimiento es dinámica y el código fuente es simplemente el estado inicial de la base de "datos".</p>
+<p>Inicialmente Prolog se diseña como un lenguaje orientado a consultas, como SQL, donde tenemos un terminal donde ir escribiendo pequeñas sentencias.</p>
+<p>En el terminal escribimos predicados para ver si son ciertos o no, dado el conocimiento del programa. Cuando introducimos variables, busca valores para las variables que cumplan el predicado.</p>
+<p>Prolog implementa un algoritmo de búsqueda (backtracking) por nosotros.</p>
+<h3>Backtracking</h3>
+<p>El algoritmo de backtracking es bastante simple y consiste en lo siguiente:</p>
+<ol>
+<li>Busca algún compuesto con el mismo functor, en la base de conocimiento (de arriba a abajo).</li>
+<li>Si es un hecho, unifica con él. (explicación más adelante)</li>
+<li>Si es una regla, pasa a tratar de demostrar el cuerpo de la regla.</li>
+<li>Si llega a un punto en el que no puede continuar, falla. Vuelve hacia atrás, deshace todas las unificaciones realizadas y si hay algún punto de elección, toma otra ruta.</li>
+</ol>
+<p>Podemos pensar que el algoritmo va haciendo un árbol intentando encontrar algo en la base de conocimiento que satisfaga el predicado de entrada.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Backtracking.png">
+</div>
+<p>O viendo cada predicado, podemos ver como puede pasar Prolog en un sentido hacia delante o hacia atrás.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/PrologFlow.png">
+</div>
+<h2>Hola mundo, otra vez</h2>
+<p>Ahora que sabemos todo esto de como funciona Prolog por debajo podemos volver a ejecutar el Hola Mundo del principio y tratar de ver como funciona. Para ello te recomiendo activar el modo trace, que nos deja ver que va haciendo Prolog paso a paso. Escribe trace antes de ejecutar la consulta. Por ejemplo:
+<pre><code>
+?- trace, mortal(X).
+   Call: (11) mortal(_6364) ? creep
+   Call: (12) human(_6364) ? creep
+   Exit: (12) human(socrates) ? creep
+   Exit: (11) mortal(socrates) ? creep
+X = socrates.
+</code></pre>
+<h2>Unificación</h2>
+<p>… o ¿pueden juntarse dos expresiones en una sin contradecirse?</p>
+<p>En Prolog, la operación más básica es la unificación, que podemos realizar mediante el operador <code>=</code> pero que igualmente se realiza cuando busca en la base de conocimiento. La idea es muy simple, ¿podemos asumir que dos términos pueden juntarse en uno solo? Para ello se realiza lo siguiente.</p>
+<ul>
+<li>Si hay una variable y una constante, la variable queda ligada a la constante.</li>
+<li>Si hay dos constantes, se comprueba que sean iguales.</li>
+<li>Si hay dos variables, se recuerda que ambas tienen que valer lo mismo, a partir de ese momento.</li>
+<li>Y esto se forma recursiva para los compuestos.</li>
+</ul>
+<p>Veamos algunos ejemplos:</p>
+<pre><code class="language-prolog">
+?- a = b.
+   false.
+?- a = a.
+   true.
+?- a = X.
+   X = a.
+?- X = Y.
+   X = Y.
+?- 4+5=3+6.
+   false.
+?- book(Name, Author) = book('Don Quijote', 'Cervantes').
+   Name = 'Don Quijote', Author = 'Cervantes'.
+</code></pre>
+<p>Es interesante prestar atención a que que una cosa esté en un lado u otro es indiferente. Además, es interesante como 4+5=3+6 no es true. Esto es debido a que Prolog, con unificación simplemente, compara términos pero no ejecuta operaciones aritméticas. Así pues 4+5 no es el mismo término que 3+6, ya que se escriben de forma diferente.</p>
+<h2>Operadores</h2>
+<p>Ya hemos visto como funciona el operador unificación (=). Veamos el resto de los operadores de Prolog:</p>
+<ul>
+<li><code>\=</code> es el operador de no unificación. Si tenemos <code>a \= b</code>, será cierto si a y b no unifican.</li>
+<li><code>,</code> es el operador lógico AND. Si tenemos <code>a,b</code> , será cierto si tanto a como b lo son.</li>
+<li><code>;</code> es el operador lógico OR. Si tenemos <code>a;b</code>, será cierto si a o b son ciertos. Ambos ciertos también valdría.</li>
+<li><code>\+</code> es el operador lógico NOT. Si tenemos <code>\+a</code>, será cierto si a no lo es.</li>
+<li><code>is</code> es el operador <code>=</code> pero además evalúa el lado derecho antes, permitiendo realizar aritmética. <code>X is 2+2.</code> es el equivalente a <code>X = 4.</code></li>
+<li><code>=:=</code> es el operador <code>=</code> pero evalúa ambos lados antes. Aquí <code>4+5 =:= 3+6</code> es equivalente a <code>9 = 9</code>.
+</li>
+</ul>
+<h2>Ejemplo: rutas aéreas</h2>
+<p>Vamos a ver un ejemplo más avanzado de programa Prolog. Se trata de un programa que tiene un listado de vuelos configuradas, con un precio entre dos aeropuertos. Vamos a hacer un programa que nos calcule cuanto nos costaría hacer el viaje de ida y vuelta (si es que es posible).</p>
+<pre><code class="language-prolog">
+vuelo(mad,bcn,200).
+vuelo(bcn,mad,100).
+
+idavuelta(X, Y, Precio) :-
+    vuelo(X, Y, P1),
+    vuelo(Y, X, P2),
+    Precio is P1+P2.
+</code></pre>
+<p>En el terminal de Prolog:</p>
+<pre><code>
+?- idavuelta(mad,bcn,X).
+   X = 300.
+?- idavuelta(bcn,mad,X).
+   X = 300.
+?- idavuelta(Origen,Destino,Precio).
+   Origen = mad, Destino = bcn, Precio = 300
+;  Origen = bcn, Destino = mad, Precio = 300.
+?- idavuelta(mad,nyc,X).
+   false.
+</code></pre>
+<p>Vamos a añadir un poco más de complejidad al programa. En la vida real, no existen vuelos directos que conecten todas las ciudades con todas, muchas veces hay que hacer escala. Por ello vamos a añadir que vuelo tenga una regla para vuelos que realizan escalas.</p>
+<pre><code class="language-prolog">
+vuelo(mad,bcn,200).
+vuelo(bcn,mad,100).
+vuelo(bcn,vll,30).
+vuelo(vll,bcn,30).
+vuelo(mad,vlc,50).
+vuelo(vlc,mad,50).
+
+vuelo(X, Y, Precio) :-
+    vuelo(X, Z, P1),
+    vuelo(Z, Y, P2),
+    Precio is P1+P2.
+
+idavuelta(X, Y, Precio) :-
+    vuelo(X, Y, P1),
+    vuelo(Y, X, P2),
+    Precio is P1+P2.
+</code></pre>
+<p>Hemos añadido vuelos de ida y vuelta entre BCN y VLL y entre MAD y VLC. Ahora podemos preguntar por el precio del vuelo entre VLL y VLC, que lógicamente será, VLL->BCN->MAD->VLC (30+100+50). También el precio de ida y vuelta que será 180 más la vuelta, que son 280.</p>
+<pre><code>
+?- vuelo(vll, vlc, X).
+   X = 180
+?- idavuelta(vll, vlc, X).
+   X = 460
+</code></pre>
+<p>Aunque, claro, estas soluciones no son únicas. Podemos dar vueltas entre MAD y BCN el tiempo que queramos. Por eso Prolog, nos ofrece más soluciones, que podemos obtener presionando la letra N</p>
+<pre><code>
+?- vuelo(vll, vlc, X).
+   X = 180
+;  X = 480
+;  X = 780
+;  X = 1080
+;  X = 1380
+;  X = 1680
+;  X = 1980
+;  X = 2280
+;  X = 2580
+;  X = 2880
+;  X = 3180
+;  X = 3480
+;  X = 3780
+;  X = 4080
+;  ...
+</code></pre>
+<h2>Listas en Prolog</h2>
+<p>La lista en Prolog es una estructura de datos básica. Es una lista enlazada, implementada mediante términos compuestos, pero a la que se le aplica azúcar sintáctico para que sea más legible. Las listas se definen con corchetes y se puede usar la barra vertical | para separar el primer elemento del resto. Además existen diversos predicados estándar para trabajar con listas como length/2 (longitud de una lista), member/2 (pertenencia a una lista), append/3 (combinar listas), nth0 (elemento N contando desde cero en una lista), nth1 (elemento N contando desde 1 en una lista).</p>
+<p>Como son predicados, pueden trabajar en varios sentidos. Por ejemplo con length/2:</p>
+<ul>
+<li><code>length([a,b,c], 3).</code> nos permite comprobar que la lista [a,b,c] tiene 3 elementos.</li>
+<li><code>length([a,b,c], N).</code> nos permite obtener la longitud de la lista.</li>
+<li><code>length([a,b,c], N), N < 5.</code> nos permite comprobar que la longitud de la lista es menor que 5.</li>
+<li><code>length(X, 3).</code> nos permite obtener una lista con tres variables no ligadas en X.</li>
+</ul>
+<p>Veamos algunos ejemplos más:</p>
+<pre><code>
+?- length([a,b,c], N).
+   N = 3.
+?- length(X, 5).
+   X = [_A,_B,_C,_D,_E].
+?- member(X, [socrates,platon,aristoteles]).
+   X = socrates
+;  X = platon
+;  X = aristoteles
+?- member(platon, [socrates, platon, aristoteles]).
+   true
+?- append([a,b],[c,d], X).
+   X = "abcd".
+?- append([a,b],X,[a,b,c,d]).
+   X = "cd".
+?- append(X,Y,[a,b,c,d]).
+   X = [], Y = "abcd"
+?- append(X,Y,[a,b,c,d]).
+   X = [], Y = "abcd"
+;  X = "a", Y = "bcd"
+;  X = "ab", Y = "cd"
+;  X = "abc", Y = "d"
+;  X = "abcd", Y = []
+</code></pre>
+<p>Un ejemplo de uso del operador | es el siguiente, para implementa la suma de toda una lista de números.</p>
+<pre><code class="language-prolog">
+suma([], 0).
+suma([H|T], S) :-
+    suma(T, S1),
+    S is H+S1.
+</code></pre>
+<p>H es una variable que unifica con el primer elemento de la lista, mientras que T unifica con el resto de la lista. Esto lo podemos usar como:</p>
+<pre><code>
+?- suma([1,2,3,4], X).
+X = 10.
+</code></pre>
+<h2>Metapredicados</h2>
+<p>Por último, conviene repasar algunos metapredicados de Prolog. Los metapredicados son predicados que trabajan con otros predicados y son extremadamente útiles.</p>
+<ul>
+<li><code>asserta/1 y assertz/1</code> nos permiten añadir términos a la base de conocimiento, tanto hechos como reglas. Dicho de otra forma, nos permite añadir código en tiempo de ejecución.</li>
+<li><code>retractall/1</code> nos permite eliminar términos de la base de conocimiento que unifiquen con el término que indiquemos.</li>
+<li><code>findall/3</code> encuentra todas las posibles soluciones a un predicado y las almacena en una lista.</li>
+<li><code>forall/2</code> es un predicado que es cierto si para todos las posibles soluciones de un predicado se da una condición que es cierta.</li>
+<li><code>maplist/2...8</code> es un predicado que permite operar con hasta 8 listas en paralelo llamando a un predicado auxiliar.</li>
+</ul>
+<p>Hagamos un ejemplo con assertz y retractall:</p>
+<pre><code>
+?- human(X).
+false.
+?- assertz(human(socrates)).
+   true.
+?- assertz(human(platon)).
+   true.
+?- human(X).
+   X = socrates
+;  X = platon.
+?- retractall(human(X)).
+?- human(X).
+   false.
+</code></pre>
+<p>Ahora veamos un ejemplo del resto de predicados. Teniendo este fichero:</p>
+<pre><code class="language-prolog">
+parent(juancarlos, felipe).
+parent(juancarlos, cristina).
+parent(juancarlos, elena).
+
+married(felipe).
+married(cristina).
+divorced(elena).
+</code></pre>
+<p>Podemos ejecutar los siguientes comandos:</p>
+<pre><code class="language-prolog">
+?- forall(parent(juancarlos, X), married(X)).
+   false.
+?- forall(parent(juancarlos, X), (married(X);divorced(X))).
+   true.
+?- findall(X, married(X), Married).
+   Married = [felipe,cristina].
+?- maplist(write, [felipe, cristina]).
+felipecristina   true
+</code></pre>
+
+<h2>Continúa...</h2>
+<p>Con esto ya tienes suficiente como para realizar programas simples y medianos en Prolog, ya que, en esencia, Prolog es un lenguaje compacto. Sin embargo el lenguaje tiene muchas más cosas interesantes y que merece la pena ver, he aquí algunos enlaces de interés dentro de este blog:</p>
+<ul>
+<li><a href="https://blog.adrianistan.eu/sudoku-prolog">Sudoku en Prolog</a></li>
+<li><a href="https://blog.adrianistan.eu/prolog-dcg-gramaticas-clausula-definida">DCGs en Prolog</a></li>
+<li><a href="https://blog.adrianistan.eu/debug-grafico-prolog">Debug gráfico en Prolog</a></li>
+<li><a href="https://blog.adrianistan.eu/programacion-web-prolog">Programación web en Prolog</a></li>
+<li><a href="https://blog.adrianistan.eu/universo-prolog">El Universo Prolog</a></li>
+</ul>
+
+
+ 

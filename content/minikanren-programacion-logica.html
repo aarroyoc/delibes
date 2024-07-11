@@ -1,0 +1,102 @@
+<p>Cuando hablamos de programaci&oacute;n l&oacute;gica, lo primero que se nos viene a la mente es Prolog, un lenguaje del que ya he hablado varias veces, y que fue uno de los primeros lenguajes l&oacute;gicos as&iacute; como uno de los m&aacute;s populares. Hoy vengo a hablaros de una familia de lenguajes, llamada <a href="http://minikanren.org/">miniKanren</a>, que demuestra que cualquier lenguaje de programaci&oacute;n puede adoptar el paradigma l&oacute;gico con solo 3 instrucciones. miniKanren est&aacute; disponible como DSL en muchos lenguajes: Scheme, Haskell, Clojure (llamado core.logic), Python, C#, Elixir, Go, JavaScript, Rust, ... y pr&aacute;cticamente cualquier lenguaje.</p>
+<h2>Historia</h2>
+<p>miniKanren surgi&oacute; originalmente en el libro <a href="https://amzn.to/2Rg9LKM">The Reasoned Schemer</a>, escrito por <a href="http://www.cs.indiana.edu/~dfried/">Daniel P. Friedman</a>, <a href="http://webyrd.net">William E. Byrd</a>, <a href="http://okmij.org/ftp/">Oleg Kiselyov</a>, and <a href="http://hemann.pl/">Jason Hemann</a> y publicado por MIT Press siendo la &uacute;ltima edici&oacute;n la de 2018. miniKanren se implementa originalmente en Scheme (algo bastante habitual para el MIT) pero sus principios b&aacute;sicos se pueden implementar en cualquier lenguaje de programaci&oacute;n de tipo general.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/Schemer.jpeg" alt="" width="460" height="460" /></p>
+<p>As&iacute;, es posible a&ntilde;adir el paradigma l&oacute;gico a cualquier lenguaje a&ntilde;adiendo &uacute;nicamente 3 funciones. Este conjunto de 3 funciones se denomina&nbsp;<strong>microKanren</strong> y normalmente las implementaciones de miniKanren implementan microKanren en el lenguaje de destino y el resto de miniKanren se implementa usando las funciones definidas en microKanren. As&iacute; miniKanren es una familia de lenguajes que no comparten sintaxis (la sintaxis depende del lenguaje de destino) aunque generalmente es muy parecida. Yo usar&eacute; <a href="https://github.com/logpy/logpy">miniKanren para Python</a>, ya que es una implementaci&oacute;n completa en un lenguaje bastante popular.</p>
+<p>Las funciones de microKanren son las siguientes:</p>
+<ul>
+<li>==
+<ul>
+<li>Realiza la operaci&oacute;n de unificaci&oacute;n, que ya coment&eacute; en la <a href="https://blog.adrianistan.eu/introduccion-a-prolog-tutorial-en-espanol">ihttps://blog.adrianistan.eu/introduccion-a-prolog-tutorial-en-espanolntroducci&oacute;n a Prolog</a> y b&aacute;sica en programaci&oacute;n l&oacute;gica</li>
+</ul>
+</li>
+<li>fresh
+<ul>
+<li>Introduce un nuevo scope, definiendo variables l&oacute;gicas. A su vez, realiza la conjunci&oacute;n de las relaciones que se definen.</li>
+</ul>
+</li>
+<li>conde
+<ul>
+<li>Introduce la posibilidad de m&uacute;ltiples respuestas, definiendo varios conjuntos independientes donde todas los predicados tienen que ser ciertos a la vez. Esto es una mezcla de AND y OR a la vez. Veremos un ejemplo m&aacute;s abajo.</li>
+</ul>
+</li>
+</ul>
+<h2>Tutorial b&aacute;sico de miniKanren</h2>
+<p>Para el peque&ntilde;o tutorial voy a usar <a href="https://github.com/logpy/logpy">LogPy</a>, un dialecto de miniKanren para Python. Se instala f&aacute;cilmente a trav&eacute;s de PyPI.</p>
+<p>Una vez lo tengamos instalado, vamos a ejecutar nuestro primer programa en miniKanren.&nbsp;</p>
+<pre><code class="language-python">
+from kanren import run, eq, var
+
+x = var()
+sol = run(1,x,eq(x,42))
+print(sol[0])
+</code></pre>
+<p>En la primera l&iacute;nea importamos las funciones que vamos a usar, run, eq y var.&nbsp;<strong>var</strong> nos permite crear variables l&oacute;gicas, que podemos usar en nuestros programas miniKanren. Cumple la misma funci&oacute;n que <strong>fresh</strong>. <strong>run</strong> ejecuta el programa miniKanren. Tiene varios argumentos. El primero es el n&uacute;mero de soluciones a buscar, el segundo es sobre qu&eacute; variables vamos a buscar soluciones. El resto de argumentos, son predicados del programa miniKanren. En este caso usamos&nbsp;<strong>eq</strong> que es == pero como Python no admite la sintaxis, se modifica el nombre. B&aacute;sicamente estamos pidiendo que X unifique con 42. La soluci&oacute;n, que es un array de soluciones, nos indica claramente que para que X unifique con 42, X tiene que ser 42.</p>
+<p>Si te acuerdas de Prolog, probablemente te est&eacute;s preguntando como hacer relaciones, por supuesto miniKanren las soporta:</p>
+<pre><code class="language-python">
+from kanren import run, var, Relation, facts
+
+x = var()
+parent = Relation()
+facts(parent,("Homer","Bart"),
+        ("Homer","Lisa"),
+        ("Abe","Homer"))
+
+sol = run(2,x,parent("Homer",x))
+print(sol[0])
+print(sol[1])
+</code></pre>
+<p>Para definir relaciones, primero creamos una relaci&oacute;n. Despu&eacute;s insertamos hechos correspondientes a esa relaci&oacute;n. Esa relaci&oacute;n la podemos usar en el c&oacute;digo miniKanren de forma muy similar a Prolog. En este caso pedimos dos soluciones, ya que sabemos que existen dos posibles valores de X: Bart y Lisa.</p>
+<p>Como hemos dicho, miniKanren no es un lenguaje independiente, es m&aacute;s bien un lenguaje ad-hoc al lenguaje que estamos usando. Por eso podemos combinar funciones de Python con miniKanren.</p>
+<pre><code class="language-python">
+from kanren import run, eq, conde, var, Relation, facts
+
+x = var()
+
+parent = Relation()
+facts(parent,("Homer","Bart"),
+        ("Homer","Lisa"),
+        ("Abe","Homer"))
+
+def grandparent(x,z):
+    y = var()
+    return conde((parent(x,y), parent(y,z)))
+
+sol = run(1,x,grandparent(x,"Bart"))
+print(sol[0])
+</code></pre>
+<p>Obteniendo como respuesta "Abe". Aqu&iacute; usamos&nbsp;<strong>conde</strong>. Conde hemos dicho antes que es un OR y AND a la vez. En un primer nivel es un OR, es decir, conde(A,B) es verdadero si A o B son verdaderos. Sin embargo si A y B son predicados compuestos, entre ellos se aplica la relaci&oacute;n AND. Por ejemplo, conde((A,B,C),(D,E)) significa que o bien A, B y C son ciertos o D y E son ciertos para que el predicado sea cierto.</p>
+<p>Con esto ya estamos listos para recrear el Hola Mundo del paradigma l&oacute;gico, la mortalidad de S&oacute;crates.</p>
+<pre><code class="language-python">
+from kanren import run, var, fact, Relation
+
+x = var() 
+human = Relation()
+
+fact(human,"Socrates")
+
+def mortal(x):
+    return human(x)
+
+sol = run(1,x,mortal(x))
+print(sol)
+</code></pre>
+<p>As&iacute; de simple y sencillo y sin tener que cambiar de lenguaje de programaci&oacute;n.</p>
+<p>Un predicado que suelen llevar las implementaciones de miniKanren que no es estrictamente necesario es <strong>membero</strong> que es cierto cuando X pertenece a la lista.</p>
+<pre><code class="language-python">
+from kanren import run, membero, var
+
+x = var()
+sol = run(1,x,
+    membero(x,[1,2,3]),
+    membero(x,[2,3,4])
+    )
+print(sol)
+</code></pre>
+<p>En este caso habr&iacute;a dos posibles respuestas (2 o 3) ya que ambos n&uacute;meros cumplen la condici&oacute;n de estar en ambas listas a la vez. La respuesta final vendr&aacute; dada por la implementaci&oacute;n de miniKanren (en LogPy da 2).</p>
+<p>&nbsp;</p>
+<h2>Diferencias con Prolog</h2>
+<p>Una vez visto miniKanren, quiz&aacute; haga falta saber las<a href="https://stackoverflow.com/questions/28467011/what-are-the-main-technical-differences-between-prolog-and-minikanren-with-resp"> diferencias que tiene respecto a Prolog</a>. En primer lugar, Prolog es un lenguaje independiente, con el que podemos dise&ntilde;ar aplicaciones desde cero. Esto sin embargo suele ser un problema, ya que aunque para ciertas tareas la programaci&oacute;n l&oacute;gica es muy buena, para otras es un verdadero infierno. Adem&aacute;s, esto ha hecho que el n&uacute;mero de librer&iacute;as que existen para Prolog sean muy limitadas. Con miniKanren no tenemos ese problema. B&aacute;sicamente estamos usando el lenguaje base y cuando queramos realizar programaci&oacute;n l&oacute;gica usamos las funciones de miniKanren.</p>
+<p>Prolog tambi&eacute;n es un lenguaje que se deriva del sistema l&oacute;gico en varios puntos, como los&nbsp;<strong>cortes</strong>, o la base de datos modificable de hechos (<strong>assert</strong> y&nbsp;<strong>retract</strong>). Esto otorga flexibilidad, pero pierde en limpieza. Adem&aacute;s, Prolog no realiza el chequeo de ocurrencias en la unificaci&oacute;n, paso matem&aacute;ticamente necesario pero computacionalmente costoso y que no suele suponer grandes diferencias de resultados en la pr&aacute;ctica. Adem&aacute;s Prolog soporta operaciones aritm&eacute;ticas. Esto no significa que en miniKanren no se puedan usar, pero dependen del lenguaje base, son por tanto indiferentes de cara a este DSL. Por otro lado en miniKanren no existe mutabilidad y todo c&oacute;digo escrito es <em>thread-safe</em>, aunque no existen muchas implementaciones que aprovechen el paralelismo. En las b&uacute;squedas, Prolog suele usar el m&eacute;todo primero en profundidad mientras que miniKanren suele ser primero en anchura.</p>
+<h2>Conclusi&oacute;n</h2>
+<p>Si bien Prolog es un lenguaje muy interesante, el hecho de ser algo separado lo ha hecho perder mucho inter&eacute;s durante los a&ntilde;os y aunque se puede empotrar, esto no es f&aacute;cil. miniKanren es un lenguaje l&oacute;gico puro, que si bien es algo m&aacute;s limitado, la experiencia de uso es mejor. Quiz&aacute; la mejor opci&oacute;n a d&iacute;a de hoy para realizar programaci&oacute;n l&oacute;gica en sistemas en producci&oacute;n. No obstante a d&iacute;a de hoy sigue faltando mucha documentaci&oacute;n sobre miniKanren, aunque si tienes experiencia con Prolog, lo entender&aacute;s r&aacute;pidamente.</p>

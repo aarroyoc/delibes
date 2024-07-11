@@ -1,0 +1,175 @@
+<p>El sistema de tipos de un lenguaje de programación tiene que ser algo que nos ayude a nosotros a encontrar fallos antes de tiempo y a hacer el código lo más legible posible. En algunos lenguajes disponemos de tipos suma, los cuáles tienen varias ventajas que podemos aprovechar.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/MemeSumType.png">
+</div>
+<h2>¿Qué son los tipos suma?</h2>
+<p>Los tipos suma son un subconjunto de los llamados Tipos Algebraicos de Datos, ADT, por sus siglas en inglés. <strong>Un tipo suma es un tipo que se compone de varios subtipos, los cuales solo uno de ellos es el que se aplica en un preciso momento.</strong> Un OR de tipos si se quiere ver de otra forma.</p>
+<p>Por ejemplo, podríamos tener un tipo llamado StringFloat que es la suma de string y float. Así, en StringFloat podemos tener o bien un string o bien un float, pero no a la vez. La principal ventaja es que podemos obtener un resultado parecido a la herencia y al polimorfismo pero más flexible y ligero. Hay que recordar esto no interfiere con la herencia ni dada por el estilo, no estamos con objetos, es solo a nivel de tipos. De hecho, podrían ser tipos totalmente diferentes los componentes de la suma. </p>
+
+<p>De cierto modo en los lenguajes de tipado dinámico ya tenemos sum types, todos lo son ya que no se comprueba nada. Lo interesante es ver como los podemos introducir en el tipado estático. De esta forma podremos hacer uso de esta "dinamicidad" de forma segura. El compilador es capaz de comprobar que usamos los subtipos de la suma siempre que hayamos comprobado que es el subtipo correcto. No todos los lenguajes admiten los tipos suma de la misma forma. TypeScript y Rust sí los admiten de forma poco dolorosa. Veamos ejemplos en ambos lenguajes:</p>
+
+<pre><code class="language-javascript">
+type Position = {
+    x: number,
+    y: number,
+};
+
+type Circle = {
+    position: Position,
+    radius: number,
+}
+
+type Rect = {
+    position: Position,
+    width: number,
+    height: number,
+}
+
+type Shape = Circle | Rect;
+
+function main(){
+    const shapes: Shape[] = [];
+    shapes.push({
+        position: {
+            x: 50,
+            y: 60
+        },
+        radius: 7
+    });
+    shapes.push({
+        position: {
+            x: 50,
+            y: 60,
+        },
+        width: 40,
+        height: 30
+    });
+}
+</code></pre>
+<p>Este código compilaría en TypeScript. Sin embargo si en alguno de los objetos que añadimos al array olvidádemos algún campo fallaría. position siempre es obligatorio pero radius, width y height son "opcionales". Sin embargo, una vez pongamos width se nos obligará a añadir height. El tipo Shape debe ser Circle con todos sus campos o Rect con todos sus campos. ¿Podríamos añadir radius al objeto que ya tiene width y height? Por defecto sí y en ese caso ese objeto sería a la vez Circle y Rect.</p>
+<pre><code class="language-rust">
+struct Position {
+    x: f64,
+    y: f64,
+}
+
+enum Shape {
+    Circle {
+        position: Position,
+        radius: f64,
+    },
+    Rect {
+        position: Position,
+        width: f64,
+        height: f64,
+    }
+}
+
+fn main(){
+    let mut shapes = Vec::new();
+    shapes.push(Shape::Circle {
+        position: Position {
+            x: 5.0,
+            y: 6.0,
+        },
+        radius: 4.0
+    });
+    shapes.push(Shape::Rect {
+        position: Position {
+            x: 5.0,
+            y: 6.0,
+        },
+        width: 70.0,
+        height: 80.0
+    });
+}
+</code></pre>
+<p>En Rust la forma de crear tipos suma es mediante enum. Existen dos formas para hacer los subtipos, con un struct o con una tupla. En el ejemplo uso un struct pero las tuplas son muy usadas en subtipos pequeños. Una gran diferencia que tiene Rust respecto a TypeScript es que no admiten tipos suma anónimos (<a href="https://github.com/rust-lang/rfcs/issues/294">al menos de momento</a>) por lo que no podemos componer los sum types, es decir, el sum type completo tiene que aparecer en el enum y no podemos juntar varios enum entre sí. Tampoco es posible añadir campos extra, ya que Rust no permite campos extra nunca. Además en Rust es obligatorio el tag, que es el Circle o el Rect que aparece y que tenemos que indicar al crear un dato de ese tipo. En TypeScript el tag es opcional.</p>
+<h2>Tags</h2>
+<p>Si queremos distinguir para cierta operación necesitaremos un tag. Ya hemos visto que en Rust es obligatorio, así que no hay nada que contar pero en TypeScript no lo es. Así que si queremos discernir que subtipo dentro de la suma tenemos, habrá que añadir un tag. <strong>El tag es un campo del objeto que va a permitir diferenciar ese tipo respecto a los demás.</strong> Puede ser por su valor o por su existencia. Normalmente es un campo de tipo type, aunque no es necesario.</p>
+
+<pre><code class="language-javascript">
+// usando como tag una propiedad que solo existe en Circle
+function area(a: Shape, b: Shape): number {
+    if("radius" in a){
+        // aquí el compilador ya sabe que a es de tipo Circle ya que es el único tipo que tienen los Circle que los demás no tienen
+
+        return Math.PI*Math.pow(a.radius, 2);
+    } else {
+        // aquí el compilador sabe que a es de tipo Rect ya que no es de tipo Circle y no hay más opciones
+        return a.height*a.width;
+    }
+}
+// usando como tag una propiedad cuyo valor indica el tipo
+
+type Circle = {
+    type: "circle",
+    position: Position,
+    radius: number,
+}
+
+type Rect = {
+    type: "rect",
+    position: Position,
+    width: number,
+    height: number,
+}
+
+function area(a: Shape, b: Shape): number {
+    if(a.type === "circle"){
+        return Math.PI*Math.pow(a.radius, 2);
+    } else {
+        return a.height*a.width;
+    }
+}
+</code></pre>
+<p>En Rust para discernir el subtipo podemos hacer pattern matching, tanto con if-let, como con match.</p>
+<pre><code class="language-rust">
+// con match
+fn area(shape: &Shape) -> f64 {
+    match shape {
+        Shape::Circle { radius, .. } => std::f64::consts::PI * (radius.powf(2.0)),
+        Shape::Rect { width, height, ..} => width * height
+    }
+}
+
+// con if-let
+fn area2(shape: &Shape) -> f64 {
+    if let Shape::Circle { radius, .. } = shape {
+        return std::f64::consts::PI * (radius.powf(2.0));
+    }
+    if let Shape::Rect { width, height, ..} = shape {
+        return width * height;
+    }
+    unreachable!();
+}
+</code></pre>
+<p>Nótese que la versión con if-let no es exhaustiva y por ello es muy recomendable añadir la macro unreachable al finalizar los ifs. En todo caso, el match es mejor opción.</p>
+<h2>Modelar NULL</h2>
+<p>Una de las ventajas más interesantes de los tipos suma, es que si están bien implementados podemos usarlos para distinguir entre un objeto de verdad y un NULL. De este modo, para que nuestro código compile siempre tendremos que comprobar que el objeto existe y no es NULL. En TypeScript lo primero será habilitar la opción strictNullChecks o strict. Con esto activado tendríamos que esto no compila:</p>
+<pre><code class="language-javascript">
+    let shape = shapes.find((t: Shape) => t.position.x === 40);
+    area(shape, shapes[0]);
+</code></pre>
+<p>Porque shape es ahora de tipo Shape | undefined, y area solo admite Shape. Hay que comprobar que no sea undefined.</p>
+<pre><code class="language-javascript">
+    let shape = shapes.find((t: Shape) => t.position.x === 40);
+    if(shape){
+        area(shape, shapes[0]);
+    }
+</code></pre>
+<p>En Rust ya tenemos un tipo suma para esto, Option, que puede ser Some(T) o None.</p>
+<pre><code class="language-rust">
+    let shape = shapes.get(0);
+    area(&shape); // ERROR: No compila
+</code></pre>
+<p>Este código no compila porque shape ya no es de tipo Shape sino de tipo Option<Shape>.</p>
+<pre><code class="language-rust">
+    let shape = shapes.get(0);
+    if let Some(shape) = shape {
+        area(&shape);
+    }
+</code></pre>
+<p>Esto sí compila ya.</p>
+<h2>Conclusión: tipos restrictivos</h2>
+<p>Como ya vimos en el artículo sobre <a href="https://blog.adrianistan.eu/que-es-idris-y-por-que-es-un-lenguaje-de-programacion-tan-interesante">Idris</a>, el sistema de tipos tiene que ayudar al programador y para ello tenemos que usarlo creando <strong>tipos lo más restrictivos posibles</strong>. Todo lo que podamos decir sobre un dato de como tiene que ser deberíamos tiparlo y no usar tipos genéricos que podemos usar en cualquier lado pero requieren comprobaciones que igual no nos acordamos de hacer.</p>

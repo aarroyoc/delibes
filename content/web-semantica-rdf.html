@@ -1,0 +1,125 @@
+<p>Este art&iacute;culo es el primero de una serie de tutoriales que van a explorar la <strong>web sem&aacute;ntica</strong> a d&iacute;a de hoy, fuera de todo hype inicial y todo el universo de los&nbsp;<strong>datos enlazados</strong>. Lo primero ser&aacute; entender el concepto fundamental y lo segundo, RDF, piedra angular de la web sem&aacute;ntica tal y como la describe W3C.</p>
+<p>La idea fundamental de la web sem&aacute;ntica, es tener una web con significado, interpretable tanto por humanos como por m&aacute;quinas. En la web tradicional, las webs no tienen significado, para un ordenador no deja de ser texto que no es capaz de interpretar con facilidad. La web sem&aacute;ntica es una red, interconectada de datos con valor sem&aacute;ntico. El valor sem&aacute;ntico se expresa a trav&eacute;s de ontolog&iacute;as. RDF es el modelo de datos propuesto por W3C para modelar esta red. No es la &uacute;nica propuesta, tambi&eacute;n existen microformats, microdata y otros formatos. Sin embargo, RDF es lo suficientemente maduro como para basarnos en &eacute;l directamente, adem&aacute;s de ser muy flexible.</p>
+<p><img src="https://files.adrianistan.eu/RDFLisa.jpg" alt="" width="850" height="579" /></p>
+<p>En esta imagen, cortes&iacute;a de W3C, podemos ver el concepto de datos enlazados, en un grafo, donde la informaci&oacute;n se relaciona a trav&eacute;s de propiedades comunes que todos entienden, pero la informaci&oacute;n reside en servidores diferentes. As&iacute;, aunque el perfil de usuario de Bob exista en http://example.org, sabemos que le interesa la Mona Lisa y que su autor fue Leonardo da Vinci. Simplemente siguiendo el grafo, podemos conocer esa informaci&oacute;n, aunque Bob no especificase ni guardase en su servidor en ning&uacute;n momento que la Mona Lisa fue obra de Leonardo da Vinci.</p>
+<h2>&iquest;Qu&eacute; es RDF?</h2>
+<p>RDF son las iniciales de&nbsp;<em>Resource Description Framework</em> y es un modelo de datos. Define una forma en la que se representa toda la informaci&oacute;n. RDF se basa en el concepto, ya usado con anterioridad, de Objeto-Atributo-Valor (tambi&eacute;n llamado sujeto-predicado-objeto). Esto es muy sencillo de entender y a la vez, muy flexible. B&aacute;sicamente, toda la informaci&oacute;n se almacena en tripletas. Una tripleta son tres valores: recurso, propiedad y valor. El recurso es el individuo sobre el que decimos algo, la propiedad es la caracter&iacute;stica sobre la que decimos algo y el valor es el contenido. Por ejemplo, podemos modelar una persona f&aacute;cilmente usando tripletas.</p>
+<pre><code>
+("Alonzo Church","fecha-nacimiento","1903-06-14")
+("Alonzo Church","lugar-nacimiento","Washington D.C.")
+("Alonzo Church","profesion","matematico")
+</code></pre>
+<p>Los valores pueden ser a su vez recursos o pueden ser valores at&oacute;micos. De este modo se logra un grafo de relaciones. Las tripletas RDF se pueden almacenar en muchos formatos diferentes. Al principio, se hizo mucho &eacute;nfasis en la sintaxis XML. Hoy d&iacute;a tambi&eacute;n son muy comunes las sintaxis Turtle, N3 o JSON-LD. RDF presenta un modelo de datos semitipado. Sobre esto hablaremos m&aacute;s adelante. En esto que hemos visto surge un problema, &iquest;c&oacute;mo identificamos cada objeto dentro de un sistema interoperable? Si estuvi&eacute;semos en Microsoft alguien habr&iacute;a dicho <a href="https://es.wikipedia.org/wiki/Identificador_%C3%BAnico_global">GUID</a>, pero en la W3C la respuesta fue IRI.</p>
+<h2>&iquest;Qu&eacute; es IRI?</h2>
+<p>IRI son las iniciales de <em>Internationalized Resource Identifier</em>, se trata de la versi&oacute;n m&aacute;s extensa de las que las URL son un caso particular. Los IRI se definen como los identificadores en toda la web, seg&uacute;n W3C. Una IRI puede ser http://www.google.com/ o tel:+34000111222. Ambas cadenas permiten identificar un recurso. Ese es el concepto de IRI. Si el identificador es a la vez un "puntero" ya que nos permite a su vez localizar la informaci&oacute;n, hablamos de IRL. En RDF tenemos que usar IRI, es decir, no tienen por qu&eacute; permitir la localizaci&oacute;n de un recurso, pero s&iacute; lo deben identificar de forma inequ&iacute;cova y exclusiva.</p>
+<h2>Namespaces</h2>
+<p>En RDF hemos dicho que necesitamos usar IRI en las tripletas. Los IRI pueden ser muy largos, y con muchas partes repetidas. Para ello, se usan los espacios de nombres, que al igual que en XML, nos permiten acortar lo que escribimos. Un beneficio secundario es que podemos usar espacios de nombres ya definidos y tener as&iacute; la interoperabilidad que es la base de la web sem&aacute;ntica. Esto son las denominadas ontolog&iacute;as. Algunas de las m&aacute;s conocidas son Schema.org, Dublin Core y FOAF.</p>
+<h2>Sintaxis de RDF</h2>
+<p>Vamos a crear un ejemplo real de uso de RDF y comprobaremos las diferencias entre las distintas sintaxis. Para ello, vamos a elegir un conjunto de canciones.</p>
+<h3>Tripletas Objeto-Atributo-Valor</h3>
+<pre><code>
+("https://blog.adrianistan.eu/song/Vagabundear","https://blog.adrianistan.eu/web-semantica-rdf/autor","https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo")
+("https://blog.adrianistan.eu/song/Vagabundear","https://blog.adrianistan.eu/web-semantica-rdf/album","https://blog.adrianistan.eu/web-semantica-rdf/CantarTierraMia")
+("https://blog.adrianistan.eu/song/CantigaApocrifa","https://blog.adrianistan.eu/web-semantica-rdf/autor","https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo")
+("https://blog.adrianistan.eu/song/CantigaApocrifa","https://blog.adrianistan.eu/web-semantica-rdf/album","https://blog.adrianistan.eu/web-semantica-rdf/CantarTierraMia")
+("https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo","https://blog.adrianistan.eu/web-semantica-rdf/pais","https://blog.adrianistan.eu/country/Espa&ntilde;a")
+("https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo","https://blog.adrianistan.eu/web-semantica-rdf/genero","https://blog.adrianistan.eu/gender/Folk")
+("https://blog.adrianistan.eu/web-semantica-rdf/CantarTierraMia","https://blog.adrianistan.eu/web-semantica-rdf/fecha","1975")
+</code></pre>
+<p>Ahora veamos como estas tripletas, que ya usan IRI, se pasan a las diferentes sintaxis.</p>
+<h3>Grafo</h3>
+<p><img src="https://files.adrianistan.eu/RDFGraph2.png" alt="" /></p>
+<p>La representaci&oacute;n de grafo es &uacute;til para ver las interrelaciones, aunque r&aacute;pidamente se puede volver bastante dif&iacute;cil de leer. En cualquier caso, siempre tenemos que tener en mente que el modelo RDF genera un grafo.</p>
+<h3>XML</h3>
+<p><img src="https://files.adrianistan.eu/RDFXML.png" alt="" /></p>
+<p>La sintaxis XML es verbosa, pero admite muchas opciones. En primer lugar definimos una etiqueta global RDF, que en este caso est&aacute; dentro del namespace rdf, que usamos para referirnos al est&aacute;ndar RDF de 1999 (la &uacute;ltima versi&oacute;n es de 2014, pero en este ejemplo no hay cambios). Cada recurso tiene un <strong>rdf:Description</strong>, pero si queremos que este objeto tenga un tipo o clase (que se indica con <strong>rdf:type</strong>) podemos simplemente usar ese nombre como etiqueta (en el ejemplo lo hacemos con&nbsp;<strong>ex:cancion</strong>). Esto forma parte de RDF Schema y lo veremos en el siguiente art&iacute;culo. Cada objeto tiene un IRI, expresado con el atributo <strong>rdf:about</strong>. rdf:about admite IRIs absolutas y relativas. Tambi&eacute;n existe,&nbsp;<strong>rdf:ID</strong>, que solo admite rutas relativas, pero algo mejor. Cuando el valor de una tripleta es at&oacute;mico, lo podemos incluir directamente, si es otro recurso, usamos <strong>rdf:resource</strong>.&nbsp;</p>
+<p>Los ficheros XML <a href="https://www.w3.org/RDF/Validator/">se pueden validar en el servicio de W3C</a>.</p>
+<h3>JSON-LD</h3>
+<pre><code>
+{
+  "@context": {
+    "ex": "https://blog.adrianistan.eu/web-semantica-rdf/",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo",
+      "ex:genero": {
+        "@id": "https://blog.adrianistan.eu/gender/Folk"
+      },
+      "ex:pais": {
+        "@id": "https://blog.adrianistan.eu/country/Espa&ntilde;a"
+      }
+    },
+    {
+      "@id": "https://blog.adrianistan.eu/song/Vagabundear",
+      "@type": "ex:cancion",
+      "ex:album": {
+        "@id": "#CantarTierraMia"
+      },
+      "ex:autor": {
+        "@id": "https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo"
+      }
+    },
+    {
+      "@id": "#CantarTierraMia",
+      "ex:fecha": "1975"
+    },
+    {
+      "@id": "https://blog.adrianistan.eu/song/CantigaApocrifa",
+      "@type": "ex:cancion",
+      "ex:album": {
+        "@id": "#CantarTierraMia"
+      },
+      "ex:autor": {
+        "@id": "https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo"
+      }
+    }
+  ]
+}
+</code></pre>
+<p>JSON-LD fue creado mucho m&aacute;s recientemente, debido a la p&eacute;rdida de popularidad de XML. Una parte de la comunidad quer&iacute;a seguir usando RDF con JSON, as&iacute; surgi&oacute; JSON-LD (JSON for Linking Data).</p>
+<p>Como vemos, es menos verboso. Se distinguen dos partes fundamentales: <strong>@context</strong> y @<strong>graph</strong>. En @context van los namespaces que vamos a usar. En @graph tenemos un array con los recursos. Cada recurso tiene una propiedad @id, su IRI (tanto relativos como absolutos) y sus propiedades. Las propiedades pueden ser valores directamente u objetos con propiedad @id, que hacen referencia a otro objeto. JSON-LD es muy sencillo de usar, pero tiene poco soporte.</p>
+<h3>N3</h3>
+<pre><code>
+@prefix ex: &lt;https://blog.adrianistan.eu/web-semantica-rdf/&gt; .
+@prefix rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt; .
+@prefix rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt; .
+@prefix xml: &lt;http://www.w3.org/XML/1998/namespace&gt; .
+@prefix xsd: &lt;http://www.w3.org/2001/XMLSchema#&gt; .
+
+&lt;https://blog.adrianistan.eu/song/CantigaApocrifa&gt; a ex:cancion ;
+    ex:album &lt;#CantarTierraMia&gt; ;
+    ex:autor &lt;https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo&gt; .
+
+&lt;https://blog.adrianistan.eu/song/Vagabundear&gt; a ex:cancion ;
+    ex:album &lt;#CantarTierraMia&gt; ;
+    ex:autor &lt;https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo&gt; .
+
+&lt;#CantarTierraMia&gt; ex:fecha "1975" .
+
+&lt;https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo&gt; ex:genero &lt;https://blog.adrianistan.eu/gender/Folk&gt; ;
+    ex:pais &lt;https://blog.adrianistan.eu/country/Espa&ntilde;a&gt; .
+</code></pre>
+<p>N3 fue un formato dise&ntilde;ado espec&iacute;ficamente para RDF por Tim Berners-Lee y W3C. Es posiblemente el lenguaje menos verboso. Al principio se definen los namespaces. A continuaci&oacute;n se definen los recursos. El IRI del recurso y a continuaci&oacute;n separado por punto y coma, propiedad y valor, finalizando con un punto. Siempre que queramos usar un IRI usamos comillas latinas. Los valores at&oacute;micos entre comillas inglesas. N3 dispone de muchas cosas, como soporte para reglas, un subconjunto con todo lo necesario para RDF es <strong>Turtle</strong>. Este c&oacute;digo por ejemplo, tambi&eacute;n es v&aacute;lido en Turtle.</p>
+<h3>N-Triples</h3>
+<pre><code>
+&lt;https://blog.adrianistan.eu/song/Vagabundear&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/album&gt; &lt;#CantarTierraMia&gt; .
+&lt;https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/genero&gt; &lt;https://blog.adrianistan.eu/gender/Folk&gt; .
+&lt;https://blog.adrianistan.eu/song/CantigaApocrifa&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/cancion&gt; .
+&lt;https://blog.adrianistan.eu/song/CantigaApocrifa&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/autor&gt; &lt;https://blog.adrianistan.eu/group/NuestroPeque\u00F1oMundo&gt; .
+&lt;https://blog.adrianistan.eu/group/NuestroPeque&ntilde;oMundo&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/pais&gt; &lt;https://blog.adrianistan.eu/country/Espa\u00F1a&gt; .
+&lt;https://blog.adrianistan.eu/song/CantigaApocrifa&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/album&gt; &lt;#CantarTierraMia&gt; .
+&lt;#CantarTierraMia&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/fecha&gt; "1975" .
+&lt;https://blog.adrianistan.eu/song/Vagabundear&gt; &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/cancion&gt; .
+&lt;https://blog.adrianistan.eu/song/Vagabundear&gt; &lt;https://blog.adrianistan.eu/web-semantica-rdf/autor&gt; &lt;https://blog.adrianistan.eu/group/NuestroPeque\u00F1oMundo&gt; .
+</code></pre>
+<p>El &uacute;ltimo formato es b&aacute;sicamente lo mismo que he puesto al principio, pero de forma estandarizada. N-Triples es muy simple e incluso menos verboso que XML en ocasiones, pero hay que repetir los IRI de objeto cada vez. Tampoco soporta namespaces.</p>
+<h3>RDFa, microdata, ...</h3>
+<p>Existen otros formatos para representar RDF, quiz&aacute; el m&aacute;s popular de los que faltan sea RDFa. Este formato se acopla a HTML y permite introducir RDF en HTML. Este formato es muy usado en SEO, aunque Google tambi&eacute;n reconoce JSON-LD.</p>
+<h2>Un paso m&aacute;s</h2>
+<p>A continuaci&oacute;n lo m&aacute;s interesante ser&iacute;a definir ontolog&iacute;as o schemas, para informar de un determinado valor sem&aacute;ntico. Gracias a RDF Schema podremos definir relaciones de significado b&aacute;sicas.</p>
+<p>Con esto acabamos el primer apartado dedicado a la web sem&aacute;ntica. Este art&iacute;culo ha sido el maś te&oacute;rico pero es clave para comprender lo que haremos m&aacute;s adelante</p>
+<p>&nbsp;</p>

@@ -1,0 +1,157 @@
+<p>Uno de los productos de Google que más he usado ha sido Google Photos. Se trata de un servicio donde podemos subir imágenes y vídeos personales, que se sincroniza con nuestro dispositivo. No obstante, cada vez intento depender menos de servicios de Google y encima, con Photos, me estoy quedando sin espacio. Así que vamos a construir una alternativa.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/GooglePhotosSyncthingBorg.png">
+</div>
+
+<h2>Syncthing</h2>
+<p>Una de las aplicaciones más populares para sincronizar entre ordenadores es <a href="https://syncthing.net/">Syncthing</a>. Se trata de un programa opensource con numerosas aplicaciones (Windows, Linux CLI, Android, MacOS, ...) que permite configurar sincronizar los archivos sin tener que hacer demasiadas configuraciones avanzadas de red. Es capaz de sincronizar archivos incluso entre dispositivos dentro de una NAT, a través de su sistema P2P.</p>
+
+<p>Primero instalamos Syncthing en el ordenador (en mi caso, Arch Linux) y lo activamos</p>
+
+<pre><code>
+$ pacman -S syncthing
+$ systemctl start syncthing@aarroyoc
+$ systemctl enable syncthing@aarroyoc
+</code></pre>
+
+<p>Esto nos va a levantar Syncthing en nuestro sistema de forma permanente y la interfaz web de Syncthing, necesaria para configurarlo. Podemos acceder a ella desde nuestro navegador: http://127.0.0.1:8384.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Syncthing1.png" width="600">
+</div>
+
+<p>Vemos tres secciones. En la primera tenemos un listado de carpetas que se van a sincronizar. Vamos a agregar una carpeta para las imágenes de la cámara de mi teléfono Android. La meteré dentro de Imágenes. Recordamos el ID que hemos metido.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Syncthing2.png" width="600">
+</div>
+
+<p>En el apartado Avanzado podemos ajustar algunos detalles interesantes. Yo lo voy a dejar todo por defecto salvo el Tipo de Carpeta que en este dispositivo lo voy a poner a "Solo Recibir".</p>
+
+<p>Vamos ahora al dispositivo Android, nos descargamos la aplicación de Syncthing disponible tanto en Google Play como en F-Droid. Veremos algo similar a esto:</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Syncthing3.png">
+</div>
+
+<p>En la app web, vamos al lado derecho "Este dispositivo" y hacemos click sobre el pequeño código para mostrar el código entero y un QR. Desde la app de Android lo escaneamos. En la app web se nos pedirá confirmación y ya tenemos enlazados los dispositivos.</p>
+
+<p>En la app de Android creamos la carpeta seleccionando la ubicación de la carpeta de nuestra cámara. En tipo de carpeta dejamos "Solo enviar". Lo más importante es que el ID sea el mismo que el de la carpeta en nuestro otro dispositivo, en este caso puse <i>android-camera</i></p>
+
+<p>Una vez hecho esto deberemos aprobar el cambio en la app web. Una vez aprobado, ¡empezará el proceso de sincronización!</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Syncthing4.png">
+</div>
+
+<p>Ahora podríamos usar Syncthing para otras cosas pero como el objetivo era solo Google Photos. Ahí lo tenemos.</p>
+
+<p>Ahora vamos a añadir un sistema de copia de seguridad en un disco duro externo.</p>
+
+<h2>Preparar el disco con Btrfs</h2>
+<h2>Preparando el disco duro</h2>
+<p>El disco duro ya lo usaba para copias de seguridad, así que tenía datos. Usaba el sistema de archivos XFS. Para este nuevo uso, quería experimentar con Btrfs, así que tocaba formatear.</p>
+<p>Lo primero, para saber si nuestro kernel Linux soporta Btrfs es ejecutar</p>
+<pre><code>
+$ cat /proc/filesystems
+</code></pre>
+<p>Y ver si aparece btrfs en el listado.</p>
+<p>Lo segundo fue hacer una copia de los datos que ya tenía en el disco. Como sí que tenía espacio, hice una copia con rsync de los datos del HDD a otro disco.</p>
+<pre><code>
+$ rsync -ah --progress /run/media/aarroyoc/Almacen Almacen
+</code></pre>
+<p>Esto conserva todos los permisos y muestra una barra de progreso durante la copia</p>
+
+<p>Ahora desmontamos el HDD. Vamos además a ejecutar fdisk para asegurarnos que el nombre del disco que vamos a formatear es el correcto. Un error aquí podría ser terrible.</p>
+
+<pre><code>
+$ umount /run/media/aarroyoc/Almacen
+$ lsblk -p
+NAME        MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+/dev/sda      8:0    0 931,5G  0 disk 
+├─/dev/sda1   8:1    0   260M  0 part /boot
+├─/dev/sda2   8:2    0    16M  0 part 
+├─/dev/sda3   8:3    0 139,7G  0 part 
+├─/dev/sda4   8:4    0    25G  0 part 
+├─/dev/sda5   8:5    0  1000M  0 part 
+└─/dev/sda6   8:6    0 765,6G  0 part /
+/dev/sdb      8:16   0   3,6T  0 disk 
+└─/dev/sdb1   8:17   0   3,6T  0 part 
+/dev/sr0     11:0    1  1024M  0 rom  
+$ fdisk -l /dev/sdb
+Disco /dev/sdb: 3,64 TiB, 4000752599040 bytes, 7813969920 sectores
+Modelo de disco: Elements 25A1   
+Unidades: sectores de 1 * 512 = 512 bytes
+Tamaño de sector (lógico/físico): 512 bytes / 4096 bytes
+Tamaño de E/S (mínimo/óptimo): 4096 bytes / 4096 bytes
+Tipo de etiqueta de disco: gpt
+Identificador del disco: 964D5ABA-35C4-495F-94EC-26699CB99391
+
+Disposit.  Comienzo      Final   Sectores Tamaño Tipo
+/dev/sdb1      2048 7813967871 7813965824   3,6T Sistema de ficheros de Linux
+</code></pre>
+<p>Finalmente ejecutamos el comando que creará la partición.</p>
+<pre><code>
+$ mkfs.btrfs -f -L Almacen /dev/sdb1
+</code></pre>
+
+<p>Por defecto en Btrfs va a usar un tamaño de nodo para metadatos de 16K. Valores pequeños aumentan la fragmentación del disco pero las operaciones son más baratas en uso de memoria. Valores altos, propiedades inversas. También vamos a tener Copy-On-Write y checksums. En principio, no lo vamos a desactivar.</p>
+
+<p>Otra opción muy interesante de Btrfs es la compresión automática. Btrfs soporta varios algoritmos: LZO, ZLIB y ZSTD. En Btrfs esta compresión no aplica al disco entero, sino que se puede ir configurando a demanda. Para ello, cada vez que montemos un disco con mount, podemos especificar con que algoritmo de compresión queremos que trabajen las escrituras nuevas.</p>
+
+<pre><code>
+$ mount -o compress=zstd /dev/sdb1 /mnt/
+</code></pre>
+
+<p>Si ya teníamos datos, podemos aplicar una recompresión durante la desfragmentación.</p>
+
+<pre><code>
+$ btrfs filesystem defragment -r -v -czstd /mnt/
+</code></pre>
+
+<p>Sí, Btrs puede requerir desfragmentar, aunque existen opciones para que se vaya haciendo automáticamente. Si queremos forzarlo, sin tener en cuenta la compresión:</p>
+
+<pre><code>
+$ btrfs filesystem defragment -r /mnt/
+</code></pre>
+
+<p>Otras características de Btrfs son los sistemas para encontrar errores (scrub), el soporte RAID (en este caso no aplica) y los snapshots y subvolúmenes. Muy interesante y os recomiendo leer sobre ello.</p>
+
+<p>Finalmente volvemos a copiar de vuelta los datos:</p>
+<pre><code>
+$ cd Almacen
+$ rsync -ah --progress * /mnt/
+</code></pre>
+
+<h2>Backups con Borg</h2>
+<p>Ahora vamos a hacer backups sobre nuestras fotos usando <a href="https://www.borgbackup.org/">Borg</a>. Los backups creados usando Borg están encriptados y son eficientes, ya que van comprimidos y se deduplicacan de forma inteligente. Voy a hacer un backup de toda la carpeta Imágenes, para hacer backup no solo de las imágenes del teléfono sino de otras.</p>
+
+<p>Borg se encuentra en los repos de la mayoría de distros Linux. En Arch Linux es tan sencillo como:</p>
+<pre><code>
+$ pacman -S borg
+</code></pre>
+
+<p>Una vez lo tengamos instalado, lo primero será crear un repo de backups en el disco duro externo. Lo voy a ubicar en "/mnt/imagenes" y tendrá una contraseña.</p>
+
+<pre><code>
+$ borg init --encryption=repokey /mnt/imagenes
+</code></pre>
+
+<p>Ya podemos crear el backup de toda la carpeta Imágenes del sistema (que recordemos, incluye la carpeta Android Camera que tiene las que sacamos del teléfono)</p>
+
+<pre><code>
+$ borg create --stats --progress /mnt/imagenes::backup-2023-05-28 ~/Imágenes
+</code></pre>
+
+<p>El comando nos mostrará al acabar unas estadísticas del backup. La primera vez que hagamos un backup tardará bastante, las siguientes ocasiones, el sistema será inteligente y solo añadirá los cambios respecto a backups anteriores, siendo mucho más rápido.</p>
+
+<p>En cualquier momento podemos listar los backups guardados con <i>borg list</i>.</p>
+<pre><code>
+$ borg list /mnt/imagenes
+</code></pre>
+
+<p>Podríamos usar <i>extract</i> para extraer el contenido de un backup entero, o de un fichero únicamente. Con <i>delete</i> podemos eliminar backups que ya no queramos. Y con <i>compact</i> podemos optimizar el espacio que usan los backups.</p>
+
+<h2>Conclusión</h2>
+<p>Con todo esto ya tenemos nuestro sustituto a Google Photos, controlado al 100% por nosotros, sin depender de Google. Espero que este post os haya servido de utilidad. ¡Hasta la próxima!</p>

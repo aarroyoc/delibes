@@ -1,0 +1,88 @@
+<p>Recientemente se anunció que mi proyecto <a href="https://rutaxruta.com">Ruta x Ruta x Castilla y León</a> resultó ganador del V Concurso de Datos Abiertos. Modalidad de Productos y Servicios: premio de estudiantes. El concurso consitía en usar los datos abiertos proporcionados por la Junta de Castilla y León para construir algo interesante. Desde aquí quiero dar las gracias a los organizadores y además quiero invitaros a qué vosotros probéis también la aplicación web (si vivís en Castilla y León claro).</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/datosabiertos.jpg" width="500">
+</div>
+<p>A continuación copio íntegramente la memoria del proyecto, de modo que sirva de documentación de la propia aplicación por si alguien tiene interés.</p>
+<h2>Objetivo</h2>
+<p><a href="https://rutaxruta.com">Ruta x ruta x Castilla y León</a> es una aplicación web para consultar rutas (tanto de senderismo, como de bicicleta, etc) y subir nuestros tracks (grabaciones GPS) de modo que otras personas puedan verlo. La diferencia principal de esta aplicación respecto a otras existentes en el mercado es precisamente el uso de fuentes de datos abiertos para enriquecer la información de la ruta. A través de Ruta x Ruta no solo es posible ver el recorrido de la ruta y una descripción, sino puntos de interés alrededor de ella (monumentos, bares/restaurantes y eventos).</p>
+
+<h2>Funcionalidades</h2>
+<h3>Consultar rutas</h3>
+<p>Desde la página principal de la aplicación podemos ver rutas existentes y realizar búsquedas simples.</p>
+
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Rutaxruta1.png" width="500">
+</div>
+
+<p>Al hacer click sobre una, veremos la ruta sobre una ortofoto o un mapa, marcando el punto de partida y de fin. Además veremos los monumentos, bares y eventos cercanos si los hubiese. Estos puntos de interés se calculan de forma automática al hacer la visualización. Al hacer click sobre ellos veremos un desplegable que nos da información sobre el punto de interés y este se marcará en el mapa. También veremos tracks subidos por los usuarios relacionados con esta ruta.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Rutaxruta2.png" width="500">
+</div>
+
+<h3>Consultar un track</h3>
+
+<p>Cualquier usuario puede ver los tracks públicos. Estos incluyen un mapa del recorrido, marcando la velocidad (siendo verde rápido y rojo lento), un resumen de algunas métricas y un gráfico de altimetría.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Rutaxruta3.png" width="500">
+</div>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Rutaxruta4.png" width="500">
+</div>
+
+<h3>Subir un track</h3>
+<p>Los usuarios que han iniciado sesión (mediante Google), pueden subir tracks para compartirlos en la red. Además pueden asociarlos a una ruta ya publicada. Se incluye una pequeña previsualización antes de subir el track.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Rutaxruta5.png" width="500">
+</div>
+
+<h3>Proponer ruta</h3>
+<p>Los usuarios que han iniciado sesión pueden proponer rutas nuevas mediante el editor de rutas. Funciona haciendo click sobre el mapa para agregar un nuevo punto, que se une al anterior mediante una línea recta. Podemos eliminar el último punto introducido haciendo click sobre el marcador azul.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Rutaxruta6.png" width="500">
+</div>
+
+<h3>Ver perfil de usuario</h3>
+<p>Es posible ver los tracks subidos por un usuario mediante su enlace a perfil (accesible a los usuarios que han iniciado sesión haciendo click en su nombre). Desde allí se pueden ver todos los tracks subidos, así como borrar los que ya no le interese mostrar al usuario.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/Rutaxruta7.png" width="500">
+</div>
+
+<h2>Fuentes de Datos Abiertos usadas</h2>
+<p>El producto Ruta x ruta usa las siguientes fuentes de datos abiertos:</p>
+<ul>
+<li><a href="https://www.ign.es/web/ign/portal/ide-area-nodo-ide-ign">Servicio WMS de IGN</a> para el mapa cartográfico raster</li>
+<li><a href="https://idecyl.jcyl.es/geonetwork/srv/spa/catalog.search#/metadata/SPAGOBCYLITADTSOIOIT">Servicio WMS de ItaCyl</a> para la imagen satelital. Se ha usado la ortofoto de 2017 porque era más completa que la de 2020 (que tenía más zonas sin imagen).</li>
+<li><a href="https://datosabiertos.jcyl.es/web/jcyl/set/es/cultura-ocio/monumentos/1284325843131">Monumentos de Castilla y León</a></li>
+<li><a href="https://datosabiertos.jcyl.es/web/jcyl/set/es/turismo/bares/1284211832884">Bares de Castilla y León</a></li>
+<li><a href="https://datosabiertos.jcyl.es/web/jcyl/set/es/cultura-ocio/agenda_cultural/1284806871500">Agenda cultural de Castilla y León</a></li>
+</ul>
+<h2>Arquitectura y tecnologías usadas</h2>
+<p>La aplicación Ruta x Ruta tiene cuatro componentes principales, a saber:</p>
+
+<p><b>Base de datos.</b> Allí se almacena todo lo relacionado con la aplicación, desde los puntos de interés hasta los tracks de los usuarios. Se trata de una base de datos MongoDB, funcionando sobre el servicio en la nube, MongoDB Atlas. Una de las características más interesantes de esta tecnología es la posibilidad de hacer consultas geográficas.</p>
+
+<p><b>Backend.</b> El componente “cerebro” que lee y escribe datos en la base de datos y expone una API REST para el frontend. Además gestiona la autenticación (via Google OAuth) y realiza el procesado de los tracks. Está hecho en Kotlin usando el framework Ktor y alojado en la nube Microsoft Azure.</p>
+
+<p><b>Frontend.</b> La capa visual con la que interactúan los usuarios. Realiza llamadas al backend con las operaciones deseadas. Está hecho en React y JavaScript y alojado en el servicio Netlify.</p>
+
+<p><b>Ingesta.</b> Una serie de scripts escritos en JavaScript que obtienen los datos de los puntos de interés, los procesan y los guardan en la base de datos.</p>
+
+<h2>Ideas futuras</h2>
+<p>Bien por falta de tiempo o falta de recursos se han decidido descartar varias ideas. Se comentan brevemente.</p>
+<ul>
+<li>Comentarios en las rutas y tracks. Se ha descartado porque añade la necesidad de moderación humana para evitar spam, mensajes irrespetuosos, etc</li>
+<li>Imágenes de las rutas y los tracks. Por el mismo motivo se han descartado en esta primera versión. Las imágenes tienen que revisarse de forma humana para asegurarse que no contienen spam, pornografía, etc Además, en este caso habría que añadir un nuevo componente tecnológico, ya que las imágenes deberían estar alojadas separadas de la base de datos.</li>
+<li>Imagen autogenerada para redes sociales para compartir. Las rutas y tracks podrían generar imágenes automáticas para compartir en Instagram, Twitter, WhatsApp, etc Se ha descartado por tener cierto reto técnico.</li>
+<li>Meteorología de las rutas en tiempo real. Se consideró añadir una predicción del tiempo justo para la zona que atraviesa la ruta. Sin embargo se ha descartado ya que suponía un reto técnico excesivo para el tiempo del que se disponía.</li>
+</ul>
+<h2>Vídeo</h2>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/J1TvNCHufbQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<h2>Conclusiones</h2>
+<p>En definitiva, se plantea una aplicación web para ver rutas que indican de forma automática los puntos de interés que hay alrededor. Estas rutas son creadas por los usuarios usando el editor interactivo, y previa moderación, se publican para todo el mundo. El uso de datos abiertos abarca dos categorías: mapas/ortofoto y puntos de interés geolocalizados. Además se permite subir tracks GPS a los usuarios. Si bien esta funcionalidad usa una parte más limitada de datos abiertos, se considera interesante para hacer la aplicación más interesante. </p>

@@ -1,0 +1,72 @@
+<p>Estaba yo leyendo uno de mis blogs favoritos,&nbsp;<a href="https://diasyfrases.blogspot.com"><em><strong>Los d&iacute;as y las frases</strong></em></a>, que pese a lo que se pueda pensar de m&iacute;, no trata, ni remotamente de tecnolog&iacute;a, programaci&oacute;n, etc sino de aforismos e historia. Muy entretenido, siempre leo sus art&iacute;culos nada m&aacute;s salir. Hace unos meses ya, el autor public&oacute; una entrada sobre la ley de Zipf. Como &eacute;l lo explica mejor que nadie, voy a copiar literalmente el texto:</p>
+<blockquote>
+<div style="text-align: justify;"><em> George Kingsley <strong>Zipf</strong> fue un <strong><u><a href="https://diasyfrases.blogspot.com/2019/07/es-la-vida-demasiado-corta-para.html">ling&uuml;ista</a></u></strong> norteamericano de mediados del siglo XX que se dedic&oacute; a aplicar el <strong>an&aacute;lisis estad&iacute;stico</strong> a las lenguas. <br /></em></div>
+<div style="text-align: justify;">&nbsp;</div>
+<div style="text-align: justify;"><em> Uno de los estudios que le report&oacute; fama fue el descubrimiento de la ley que lleva su nombre, la "<strong>Ley de Zipf</strong>", seg&uacute;n la cual la frecuencia con la que son utilizadas las palabras siguen una distribuci&oacute;n <strong>estad&iacute;stica </strong>concreta. No entraremos en detalles t&eacute;cnicos de su formulaci&oacute;n, pero b&aacute;sicamente nos dice que la palabra m&aacute;s usada en un idioma (the, en ingl&eacute;s) aparece el doble de veces que la segunda m&aacute;s usada (of), y el triple que la tercera, etc.&nbsp;</em></div>
+<div style="text-align: justify;">&nbsp;</div>
+<div style="text-align: justify;"><em> Pero esta ley de la frecuencia de las apariciones no ocurre solo con las palabras, su &aacute;mbito es mucho mayor. Por ejemplo, en el de las poblaciones de las ciudades de un pa&iacute;s: la ciudad m&aacute;s grande suele tener el doble de habitantes que la segunda poblaci&oacute;n de ese pa&iacute;s. Y en general es aplicable a la ordenaci&oacute;n de&nbsp; grandes conjuntos de datos... E <strong><u><a href="https://diasyfrases.blogspot.com/2016/07/cisne-negro.html">internet</a></u>,&nbsp;</strong>que no deja de ser una <strong>base de datos</strong> enorme,no podr&iacute;a ser menos, tambi&eacute;n se puede describir el n&uacute;mero de visitas a las p&aacute;ginas individuales de Internet en un intervalo de tiempo dado... (Art&iacute;culo <a href="https://diasyfrases.blogspot.com/2019/09/cumple-este-blog-con-la-ley-de-zipf.html">https://diasyfrases.blogspot.com/2019/09/cumple-este-blog-con-la-ley-de-zipf.html</a>)</em></div>
+</blockquote>
+<p style="text-align: center;"><img src="https://files.adrianistan.eu/Zipf.jpeg" alt="" /></p>
+<p style="text-align: left;">A continuaci&oacute;n, prueba con los art&iacute;culos del blog, seg&uacute;n n&uacute;mero de visitas, a ver si la popularidad sigue esta curiosa ley, a priori, relacionada con la ling&uuml;&iacute;stica. &iexcl;Al parecer <em>Los d&iacute;as y las frases</em> sigue una distribuci&oacute;n similar a la ley de Zipf! &iquest;Y mi blog, Adrianist&aacute;n? &iquest;Seguir&aacute; tambi&eacute;n la ley de Zipf?</p>
+<h2 style="text-align: left;">Experimento</h2>
+<p>Voy a tomar los datos del mes de octubre, ya que es el m&aacute;s pr&oacute;ximo que ya ha acabado y considero que es un mes representativo, bastante normalillo. Adem&aacute;s, las entradas que publiqu&eacute; en octubre no parecen haber tenido demasiado impacto en general. Tambi&eacute;n he decidido quitar la p&aacute;gina de inicio, ya que no es un art&iacute;culo como tal.</p>
+<p>El art&iacute;culo m&aacute;s visto del mes es Estad&iacute;stica en Python Parte 3 con 1327 visitas. A partir de aqu&iacute; podemos calcular las visitas estimadas seg&uacute;n la ley, dividiendo progresivamente.</p>
+<table>
+<tbody>
+<tr>
+<th>Art&iacute;culos</th>
+<th>Visitas Reales</th>
+<th>Visitas Zipf</th>
+</tr>
+<tr>
+<td>/estadistica-python-media-mediana-varianza-percentiles-parte-iii</td>
+<td>1327</td>
+<td>1327</td>
+</tr>
+<tr>
+<td>/estadistica-python-distribucion-binomial-normal-poisson-parte-vi</td>
+<td>445</td>
+<td>663.5</td>
+</tr>
+<tr>
+<td>/estadistica-python-pandas-numpy-scipy-parte-i</td>
+<td>434</td>
+<td>442.333333333333</td>
+</tr>
+<tr>
+<td>/rust-101-tutorial-rust-espanol</td>
+<td>328</td>
+<td>331.75</td>
+</tr>
+<tr>
+<td>/introduccion-a-prolog-tutorial-en-espanol</td>
+<td>233</td>
+<td>265.4</td>
+</tr>
+<tr>
+<td>/tutorial-de-cmake</td>
+<td>199</td>
+<td>221.166666666667</td>
+</tr>
+<tr>
+<td>/estadistica-python-analisis-datos-multidimensionales-regresion-lineal-parte-iv</td>
+<td>162</td>
+<td>189.571428571429</td>
+</tr>
+<tr>
+<td>/cosas-no-sabias-python</td>
+<td>151</td>
+<td>165.875</td>
+</tr>
+<tr>
+<td>/estadistica-python-ajustar-datos-una-distribucion-parte-vii</td>
+<td>134</td>
+<td>147.444444444444</td>
+</tr>
+</tbody>
+</table>
+<p>(veo que os gusta mucho la estad&iacute;stica con Python)</p>
+<p>Vemos que hay n&uacute;meros muy pr&oacute;ximos a la estimaci&oacute;n, pero mejor hagamos un gr&aacute;fico.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://files.adrianistan.eu/LeyZipf.png" alt="" /></p>
+<p>Vemos que la curva real se ajusta relativamente bien a la curva estimada por la ley de Zipf. El punto donde m&aacute;s se aleja (tanto absoluto como relativamente) es el segundo art&iacute;culo.</p>
+<p>Podr&iacute;amos decir, que s&iacute;, en Adrianist&aacute;n tambi&eacute;n se aplica la ley de Zipf. &iquest;Ser&aacute;, quiz&aacute;, que esta ley se aplica en todos los sistemas de informaci&oacute;n? &iquest;Es parte intr&iacute;nseca de la realidad? Os dejo reflexionar</p>

@@ -1,0 +1,99 @@
+<p><i>Bienvenidos al primer artículo de Adrianistán desde la instauración del estado de alarma, desde aquí mando un reconocimiento a todas aquellas personas que trabajan en esta crisis que esperemos acabe pronto.</i></p>
+<p>Hace unos días leí <a href="https://twitter.com/jesusprubio/status/1237752138069094400">un tuit de Jesús Rubio</a> que básicamente mostraba como había sustituido una cantidad importante de comandos típicos de Unix con variantes escritas en Rust. Rust es un lenguaje capaz de sustituir a C en cualquier sitio, sin penalización de rendimiento y con beneficios extra, aunque a la gente que se sienta cómoda con el funcionamiento de C les costará adaptarse a un lenguaje como Rust. Os recuerdo que tenéis un <a href="https://blog.adrianistan.eu/rust-101-tutorial-rust-espanol">tutorial de Rust en este blog</a>, útil para iniciarse.</p>
+<p>En este post veremos algunas de estas herramientas y como se instalan, además de ver si son sustitutos capaces o no a las implementaciones clásicas.</p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/RustAlias.jpg">
+<br>
+<small>La foto original de Jesús Rubio</small>
+</div>
+<h2>ls -> exa</h2>
+<p>ls es el famoso comando Unix de listar un directorio. Es el equivalente a dir de MS-DOS. Cualquier persona que haya tocado la línea de comandos alguna vez lo conoce. <a href="https://the.exa.website/">exa</a> es la versión hecha en Rust. Es compatible con la mayoría de opciones de ls aunque el creador admite que no es un reemplazo directo. La razón es que dice que exa tiene mejores opciones por defecto que ls, aunque eso implicase romper la compatibilidad.</p>
+<p>Otras características de exa es que se adapta mejor a pantallas grandes, se integra con Git, puede mostrar los atributos extendidos de los ficheros (no solo los estandar), tiene colorines, puede seguir los enlaces simbólicos y mostrar vistas de árbol. Todo ello sin perder velocidad.</p>
+<p>Unas cuantas distros como Fedora, Arch, Debian o Ubuntu ya lo empaquetan en sus últimas versiones, así que usa el gestor de paquetes nativo o Nix si prefieres.</p>
+<p>En Debian o Ubuntu es tan simple como:</p>
+<pre><code>
+sudo apt install exa
+</code></pre>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/LsExa.png">
+</div>
+<p>A priori no parece haber mucha diferencia, aunque por debajo funcionan ya de forma diferente. exa hace más llamadas al sistema que ls, y esto es por diseño. ls en su día se diseñó para ordenadores lentos, exa se diseña para ordenadores modernos y por ello, intenta recabar más información. La diferencia, en los ordenadores actuales, de rendimiento es mínima.</p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/ExaLong.png">
+</div>
+<p>Para consultar todas las opciones, revisar el manual o ejecutar la ayuda con --help</p>
+<h2>grep -> ripgrep (rg)</h2>
+<p>ripgrep es el reemplazo moderno a grep, la utilidad para buscar sobre texto. Posiblemente ya lo estés utilizando sin saberlo ya que Visual Studio Code lo utiliza para su función de búsqueda.</p>
+<p><a href="https://blog.burntsushi.net/ripgrep/">ripgrep se define</a> como el programa que combina la usabilidad de The Silver Searcher con el rendimiento de grep. ripgrep es 100% Unicode, y tiene algunas características específicas para buscar código, como ignorar ficheros en .gitignore, filtrar búsquedas a ficheros de cierto lenguaje de programación, soporta las regex más potentes (PCRE2), permite buscar en ficheros comprimidos zip, bzip2, lzma, etc. La mala noticia es que debido a estas mejoras, ripgrep no cumple con el estándar POSIX, aunque la importancia de eso, en mi opinión, es debatible.</p>
+<p>ripgrep ya está disponible en muchas distribuciones como Debian o Fedora. Una cosa a tener en cuenta es que aunque el programa se llama ripgrep, por comodidad el comando suele ser rg.</p>
+<pre><code>
+sudo apt install ripgrep
+</code></pre>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/RgSearch.png">
+</div>
+<h2>{cat, less} -> batcat</h2>
+<p>batcat es un clon de cat y otros programas más avanzados para mostrar texto como less o more. Soporta resaltado de sintaxis, integración con Git para mostrar cambios, permite mostrar caracteres no legibles, soporta búsquedas y mucho más.</p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/Batcat.png">
+</div>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/BatcatGit.png">
+<br>
+<small>Observad los símbolos + y ~ en el lateral, es la integración con Git</small>
+</div>
+<p>Está disponible en la mayoría de distribuciones, aunque en algunas como Debian el ejecutable no se llama bat sino batcat</p>
+<pre><code>
+sudo apt install bat
+</code></pre>
+<h2>{ps, top} -> procs</h2>
+<p>procs es el sustituo de ps. Añade alguna información extra como los puertos TCP/UDP abiertos, métricas de entrada/salida, integración con Docker, además de modos de búsqueda mejorados y soporte para funcionar como sustituto de top.</p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/Procs.png">
+</div>
+<p>Si ejecutamos procs sin ningún parámetro, entrará en un modo similar a top.</p>
+<p>procs no está en ninguna distro pero se puede instalar via Snap o via Nix</p>
+<pre><code>
+sudo snap install procs
+nix-env -i procs
+</code></pre>
+<h2>nano -> kibi</h2>
+<p>kibi es un editor de texto para línea de comandos escrito en menos de 1024 líneas de código Rust. Si bien no es tan potente como Vim o Emacs, puede ser un buen sustituto a Nano. Soporta Unicode, búsquedas, resaltado de sintaxis, numeración, ...</p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/Kibi.png">
+</div>
+<p>Este programa es el más complejo de instalar, necesitarás tener Cargo instalado y ejecutar:</p>
+<pre><code>
+cargo install kibi
+</code></pre>
+<p>Y asegurarte de que el binario generado por Cargo se encuentra en el PATH. Además el resaltado de sintaxis no te funcionará porque no tienes los ficheros de configuración. Para seguir con esto, <a href="https://github.com/ilai-deutel/kibi">recomiendo ver el proyecto en GitHub.</a></p>
+<h2>{find, parallel} -> fd-find</h2>
+<p>fd-find es una alternativa moderna a find, la herramienta para buscar archivos y opcionalmente ejecutar comandos al encontrarlos, no compatible al 100% ya que al igual que exa, intenta mejorar las opciones por defecto. He de reconocer que find es uno de los programas que menos uso ya que me custa mucho acordarme de sus parámetros y que muchas veces no son coherentes con otras herramientas Unix. </p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/FdFind.png">
+</div>
+<p>Para ejecutar comandos en paralelo, por ejemplo, convertir todas las imágenes jpg en png (en paralelo):</p>
+<pre><code>
+fd -e jpg -x convert {} {.}.png
+</code></pre>
+<p>El comando fd está ya cogido en muchas distros, así que en Debian viene como fdfind. Se puede instalar desde apt.</p>
+<pre><code>
+sudo apt install fd-find
+</code></pre>
+<h2>sh, bash, zsh, fish -> nu</h2>
+<p><a href="https://www.nushell.sh">Nu</a> es una shell escrita en Rust que daría para artículos y artículos enteros. Todavía es algo inestable pero promete mucho. En Nu todos los comandos se comunican mediante tablas y formatos de datos estructurados, en lugar del texto plano tradicional de Unix. En ciertos momentos, parece que estamos ante una base de datos. Esta idea no es nueva, ciertos sistemas operativos minoritarios (IBM i) tienen conceptos similares, pero es bastante innovadora en Linux. La única shell para Linux de características similares es PowerShell de Microsoft.</p>
+<p>Por ejemplo, de un simple ls (todavía no hay integración con exa) podemos filtrar con where, obtener solo los primeros campos, etc</p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/NuShell.png">
+</div>
+<p>Además Nu reconoce de forma nativa formatos como JSON, TOML, XML o YAML y permite recorrer sus campos. Por ejemplo, de un fichero de Rust Cargo.toml podemos acceder a la versión de una dependencia fácilmente con open y get.</p>
+<div style="text-align: center">
+<img src="https://files.adrianistan.eu/NuOpenGet.png">
+</div>
+<p>Nu es en definitiva una shell muy prometedora y espero que siga mejorando en el futuro, aunque todavía no está lista para trabajar a diario con ella. También el soporte a scripts está un poco verde, pero ya se sabe que serán incompatibles con Bash.</p>
+<p>Nu lo podéis instalar desde Nix o desde Cargo:</p>
+<pre><code>
+cargo install nu
+nix-env -i nushell
+</code></pre>
+<p>Estas han sido solo algunas de la multitud de herramientas hechas en Rust que clonan y mejoran la funcionalidad de las herramientas clásicas de Unix. ¿Crees que llegarán a sustituir a las herramientas clásicas de Unix?</p>

@@ -1,0 +1,402 @@
+<p>Bienvenidos a una secci&oacute;n del blog titulada&nbsp;<strong>Cr&oacute;nica Neuronal</strong>. En esta secci&oacute;n resolveremos problemas reales de Inteligencia Artificial de forma pr&aacute;ctica. La estructura es la siguiente. Yo presento un problema, muchas veces sacado de <a href="https://www.kaggle.com">Kaggle</a>, <a href="https://spainml.com/">SpainML</a> u otro sitio y voy contando como lo voy resolviendo, escribiendo paso a paso mis pensamientos en cada momento. De hecho, yo no he resuelto estos problemas, sino que los voy resolviendo sobre la marcha mientras escribo la cr&oacute;nica. A los problemas les dedico un tiempo limitado y puede ser posible (como en este caso) que no llegue a resultados satisfactorios.</p>
+<h2>House Prices</h2>
+<p>Este primer problema ha sido creado por <a href="https://www.kaggle.com/c/house-prices-advanced-regression-techniques/">Kaggle</a>, forma parte de la categor&iacute;a de problemas para principiantes. El problema consiste en predecir el valor de venta real (es decir, por el que se ejecuta una compra-venta) de casas de Ames, Iowa. Para ello disponemos de un historial de compra-ventas en la zona de Ames, con gran cantidad de detalles:</p>
+<ul>
+<li><strong>MSSubClass</strong>: Tipo de edificio</li>
+<li><strong>MSZoning</strong>: Clasificaci&oacute;n de la zona</li>
+<li><strong>LotFrontage</strong>: Linear feet of street connected to property</li>
+<li><strong>LotArea</strong>: Lot size in square feet</li>
+<li><strong>Street</strong>: Tipo de acceso por carretera</li>
+<li><strong>Alley</strong>: Tipo de acceso por callej&oacute;n</li>
+<li><strong>LotShape</strong>: Forma de la propiedad</li>
+<li><strong>LandContour</strong>: Rugosidad de la propiedad</li>
+<li><strong>Utilities</strong>: Tipo de utilidades disponibles</li>
+<li><strong>LotConfig</strong>: Configuraci&oacute;n de la parcela</li>
+<li><strong>LandSlope</strong>: Inclinaci&oacute;n de la parcela</li>
+<li><strong>Neighborhood</strong>: Barroi</li>
+<li><strong>Condition1</strong>: Proximidad a carretera principal o ferrocarril</li>
+<li><strong>Condition2</strong>: Proximidad a carretera principal o ferrocarril (si hubiese un segundo)</li>
+<li><strong>BldgType</strong>: Tipo de vivienda</li>
+<li><strong>HouseStyle</strong>: Estilo de la vivienda</li>
+<li><strong>OverallQual</strong>: Calidad de materiales y construcci&oacute;n</li>
+<li><strong>OverallCond</strong>: Calidad de la casa en general</li>
+<li><strong>YearBuilt</strong>: Fecha original de construcci&oacute;n</li>
+<li><strong>YearRemodAdd</strong>: Fecha de remodelaci&oacute;n</li>
+<li><strong>RoofStyle</strong>: Tipo de techo</li>
+<li><strong>RoofMatl</strong>: Material del techo</li>
+<li><strong>Exterior1st</strong>: Material del exterior de la casa</li>
+<li><strong>Exterior2nd</strong>: Material del exterior de la casa</li>
+<li><strong>MasVnrType</strong>: Recubrimiento exterior decorativo</li>
+<li><strong>MasVnrArea</strong>: &Aacute;rea del recubrimiento exterior decorativo</li>
+<li><strong>ExterQual</strong>: Calidad del material exterior</li>
+<li><strong>ExterCond</strong>: Condiciones actuales del material exterior</li>
+<li><strong>Foundation</strong>: Tipo de pilares</li>
+<li><strong>BsmtQual</strong>: Altura del s&oacute;tano</li>
+<li><strong>BsmtCond</strong>: Condiciones del s&oacute;tano</li>
+<li><strong>BsmtExposure</strong>: Exposici&oacute;n del s&oacute;tano al exterior</li>
+<li><strong>BsmtFinType1</strong>: Calidad del primer &aacute;rea acabada del s&oacute;tano</li>
+<li><strong>BsmtFinSF1</strong>: Tipo del primer &aacute;rea acabada</li>
+<li><strong>BsmtFinType2</strong>: Calidad del segundo &aacute;rea acabada del s&oacute;tano</li>
+<li><strong>BsmtFinSF2</strong>: Tipo del segundo &aacute;rea acabada</li>
+<li><strong>BsmtUnfSF</strong>: &Aacute;rea sin acabar del s&oacute;tano</li>
+<li><strong>TotalBsmtSF</strong>: &Aacute;rea del s&oacute;tano</li>
+<li><strong>Heating</strong>: Tipo de calefacci&oacute;n</li>
+<li><strong>HeatingQC</strong>: Calidad de la calefacci&oacute;n</li>
+<li><strong>CentralAir</strong>: Sistema de aire acondicionado centralizado</li>
+<li><strong>Electrical</strong>: Sistema el&eacute;ctrico</li>
+<li><strong>1stFlrSF</strong>: &Aacute;rea primera planta</li>
+<li><strong>2ndFlrSF</strong>: &Aacute;rea segunda planta</li>
+<li><strong>LowQualFinSF</strong>: &Aacute;rea finalizada de baja calidad</li>
+<li><strong>GrLivArea</strong>: &Aacute;rea habitable sobre el suelo</li>
+<li><strong>BsmtFullBath</strong>: S&oacute;tano con ba&ntilde;o completo</li>
+<li><strong>BsmtHalfBath</strong>: S&oacute;tano con ba&ntilde;o incompleto</li>
+<li><strong>FullBath</strong>: Ba&ntilde;os completos sobre el suelo</li>
+<li><strong>HalfBath</strong>: Ba&ntilde;os incompletos sobre el suelo</li>
+<li><strong>Bedroom</strong>: Dormitorios sobre el suelo</li>
+<li><strong>Kitchen</strong>: Cocinas</li>
+<li><strong>KitchenQual</strong>: Calidad cocinas</li>
+<li><strong>TotRmsAbvGrd</strong>: Habitaciones sobre el suelo (sin ba&ntilde;os)</li>
+<li><strong>Functional</strong>: Rating de funcionalidad</li>
+<li><strong>Fireplaces</strong>: N&uacute;mero de chimeneas</li>
+<li><strong>FireplaceQu</strong>: Calidad chimeneas</li>
+<li><strong>GarageType</strong>: Tipo garaje</li>
+<li><strong>GarageYrBlt</strong>: A&ntilde;o del garaje</li>
+<li><strong>GarageFinish</strong>: Calidad interior del garaje</li>
+<li><strong>GarageCars</strong>: N&uacute;mero de coches en el garaje</li>
+<li><strong>GarageArea</strong>: &Aacute;rea del garaje</li>
+<li><strong>GarageQual</strong>: Calidad del garaje</li>
+<li><strong>GarageCond</strong>: Condiciones actuales del garaje</li>
+<li><strong>PavedDrive</strong>: Entrada al garaje asfaltada</li>
+<li><strong>WoodDeckSF</strong>: &Aacute;rea exterior recubierta de madera</li>
+<li><strong>OpenPorchSF</strong>: &Aacute;rea de porche abierto</li>
+<li><strong>EnclosedPorch</strong>: &Aacute;rea de porche cerrado</li>
+<li><strong>3SsnPorch</strong>: &Aacute;rea de porche tres-estaciones</li>
+<li><strong>ScreenPorch</strong>: &Aacute;rea de porche pantalla</li>
+<li><strong>PoolArea</strong>: &Aacute;rea de la piscina</li>
+<li><strong>PoolQC</strong>: Calidad de la piscina</li>
+<li><strong>Fence</strong>: Calidad de la valla</li>
+<li><strong>MiscFeature</strong>: Miscel&aacute;nea</li>
+<li><strong>MiscVal</strong>: Valor de la miscel&aacute;nea</li>
+<li><strong>MoSold</strong>: Mes de venta</li>
+<li><strong>YrSold</strong>: A&ntilde;o de venta</li>
+<li><strong>SaleType</strong>: Tipo de venta</li>
+<li><strong>SaleCondition</strong>: Condici&oacute;n de la venta</li>
+</ul>
+<p>Como vemos, el n&uacute;mero de variables es enorme. Hay que tener en cuenta que muchas propiedades pueden no influir o influir de forma poco significativa. En caso de detectarlo puede ser convenientes eliminarlas, ya que pueden a&ntilde;adir ruido innecesario.</p>
+<p>Se trata de un problema de&nbsp;<strong>regresi&oacute;n</strong>, ya que se nos pide predecir un valor num&eacute;rico dentro de un continuo (los precios, a efectos pr&aacute;cticos son continuos) y un infinito. Esto se opone a los problemas de&nbsp;<strong>clasificaci&oacute;n</strong>, donde intentamos predecir algo dentro de una lista de posibles valores.</p>
+<h2>Cargando datos y Holdout</h2>
+<p>Vamos a empezar abriendo Jupyter y cargando los datos en formato CSV con Pandas. Si leemos el CSV vemos que tiene una columna extra llamada, Id. Vamos a eliminarla, ya que esta columna &uacute;nica para cada instancia nos provocar&iacute;a <strong>sobreajuste</strong>.</p>
+<p>Adem&aacute;s, vamos a preparar un sistema de prueba. Me decanto por el m&eacute;todo&nbsp;<strong>Holdout</strong> con 2/3-1/3. Esto es que nuestros datos de entrenamiento y de test son 2/3 y 1/3 del total respectivamente. Cuando tengamos un buen algoritmo, podremos usar&nbsp;<strong>todos</strong> los datos para la clasificaci&oacute;n en Kaggle. De momento vamos a eliminar adem&aacute;s las variables para las que existan valores desconocidos con&nbsp;<strong>dropna</strong>.</p>
+<pre><code class="language-python">
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+
+data_csv = pd.read_csv("train.csv")
+
+data = data_csv.drop(columns=["Id"])
+
+data.dropna(axis="columns", inplace=True)
+data = pd.get_dummies(data)
+
+x = data.drop(columns=["SalePrice"])
+y = data["SalePrice"]
+
+train_x, test_x, train_y, test_y = train_test_split(x, y, test_size=1/3)
+</code></pre>
+<h2>&Aacute;rboles de decisi&oacute;n</h2>
+<p>Siempre es recomendable probar los conjuntos de datos con algoritmos sencillos de aprendizaje autom&aacute;tico. Los &aacute;rboles de decisi&oacute;n son r&aacute;pidos y pueden ofrecernos informaci&oacute;n sobre el conjunto de datos muy interesante. En mi caso voy a usar <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html">DecisionTreeRegressor</a> perteneciente a sklearn. No obstante, este m&oacute;dulo no admite variables categ&oacute;ricas. Para ello podemos usar <strong>LabelEncoder&nbsp;</strong>o&nbsp;<strong>OneHotEncoder</strong> tambi&eacute;n de sklearn y poder realizar una transformaci&oacute;n. &iquest;Cu&aacute;l usar? La teor&iacute;a dicta que LabelEncoder cuando las categor&iacute;as tienen un orden y OneHotEncoder cuando no tiene sentido. Como en muchas propiedades no sabemos si es intr&iacute;nsecamente mejor Ladrillo o Piedra, usaremos OneHotEncoder por defecto. En este caso no voy a usar sklearn, sino el m&eacute;todo de Pandas&nbsp;<strong>get_dummies</strong>. Adem&aacute;s creo que no va a hacer falta <strong>normalizar</strong> los datos, as&iacute; que nos saltamos este paso.</p>
+<pre><code class="language-python">
+from sklearn.tree import DecisionTreeRegressor
+
+tree = DecisionTreeRegressor(criterion="mse", splitter="best", max_depth=None, min_samples_split=10, min_samples_leaf=5)
+tree.fit(train_x, train_y)
+predict_y = tree.predict(test_x)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+</code></pre>
+<p>Por &uacute;ltimo, para evaluar los datos elegimos que una diferencia del 10% entre el valor real y el valor predicho nos vale. Este &aacute;rbol de decisi&oacute;n, tiene un criterio MSE, no tiene altura m&aacute;xima pero a cambio le he puesto que el tama&ntilde;o de las hojas sea m&iacute;nimo de 5 (es decir, una ramificaci&oacute;n final solo lo puede ser si al menos 5 instancias de entrenamiento caen en ella) y un n&uacute;mero de split de 10 (para crear una rama hace falta por lo menos 10 ejemplos). Los resultados son bastante mediocres: una tasa de error del&nbsp; 50%. Pero est&aacute; suficientemente bien, como para hacer una entrega de prueba en Kaggle.</p>
+<h2>Realizando las predicciones</h2>
+<p>Aqu&iacute; me encontr&eacute; con un problema. Los datos de test ten&iacute;an iferentes datos que los de entrenamiento y el OneHotEncoding con get_dummies fallaba. La soluci&oacute;n que utilic&eacute; es cargar los datos de entrenamiento y test en un mismo DataFrame de Pandas, hacer el get_dummies y despu&eacute;s volverlos a separar. Despu&eacute;s de realizar esto tenemos que volver a entrenar el modelo con todos los datos posibles y realizar la predicci&oacute;n y guardarla en el CSV. El c&oacute;digo completo es el siguiente:</p>
+<pre><code class="language-python">
+import pandas as pd
+import numpy as np
+
+data_csv = pd.read_csv("train.csv")
+test_csv = pd.read_csv("test.csv")
+size = test_csv.shape
+all_data = pd.concat((test_csv,data_csv),sort=False)
+
+all_data.dropna(axis="columns",inplace=True)
+all_data = pd.get_dummies(all_data,drop_first=True)
+
+test = all_data[0:size[0]]
+data = all_data[size[0]:]
+
+x = data
+y = data_csv["SalePrice"]
+
+
+from sklearn.model_selection import train_test_split
+
+
+train_x, test_x, train_y, test_y = train_test_split(x,y,test_size=1/3)
+
+
+# ARBOLES DE DECISION
+
+from sklearn.tree import DecisionTreeRegressor
+
+tree = DecisionTreeRegressor(criterion="mse",splitter="best",max_depth=None,min_samples_split=10,min_samples_leaf=5)
+tree.fit(train_x,train_y)
+predict_y = tree.predict(test_x)
+
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+
+
+# PREDECIR
+
+tree.fit(x,y)
+
+test_out = tree.predict(test)
+out = pd.DataFrame({"Id" : test_id, "SalePrice" : test_out})
+
+out.to_csv("out.csv",index=False)
+</code></pre>
+<p>El fichero out.csv lo podemos subir a Kaggle.</p>
+<p><img src="https://files.adrianistan.eu/KaggleScore.png" alt="" /></p>
+<p>El resultado es mejor de lo esperado, quiz&aacute; Kaggle usa un interavalo de admisi&oacute;n m&aacute;s alto que el m&iacute;o. Igualmente, lo voy a dejar en el 10%</p>
+<h2>K-Vecinos</h2>
+<p>Voy a probar el algoritmo de <strong>K-Vecinos</strong>. No tengo muchas esperanzas en &eacute;l, pero la interfaz de programaci&oacute;n en sklearn es muy parecida a la los &aacute;rboles de decisi&oacute;n.</p>
+<pre><code class="language-python">
+from sklearn.neighbors import KNeighborsRegressor
+
+knr = KNeighborsRegressor(n_neighbors=5,p=2,metric="minkowski")
+knr.fit(train_x,train_y)
+predict_y = knr.predict(test_x)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+</code></pre>
+<p>Y efectivamente, el resultado es horrible. K-Vecinos tiene una tasa de error del 60%. No creo que merezca la pena insistir mucho en este algoritmo. Lo he configurado con distancia de Minkowski y P=2 (lo que equivale a la distancia eucl&iacute;dea).</p>
+<h2>Regresi&oacute;n Lineal</h2>
+<p>La <strong>regresi&oacute;n lineal</strong> en cambio s&iacute; que creo que puede ser interesante probarla.&nbsp;</p>
+<pre><code class="language-python">
+from sklearn.linear_model import LinearRegression
+
+reg = LinearRegression()
+reg.fit(train_x,train_y)
+predict_y = reg.predict(test_x)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+</code></pre>
+<p>Los resultados son los mejores hasta ahora: 43%. Pero podr&iacute;a ser mejor. Decido probar con <strong>m&aacute;quinas de vector soporte</strong>.</p>
+<h2>SVM</h2>
+<p>Si la regresi&oacute;n lineal ha obtenido los mejores resultados, con una SVM ser&iacute;amos capaces de llegar a ese mismo valor y posiblemente mejorarlo. Sin embargo, con un SVR lineal no pude llegar a replicarlo</p>
+<pre><code class="language-python">
+from sklearn.svm import SVR
+
+svr = SVR(kernel="linear", max_iter=-1)
+svr.fit(train_x,train_y)
+predict_y = svr.predict(test_x)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+</code></pre>
+<p>Y consegu&iacute; un m&iacute;sero 51% de error. Y este era el kernel que mejor funcionaba, el lineal. Prob&eacute; poly con diferentes grados, rbf y sigmoid y todos ellos daban un resultado peor. Es hora de sacar la maquinaria pesada y entrar a tope con <strong>redes neuronales</strong>.</p>
+<h2>Perceptr&oacute;n multicapa</h2>
+<p>He decidido saltarme directamente el Adaline y otros modelos m&aacute;s simples ya que no creo que mejoren la regresi&oacute;n lineal. Al perceptr&oacute;n multicapa al principio le quise dar un gran n&uacute;mero de neuronas (150 al principio) en una capa oculta, con una funci&oacute;n de activaci&oacute;n RELU y un solver de tipo ADAM. Como el resultado era muy parecido al de la SVM. Empec&eacute; a hacer cambios. LBFGS es bueno en datasets peque&ntilde;os y efectivamente, los resultados mejoraron. Modifiqu&eacute; a geometr&iacute;a de la red. Con 3 capas de 100 y RELU empec&eacute; a obtener resultados mucho mejores que con cualquier m&eacute;todo, pero muy sensibles a variaciones aleatorias.&nbsp;</p>
+<p>Aqu&iacute; apliqu&eacute; normalizaci&oacute;n con&nbsp;<strong>StandardScaler</strong>, pero no cambi&oacute; demasiado el resultado.</p>
+<pre><code class="language-python">
+# Perceptron Multicapa
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
+
+ss = StandardScaler()
+ss.fit(train_x)
+train_x_ss = ss.transform(train_x)
+test_x_ss = ss.transform(test_x)
+
+mlp = MLPRegressor(hidden_layer_sizes=(100,100,100),activation="relu",solver="lbfgs",max_iter=50000)
+mlp.fit(train_x_ss, train_y)
+predict_y = mlp.predict(test_x_ss)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+</code></pre>
+<h2>Segundo test</h2>
+<p>Vuelvo a subir a Kaggle. Esta vez obtengo una tasa de error de 0.17975. Ha mejorado, pero bastante poco.</p>
+<h2>Random Forest</h2>
+<p>Los &aacute;rboles parecieron ir bien, pruebo los&nbsp;<strong>Random Forest</strong>, con buenos resultados. Tasa de error en local del 39% y 0.17223 en Kaggle. No obstante, en Kaggle parezco haberme quedado estancado.</p>
+<pre><code class="language-python">
+from sklearn.ensemble import RandomForestRegressor
+
+rand = RandomForestRegressor()
+rand.fit(train_x,train_y)
+predict_y = rand.predict(test_x)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+</code></pre>
+<h2>Limpiando datos</h2>
+<p>Aqu&iacute; empec&eacute; a buscar ayuda en Internet. Algo que no hab&iacute;a realizado y que es muy interesante, es limpiar los datos. Eliminar algunas columnas espec&iacute;ficamente y rellenar otras con valores faltantes con otros valores. Volv&iacute; a ejecutar el Random Forest obteniendo un 38% en local pero un 0.14754 en Kaggle.</p>
+<h2>Conclusi&oacute;n</h2>
+<p>No he conseguido mi objetivo de llegar al top 25% de Kaggle. Todav&iacute;a me quedan muchas cosas por aprender. Para pr&oacute;ximos problemas debo realizar un an&aacute;lisis exploratorio de los datos m&aacute;s avanzado (aqu&iacute; casi no lo he realizado) y debo entender otras t&eacute;cnicas de regresi&oacute;n (he de decir que prefiero problemas de <strong>clasificaci&oacute;n</strong> a d&iacute;a de hoy). &iquest;Vosotros ten&eacute;is alguna idea de como mejorar los resultados, os escucho en los comentarios? Adem&aacute;s, os dejo el c&oacute;digo final.</p>
+<pre><code class="language-python">
+import pandas as pd
+import numpy as np
+
+data_csv = pd.read_csv("train.csv")
+test_csv = pd.read_csv("test.csv")
+test_id = test_csv["Id"]
+size = test_csv.shape
+all_data = pd.concat((test_csv,data_csv),sort=False)
+
+all_data.drop(['SalePrice','Utilities', 'RoofMatl', 'MasVnrArea', 'BsmtFinSF1', 'BsmtFinSF2', 'BsmtUnfSF', 'Heating', 'LowQualFinSF',
+               'BsmtFullBath', 'BsmtHalfBath', 'Functional', 'GarageYrBlt', 'GarageArea', 'GarageCond', 'WoodDeckSF',
+               'OpenPorchSF', 'EnclosedPorch', '3SsnPorch', 'ScreenPorch', 'PoolArea', 'PoolQC', 'Fence', 'MiscFeature', 'MiscVal'],
+              axis=1, inplace=True)
+
+all_data['MSSubClass'] = all_data['MSSubClass'].astype(str)
+
+
+all_data['MSZoning'] = all_data['MSZoning'].fillna(all_data['MSZoning'].mode()[0])
+
+
+all_data['LotFrontage'] = all_data['LotFrontage'].fillna(all_data['LotFrontage'].mean())
+
+all_data['Alley'] = all_data['Alley'].fillna('NOACCESS')
+
+all_data.OverallCond = all_data.OverallCond.astype(str)
+
+
+all_data['MasVnrType'] = all_data['MasVnrType'].fillna(all_data['MasVnrType'].mode()[0])
+
+for col in ('BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2'):
+    all_data[col] = all_data[col].fillna('NoBSMT')
+
+all_data['TotalBsmtSF'] = all_data['TotalBsmtSF'].fillna(0)
+
+
+all_data['Electrical'] = all_data['Electrical'].fillna(all_data['Electrical'].mode()[0])
+
+
+all_data['KitchenAbvGr'] = all_data['KitchenAbvGr'].astype(str)
+
+
+all_data['KitchenQual'] = all_data['KitchenQual'].fillna(all_data['KitchenQual'].mode()[0])
+
+
+all_data['FireplaceQu'] = all_data['FireplaceQu'].fillna('NoFP')
+
+
+for col in ('GarageType', 'GarageFinish', 'GarageQual'):
+    all_data[col] = all_data[col].fillna('NoGRG')
+
+means 0
+all_data['GarageCars'] = all_data['GarageCars'].fillna(0.0)
+
+popular values
+all_data['SaleType'] = all_data['SaleType'].fillna(all_data['SaleType'].mode()[0])
+
+all_data['YrSold'] = all_data['YrSold'].astype(str)
+all_data['MoSold'] = all_data['MoSold'].astype(str)
+
+all_data
+all_data['TotalSF'] = all_data['TotalBsmtSF'] + all_data['1stFlrSF'] + all_data['2ndFlrSF']
+all_data.drop(['TotalBsmtSF', '1stFlrSF', '2ndFlrSF'], axis=1, inplace=True)
+
+all_data = pd.get_dummies(all_data,drop_first=True)
+
+test = all_data[0:size[0]]
+data = all_data[size[0]:]
+
+x = data
+y = data_csv["SalePrice"]
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, LabelBinarizer
+
+
+train_x, test_x, train_y, test_y = train_test_split(x,y,test_size=1/3)
+
+
+# ARBOLES DE DECISION
+
+from sklearn.tree import DecisionTreeRegressor
+
+tree = DecisionTreeRegressor(criterion="mse",splitter="best",max_depth=None,min_samples_split=10,min_samples_leaf=5)
+tree.fit(train_x,train_y)
+predict_y = tree.predict(test_x)
+
+
+1-np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+
+
+# K-MEDIAS
+
+from sklearn.neighbors import KNeighborsRegressor
+
+knr = KNeighborsRegressor(n_neighbors=7,p=1,metric="minkowski")
+knr.fit(train_x,train_y)
+predict_y = knr.predict(test_x)
+
+1- np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+
+
+# Regresion Lineal
+
+from sklearn.linear_model import LinearRegression
+
+reg = LinearRegression()
+reg.fit(train_x,train_y)
+predict_y = reg.predict(test_x)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+
+
+# SVM
+from sklearn.svm import SVR
+from sklearn.preprocessing import MinMaxScaler
+
+svr = SVR(kernel="linear", degree=3, gamma="scale", max_iter=-1)
+svr.fit(train_x,train_y)
+predict_y = svr.predict(test_x)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+
+
+
+# Perceptron Multicapa
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
+
+ss = StandardScaler()
+ss.fit(train_x)
+train_x_ss = ss.transform(train_x)
+test_x_ss = ss.transform(test_x)
+
+mlp = MLPRegressor(hidden_layer_sizes=(100,100,100),activation="relu",solver="lbfgs",max_iter=50000)
+mlp.fit(train_x_ss, train_y)
+predict_y = mlp.predict(test_x_ss)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+
+
+
+# Random Forest
+from sklearn.ensemble import RandomForestRegressor
+
+rand = RandomForestRegressor(n_estimators=100)
+rand.fit(train_x,train_y)
+predict_y = rand.predict(test_x)
+
+1 - np.sum(abs(predict_y - test_y) &lt; 0.1*test_y)/test_y.shape[0]
+
+
+# PREDECIR
+
+rand.fit(x,y)
+
+test_out = rand.predict(test)
+out = pd.DataFrame({"Id" : test_id, "SalePrice" : test_out})
+out.to_csv("out.csv",index=False)
+</code></pre>

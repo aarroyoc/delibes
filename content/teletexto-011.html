@@ -1,0 +1,42 @@
+<p>Después de una pausa, retomamos los artículos en el blog con otra edición de Teletexto, la número 11. Ya sabéis que Teletexto es la sección donde dejo enlaces que me han resultado interesantes.</p>
+
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/TeletextMap.jpg" width="500">
+</div>
+
+<p>Antes de empezar me gustaría aclarar el tema de la serie de Reinforcement Learning. Quizá en el futuro haga más artículos, pero por ahora está en pausa. No tenía mucho interés y explicar algunas cosas se estaba volviendo tedioso y quizá no estaba todo demasiado claro por querer ser más breve. Aun así, es algo que me ha servido a mí para entender mejor las bases. Dicho esto: empezamos el teletexto.</p>
+
+<p>En este tiempo hemos tenido dos versiones nuevas de dos lenguajes muy importantes: Python 3.10 y Java 17 LTS. Sobre las novedades del primero, revisa este enlace de <a href="https://realpython.com/python310-new-features/">Real Python</a>. Lo más destacado es la inclusión del match. En esencia es como un switch de otros lenguajes pero con pattern matching. Así que se parece más al match de Rust, al case de Haskell o incluso a la unificación de Prolog. En mi opinión no sé si este cambio era necesario. Es cierto que el pattern matching se está volviendo un obligado dentro de los lenguajes de programación mainstream, pero esta estructura añade cierta complejidad extra a Python. Además, el uso de match es más interesante en lenguajes funcionales, algo a lo que Python no se inclina demasiado. Ya hable de estas cosas en <a href="https://blog.adrianistan.eu/la-perlificacion-de-python">La perlificación de Python</a></p>
+
+<p>Sobre Java 17, podremos leer en <a href="https://picodotdev.github.io/blog-bitix/2021/09/novedades-y-nuevas-caracteristicas-de-java-17/">Blog Bitix</a> las novedades más interesantes. Java 17 es la nueva LTS, la anterior era Java 11. Entre estas versiones Java ha ido evolucionando mucho, tomando ideas que implementaron antes Scala y Kotlin. Esto plantea una interesante pregunta. Scala y Kotlin surgieron como "mejoras" de Java. ¿Qué pasa si Java mejora tanto que ya no hay diferencias entre estos lenguajes y Java? ¿Perderán si razón de ser? Quizá Scala, con un enfoque diferente no tenga este problema pero Kotlin sigue un enfoque muy similar a Java. Es cierto que hay ciertas cosas que parece que Java no va a incorporar (sintaxis menos verbosa, null safety, etc) pero es interesante. Quizá por eso Kotlin, aparte de la JVM, quiere expandirse a otros entornos con Kotlin/JS y Kotlin/Native. Y la dependencia de Android en Kotlin es mayor de lo que mucha gente cree (Compose no se puede implementar en Java). Así que quizá sí pueda sobrevivir lo suficiente como para hacerse un hueco no tan ligado a Java.</p>
+
+<p>Hablando de Kotlin, <a href="https://blog.jetbrains.com/kotlin/2021/07/useful-kotlin-idioms-you-should-know/">he aquí unos idioms</a> que deberías manejar si vas a programar en Kotlin.</p>
+
+<p>JavaScript es uno de los lenguajes más importantes a día de hoy. Lingua franca de la web, también se ha extendido por backend e IoT. Muchos lenguajes viven con una sola implementación de referencia. No es el caso de JavaScript, uno de los lenguajes con más implementaciones diferentes que existen. <a href="https://notes.eatonphil.com/javascript-implementations.html">Esta web intenta recopilar todas las implementaciones que existen.</a> Spoiler: hay más de 40 implementaciones.</p>
+
+<p>La web <a href="https://www.lalal.ai/">Lalal.ai</a> nos permite dividir una canción en pista vocal y pista instrumental usando inteligencia artificial. Una auténtica pasada, ideal para sacar las instrumentales para un karaoke.</p>
+
+<p>Un genio ha cogido Space Cadet (el mítico pinball de Windows XP), lo ha decompilado y lo ha traducido a WebAssembly... <a href="https://alula.github.io/SpaceCadetPinball/">¡Y funciona!</a> Una maravilla poder volver a jugar al mítico juego, que por motivos de tiempo y un bug misterioso se tuvo que eliminar en Windows Vista.</p>
+
+<p>Los videojuegos son software, pero tiene peculiaridades. Este post de 2008 comenta una muy interesante Una parte muy interesante: <a href="http://journal.stuffwithstuff.com/2008/04/24/incremental-development-for-games-is-hard/">desarrollar videojuegos de forma incremental es complicado.</a> Sí, se habla mucho de hacer prototipos pero hasta eso tiene límites. ¿Cómo vas a desarrollar incrementalmente el ajedrez se pregunta? No es divertido hasta que no tiene cierta complejidad y figuras diferentes. Personalmente creo que aquí hay dos tipos de escuelas: los que van a ir prototipo a prototipo a partir de alguna mecánica divertida o algo que se les haya ocurrido y los que simplemente juntan muchas piezas hasta que al final, por haber tantas, empieza a ser interesante (este último ejemplo serían SimCity o Los Sims, cuyos prototipos no creo que sean muy entretenidos).</p>
+
+<p><a href="https://www.nashvail.me/blog/stop-learning">¡Deja de aprender!</a></p>
+
+<p>Hace unas semanas fue la conferencia Strange Loop en St. Louis. Quizá no sea la más popular, pero para mí es de las favoritas. Siempre hay temas muy interesantes de invitados muy interesantes que se salen de lo convencional. Todavía no he visto todas las charlas de este año. Pero voy a comentar dos que me parecen muy interesantes:
+<ul>
+<li><a href="https://www.youtube.com/watch?v=AffW-7ika0E">"Strange Dreams of Stranger Loops" by Will Byrd</a> Un quine es un programa que al ejecutarse, devuelve el mismo programa. Este tipo de programas parecen meras malabarismos mentales y en algunos casos lo son, pero Will argumenta que por debajo de toda esta maraña debe haber propiedades sobre la computación que todavía desconocemos y que merecería la pena investigar. En la charla usa <a href="https://blog.adrianistan.eu/minikanren-programacion-logica">miniKanren</a> (él es su inventor de hecho)</li>
+<li><a href="https://www.youtube.com/watch?v=vzfy4EKwG_Y">"Outperforming Imperative with Pure Functional Languages" by Richard Feldman</a>. El autor del lenguaje de programación Roc explica por qué la programación funcional siempre ha tenido menos rendimiento que la imperativa y qué está haciendo en su lenguaje para poder reducir esa diferencia sin dejar de ser un lenguaje funcional puro.</li>
+</ul>
+</p>
+
+<p>Hay una escuela de pensamiento que opina que los tests importantes son los de integración o los E2E. Tienen argumentos muy interesantes que os dejo leer <a href="https://matklad.github.io//2021/05/31/how-to-test.html">aquí</a> y <a href="https://www.tedinski.com/2019/03/19/testing-at-the-boundaries.html">aquí</a>. Luego existe la otra escuela de pensamiento que dice que de hecho solo con buenos unit tests bastaría. ¿De qué escuela eres?</p>
+
+<p>¿Quiéres ser más productivo programando? En <a href="https://scattered-thoughts.net/writing/moving-faster/">Writing faster</a> hay unos consejos muy interesantes. No todo el mundo es igual, pero al menos introduce algunas ideas que podrías valorar para ser más productivo.</p>
+
+<p>Me despido hoy sin música, pero con dos vídeos que me parecen muy bonitos, sobre un hombre y sus motores artesanales: Motores Patelo. Un ejemplo de verdadera ingeniería.</p>
+
+<div style="text-align:center">
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/t1U2b8upyRs" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/Q5zV8g5VQDo" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+

@@ -1,0 +1,76 @@
+<p>Rust es un lenguaje imperativo, orientado a objetos y funcional, con gran soporte a concurrencia y de prop&oacute;sito general. En este tutorial de Rust daremos nuestros primeros pasos en Rust, un lenguaje que nace de las necesidades de tener un lenguaje que fuese r&aacute;pido, concurrente y seguro. Aprenderemos a amar/odiar al estricto compilador y veremos algunas de las grandes ideas detr&aacute;s de Rust. Sin embargo, esto requiere mayor atenci&oacute;n de nuestra parte ya que Rust no es <em>otro lenguaje basado en C</em>. Algunas de sus caracter&iacute;sticas son:</p>
+<ul>
+<li>Abstracciones sin costo</li>
+<li>Seguridad de memoria garantizada</li>
+<li>Eliminaci&oacute;n de las condiciones de carrera</li>
+<li>Generalizaci&oacute;n basada en <em>traits</em></li>
+<li>Comparaci&oacute;n de patrones</li>
+<li>Inferencia de tipos</li>
+</ul>
+<p>Rust toma influencias de muchos lenguajes, para dar lugar a un estilo &uacute;nico de programaci&oacute;n que costar&aacute; m&aacute;s de lo habitual aprender a usar de forma efectiva. Rust toma influencia de C++, OCaml, Haskell y en menor medida de Erlang, Alef, Limbo, Swift y otros lenguajes menos conocidos.</p>
+<blockquote>Si aprecias el trabajo detr&aacute;s de este tutorial, no dudes en apoyarme a trav&eacute;s de una donaci&oacute;n v&iacute;a <a href="https://www.paypal.me/aarroyoc/5">PayPal</a> o alguna criptodivisa (ver margen derecho). Tambi&eacute;n se aceptan mejoras al texto, tan solo ponte en <a href="https://blog.adrianistan.eu/contacto/">contacto</a> conmigo.</blockquote>
+<h2>&Iacute;ndice del tutorial de Rust</h2>
+<ol>
+<li>Instalando Rust</li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/variables-tipos-datos-rust/">Variables y tipos de datos en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/referencias-prestamos-en-rust/">Referencias y pr&eacute;stamos en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/funciones-closures-rust/">Funciones y closures en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/estructuras-control-rust/">Estructuras de control en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/structs-traits-poo-rust/">Structs, traits y POO en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/gestion-errores-rust-option-result/">Gesti&oacute;n de errores en Rust, Option y Result</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/concurrencia-en-rust/">Concurrencia en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/box-rc-refcell-punteros-inteligentes-rust/">Box, Rc y RefCell, punteros inteligentes en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/cargo-modulos-rust/">Cargo y m&oacute;dulos en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/tests-en-rust/">Tests en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/07/03/documentacion-con-rustdoc/">Documentaci&oacute;n con rustdoc</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/09/15/leer-teclado-rust/">Leer de teclado en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/09/29/crear-ventanas-botones-rust-gtk/">Crear ventanas y botones en Rust con GTK</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/12/30/leer-escribir-json-rust-serde/">Leer y escribir JSON en Rust con Serde</a></li>
+<li><a href="https://blog.adrianistan.eu/2018/01/01/yew-frontend-rust-angular-react/">Yew, crea webapps al estilo Angular/React en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/04/15/tutorial-rocket-echa-volar-tus-webapps-rust/">Construye un servidor web o una API con Rocket</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/01/17/tutorial-piston-programa-juegos-rust/">Programa juegos en Rust con Piston</a> (actualmente recomiendo ggez antes que Piston)</li>
+<li><a href="https://blog.adrianistan.eu/2018/02/23/futures-tokio-programar-forma-asincrona-rust/">Futures y Tokio: programaci&oacute;n as&iacute;ncrona</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/10/12/diversion-punteros-rust-bloques-unsafe/">Diversi&oacute;n con punteros: bloques unsafe en Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2018/06/07/bindings-rust-c-bindgen/">Bindings entre Rust y C/C++ con bindgen</a></li>
+</ol>
+<h2>Otros art&iacute;culos sobre Rust en el blog</h2>
+<ul>
+<li><a href="https://blog.adrianistan.eu/2017/01/27/tutorial-neon-combina-node-js-rust/">Tutorial de Neon</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/01/31/tutorial-maud-motor-plantillas-html-rust/">Tutorial de Maud</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/06/02/webassembly-tontos-usando-rust/">WebAssembly y Rust</a></li>
+<li><a href="https://blog.adrianistan.eu/2017/10/10/cheatsheet-contenedores-rust/">Cheatsheet de contenedores en Rust</a></li>
+</ul>
+<h2>Instalando Rust</h2>
+<p>Rust funciona en una <a href="https://forge.rust-lang.org/platform-support.html">gran variedad de sistemas operativos</a> y emite c&oacute;digo compatible con muchos otros. El compilador oficial de Rust usa LLVM de forma interna, por la que las mejoras que se realicen sobre LLVM mejoran de forma indirecta el compilador de Rust. Otros lenguajes que usan LLVM son: C++ (con el compilador Clang), Julia, Swift, FORTRAN (con el compilador Flang), D (con el compilador LDC), Haskell (a trav&eacute;s de GHC) y muchos m&aacute;s con otros compiladores. Mencionar que tambi&eacute;n existe un <a href="https://gcc.gnu.org/wiki/RustFrontEnd">compilador de Rust bajo la suite GCC</a> pero es experimental y no se recomienda su uso. Para instalar el compilador oficial de Rust visitamos la <a href="https://www.rust-lang.org/">p&aacute;gina oficial de Rust</a>. <a href="https://files.adrianistan.eu/RustWeb.png"><img class="aligncenter size-large wp-image-844" src="https://files.adrianistan.eu/RustWeb-1024x500.png" alt="" width="840" height="410" /></a> Hacemos click en Instalar. Descargamos el archivo y seguimos los pasos en pantalla. <a href="https://files.adrianistan.eu/RustInstall.png"><img class="aligncenter size-large wp-image-845" src="https://files.adrianistan.eu/RustInstall-1024x500.png" alt="" width="840" height="410" /></a></p>
+<p>Lo que acabamos de hacer es usar <strong>rustup</strong>. Se trata de un programa que nos ayudar&aacute; mucho y que nos permite instalar varias versiones de Rust en una misma m&aacute;quina as&iacute; como actualizar las mismas. Es una herramienta parecida a rvm de Ruby o nvm de Node.js. <strong>rustup</strong> nos instala <strong>rustc</strong>, <strong>cargo</strong> y <strong>rustdoc</strong>. Comprobemos que Rust se ha instalado correctamente, hagamos un Hola Mundo. Crea un archivo llamado <em>hola.rs</em> (rs es la extensi&oacute;n de los archivos de c&oacute;digo fuente de Rust). Debe contener lo siguiente:</p>
+<pre class="lang:rust decode:true">fn main() {
+    println!("&iexcl;Hola mundo!");
+}
+</pre>
+<p>Podemos compilar con <strong>rustc</strong>.</p>
+<pre class="lang:default decode:true">rustc hola.rs -o hola
+</pre>
+<p>Como en GCC, la opci&oacute;n -o sirve para especificar el nombre del ejecutable de salida. <strong>println!</strong> es una macro que nos permite escribir en pantalla. Permite realizar interpolaciones, usando llaves. Por ejemplo: <em>println!("Mi nombres es {}","Adri&aacute;n");</em> Equivale a: <em>println!("Mi nombre es Adri&aacute;n");</em></p>
+<h2><a href="https://files.adrianistan.eu/RustHelloCLI.png"><img class="aligncenter size-full wp-image-846" src="https://files.adrianistan.eu/RustHelloCLI.png" alt="" width="646" height="126" /></a></h2>
+<h2>Usando rustup</h2>
+<p>He aqu&iacute; algunos comandos &uacute;tiles para manejar <strong>rustup</strong> de forma efectiva.</p>
+<h3>Mostrar que versi&oacute;n est&aacute; actualmente activa</h3>
+<pre class="lang:default decode:true">rustup show
+</pre>
+<h3>Actualizar los entornos de Rust</h3>
+<pre class="lang:default decode:true">rustup update
+</pre>
+<p><a href="https://files.adrianistan.eu/rustup.png"><img class="aligncenter size-full wp-image-847" src="https://files.adrianistan.eu/rustup.png" alt="" width="643" height="340" /></a></p>
+<h3>Instalar la versi&oacute;n nightly de Rust</h3>
+<pre class="lang:default decode:true">rustup install nightly
+</pre>
+<h3>Ejecutar esta un comando con un entorno determinado</h3>
+<pre class="lang:default decode:true">rustup run nightly rustc hola.rs -o hola
+</pre>
+<h3>Cambiar el entorno por defecto</h3>
+<pre class="lang:default decode:true">rustup default nightly / rustup default stable
+</pre>
+<h3>A&ntilde;adir una plataforma al entorno (para cross-compiling)</h3>
+<pre class="lang:default decode:true">rustup target add arm-linux-androideabi (Android ARM)
+</pre>
+<p>Con esto acabamos esta parte sobre como configurar el entorno. A continuaci&oacute;n entraremos en profundidad ya en el lenguaje en s&iacute;.</p>

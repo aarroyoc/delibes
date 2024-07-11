@@ -1,0 +1,38 @@
+<p>Hace poco sal&iacute;a la noticia de que Miri ya estaba disponible para instalar en las versiones nightly de Rust. Pero, &iquest;qu&eacute; es Miri? y &iquest;por qu&eacute; es importante una m&aacute;quina virtual para Rust?</p>
+<p>Rust es un lenguaje compilado a c&oacute;digo m&aacute;quina. No necesita int&eacute;rpretes ni m&aacute;quinas virtuales para funcionar, sin embargo, hay situaciones donde Miri es &uacute;til. Hay dos casos en particular donde es interesante y se habilita la posibilidad de un tercero:</p>
+<ul>
+<li>Evaluar las <strong>expresiones const</strong> de forma m&aacute;s eficiente</li>
+<li>Detectar <strong>fallos</strong> que solo pueden ser detectados en <strong>runtime</strong></li>
+<li>Permitir&aacute; tener un REPL de Rust en el futuro</li>
+</ul>
+<p>&iquest;C&oacute;mo? Las expresiones const son c&oacute;digo Rust que se ejecuta en tiempo de compilaci&oacute;n, para obtener una constante que finalmente ser&aacute; la que vaya en el ejecutable. Cuando rustc se encuentra con una de ellas, compila el c&oacute;digo necesario para obtener el valor de vuelta de esa funci&oacute;n. Este proceso es largo, sobre todo teniendo en cuenta que ese c&oacute;digo solo va a ser ejecutado durante la compilaci&oacute;n del programa entero, por lo que no es necesaria una compilaci&oacute;n completa a c&oacute;digo m&aacute;quina. De este modo se mejora la velocidad en la mayor&iacute;a de expresiones const.</p>
+<p>Por otro lado, Rust no es capaz de prevenir todos los fallos posibles dada su naturaleza y en c&oacute;digo unsafe todav&iacute;a menos. Miri comprueba los siguientes fallos:</p>
+<ul>
+<li>Accesos fuera de memoria y use-after-free</li>
+<li>Uso incorrecto de variables no inicializadas</li>
+<li>Violaci&oacute;n de precondiciones intr&iacute;nsecas (llegar a <a href="https://doc.rust-lang.org/stable/std/hint/fn.unreachable_unchecked.html" rel="nofollow"><code>unreachable_unchecked</code></a> , llamar <a href="https://doc.rust-lang.org/stable/std/ptr/fn.copy_nonoverlapping.html" rel="nofollow"><code>copy_nonoverlapping</code></a> con rangos que se superponen, ...)</li>
+<li>Accesos a memoria no lo suficientemente bien alineados</li>
+<li>Violaciones de invariantes de tipos b&aacute;sicos (por ejemplo un bool que no sea ni 0 ni 1 internamente o un valor de enum fuera de rango)</li>
+</ul>
+<p>En este sentido Miri aporta algo similar a Valgrind de C pero mejorado.</p>
+<p>Actualmente Miri tiene algunas limitaciones, por ejemplo, no soporta concurrencia, acceso al sistema de archivos o acceso a la red.</p>
+<h2>&iquest;C&oacute;mo usar Miri?</h2>
+<p>Miri est&aacute; disponible solo en algunas versiones nightly. Al tiempo de escribir este post, los siguientes comandos permiten obtener la copia m&aacute;s reciente de Miri:</p>
+<pre><code>
+rustup toolchain install nightly-2019-04-17
+rustup component add miri --toolchain=nightly-2019-04-17
+cargo +nightly-2019-04-17 miri test
+cargo +nightly-2019-04-17 miri run
+</code></pre>
+<p>El uso es muy sencillo, test ejecuta los test y run ejecuta la aplicaci&oacute;n si es un binario.</p>
+<p>Pongamos un ejemplo de un test que funciona normalmente pero falla en Miri.</p>
+<pre><code class="language-rust">
+#[test]
+fn does_not_work_on_miri() {
+    let x = 0u8;
+    assert!(&amp;x as *const _ as usize % 4 &lt; 4);
+}
+</code></pre>
+<p>Ejecutando cargo test todo funciona bien pero con miri test falla.</p>
+<p style="text-align: center;"><img src="../../static/img/MiriTest.png" alt="" width="1096" height="508" /></p>
+<p style="text-align: left;">Y con esto ya tenemos otra herramienta m&aacute;s para nuestra programaci&oacute;n en Rust</p>

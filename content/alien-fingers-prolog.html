@@ -1,0 +1,77 @@
+<p>Hace pocos días me encontré con el problema de "Alien fingers" en mi TL de Twitter. Se trata de un sencillo problema, que podemos resolver en Prolog de forma 100% declarativa.</p>
+<div style="text-align:center">
+<img width="400" src="https://files.adrianistan.eu/photo_2022-01-28_17-41-12.jpg">
+</div>
+<p>El puzzle, escrito por Chris Maslanka, viene a decir que los aliens usan notación hexadecimal para escribir números. Resulta que el número que escribieron, era de dos dígitos y era muy curioso, porque su valor era el mismo que los dígitos invertidos en notación decimal. ¿Qué número era?.</p>
+<p>Para encontrar la respuesta en Prolog, primero vamos a definir la notación hexadecimal, para ello usaremos <a href="https://blog.adrianistan.eu/prolog-dcg-gramaticas-clausula-definida">DCGs.</a></p>
+
+<p>La DCG en cuestión describirá, para un número N, su representación en hexadecimal con dos dígitos.</p>
+<pre><code class="language-prolog">
+:- use_module(library(dcgs)).
+:- use_module(library(clpz)).
+
+hex_number(N) -->
+    hex(A),
+    hex(B),
+    {
+        N #= B + A*16
+    }.
+
+hex(0) --> "0".
+hex(1) --> "1".
+hex(2) --> "2".
+hex(3) --> "3".
+hex(4) --> "4".
+hex(5) --> "5".
+hex(6) --> "6".
+hex(7) --> "7".
+hex(8) --> "8".
+hex(9) --> "9".
+hex(10) --> "A".
+hex(11) --> "B".
+hex(12) --> "C".
+hex(13) --> "D".
+hex(14) --> "E".
+hex(15) --> "F".
+</code></pre>
+<p>Básicamente, hex_number de N describe la lista compuesta de hex(A) y hex(B). hex de N describe a su vez un caracter, siendo N el número que que representa (del 10 al 15 usamos de la A hasta la F). Finalmente calculamos el valor numérico del número representado.</p>
+<p>Esta DCG se puede usar en muchos sentidos. Podemos usarla para generar todos los númeroe hexadecimales de 2 dígitos, para parsear un número en notación hexadecimal o para generar la representación hexadecimal de un número.</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/HexDCG.png">
+</div>
+<p>Para los números decimales es igual pero más sencillo ya que es nuestra notación natural</p>
+<pre><code class="language-prolog">
+dec_number(N) -->
+    dec(A),
+    dec(B),
+    {
+        N #= B + A*10
+    }.
+
+dec(0) --> "0".
+dec(1) --> "1".
+dec(2) --> "2".
+dec(3) --> "3".
+dec(4) --> "4".
+dec(5) --> "5".
+dec(6) --> "6".
+dec(7) --> "7".
+dec(8) --> "8".
+dec(9) --> "9".
+</code></pre>
+<p>Ahora simplemente necesitamos algo para que las representaciones se puedan invertir. En Scryer Prolog, podemos tratar los strings como listas a todos los efectos, es por ello que podemos usar el predicado <i>reverse/2</i>. Sin embargo, como este caso es muy sencillo, podemos usar un predicado casero que solo sirva para invertir listas de dos elementos. Se haría así:
+<pre><code class="language-prolog">
+inv([A, B], [B, A]).
+</code></pre>
+<p>Ahora ya podemos resolver el puzzle. Simplemente escribimos el enunciado del problema en Prolog</p>
+<pre><code class="language-prolog">
+puzzle(Hex) :-
+    phrase(hex_number(N), Hex), % Un número N en notación hexadecimal Hex que...
+    inv(Hex, Dec), % Invirtiendo los caracteres ...
+    phrase(dec_number(N), Dec). %  es igual al mismo número N pero en notación decimal
+</code></pre>
+<p>¡Y obtenemos los resultados!</p>
+<div style="text-align:center">
+<img src="https://files.adrianistan.eu/PuzzleAlien.png">
+</div>
+<p>Nos da dos soluciones, una trivial de "00" y otra, más interesante de "35". "35" en hexadecimal representa el número 53, que en notación decimal se escribe como "35" pero invertido. ¡Ese es el número que escribieron los aliens!</p>

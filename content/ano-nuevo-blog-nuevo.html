@@ -1,0 +1,36 @@
+<p>Llevaba un mes entero sin escribir, &iquest;cre&iacute;ais que estaba descansando en una playa paradis&iacute;aca?</p>
+<p>Evidentemente no, primero porque las playas no son mis lugares favoritos, y segundo porque realmente estaba haciendo algo gordo. En realidad eran varias cosas, pero la primera que puede ver la luz ahora mismo es esta. Este propio blog. &iquest;Lo v&eacute;is? Es nuevo. Est&aacute; hecho a mano en Rust. Y aunque todav&iacute;a le faltan algunas cosas, ya es lo suficientemente capaz como para sustituir a WordPress.</p>
+<p><img style="display: block; margin-left: auto; margin-right: auto;" src="https://blog.adrianistan.eu/static/img/NewDesign.png" alt="" width="500" height="249" /></p>
+<p>WordPress me gusta, funciona bien, es un producto intuitivo, con buen marketing y con una factura t&eacute;cnica aceptable. Pero hab&iacute;a varios "problemas":</p>
+<ul>
+<li>WordPress usa MariaDB (o MySQL), ahora mismo quiero aprovechar la potencia de SQL est&aacute;ndar y en eso solo PostgreSQL me ofrece lo que busco. No es que en este blog lo vaya a usar, pero as&iacute; evito tener que mantener dos bases de datos paralelamente en la misma Raspberry</li>
+<li>soy un programador que no ha programado su blog (y aunque sea una tonter&iacute;a, admiro mucho a la gente que se programa sus propios blogs)</li>
+<li>quer&iacute;a probar Rust en producci&oacute;n</li>
+<li>quer&iacute;a probar tecnolog&iacute;a relacionada con la web sem&aacute;ntica</li>
+</ul>
+<p>Como veis, ning&uacute;n motivo real, podr&iacute;amos decir que lo he hecho por que s&iacute;.</p>
+<h2>Tecnolog&iacute;as usadas</h2>
+<p>Este sistema de blog, que he llamado Diario y que es software libre, aunque hay que modificar unas cuantas cosas, es un mejunje de varias tecnolog&iacute;as. Por un lado quer&iacute;a usar Rust en producci&oacute;n y por otro quer&iacute;a probar tecnolog&iacute;a relacionada con la web sem&aacute;ntica, as&iacute; que hay varios lenguajes de programaci&oacute;n involucrados.</p>
+<ul>
+<li>Rust es el lenguaje de programaci&oacute;n principal
+<ul>
+<li><a href="../../tutorial-rocket-echa-volar-tus-webapps-rust/">Rocket</a> es el servidor web, esto me obliga a usar nightly. Sin embargo Rocket me parece un framework web muy bien dise&ntilde;ado y funciona muy bien</li>
+<li><a href="http://diesel.rs/">Diesel</a> como ORM. Pero no estoy usando migraciones, as&iacute; que al principio me cost&oacute; pillar la documentaci&oacute;n. Es un ORM muy bien dise&ntilde;ado pero cuando hay un error de compilaci&oacute;n es bastante cr&iacute;ptico</li>
+<li><a href="https://tera.netlify.com/">Tera</a> como motor de plantillas</li>
+<li>y alguna librer&iacute;a m&aacute;s como <a href="https://crates.io/crates/chrono">Chrono</a>, Regex, Ring o Serde</li>
+</ul>
+</li>
+<li><a href="https://www.postgresql.org/">PostgreSQL</a> como base de datos</li>
+<li><a href="https://www.python.org/">Python</a> para la funcionalidad del formulario de contacto. La raz&oacute;n es que no consegu&iacute; hacer funcionar lettre en un tiempo razonable para poder enviar emails. As&iacute; que uso el m&oacute;dulo smtp de Python.</li>
+<li><a href="https://developer.mozilla.org/en-US/docs/Web/XSLT">XSLT</a>, para generar los feeds RSS, el sitemap y para alguna cosa m&aacute;s
+<ul>
+<li>XSLT no lo hab&iacute;a usado nunca, pero no es complicado, eso s&iacute;, no hay librer&iacute;as en Rust para usarlo, as&iacute; que he usado xsltproc de l&iacute;nea de comandos</li>
+</ul>
+</li>
+</ul>
+<p>Quiz&aacute; todo te parezca normal, hasta lo de XSLT. &iquest;Por qu&eacute; he usado XSLT cuando ya tengo un sistema completo en Rust, que solo es cuesti&oacute;n de programar los feeds RSS y ya? Pues porque quiero que este blog tenga una API, una API de la web sem&aacute;ntica.</p>
+<p>Para ello, tiene que aceptar peticiones <a href="https://en.wikipedia.org/wiki/SPARQL">SPARQL</a>. Todav&iacute;a no lo he conseguido, pero viendo la falta de herramientas y librer&iacute;as para trabajar con SPARQL, mi idea es generar un fichero con informaci&oacute;n RDF donde se almacena TODA la parte p&uacute;blica del blog. All&iacute; se ejecutar&aacute;n las consultas y de paso, me sirve para generar ficheros RSS y similares en XML de forma f&aacute;cil y sencilla, transformando el fichero RDF original.</p>
+<h2>C&oacute;digo fuente</h2>
+<p>El c&oacute;digo fuente del sistema, por si quer&eacute;is echarle un ojo, est&aacute; aqu&iacute;: <a href="https://github.com/aarroyoc/diario">https://github.com/aarroyoc/diario</a></p>
+<h2>Feedback</h2>
+<p>Todav&iacute;a quedan muchas cosas, como por ejemplo la API SPARQL (aunque eso casi est&aacute;). He intentado adem&aacute;s que todas las URLs antiguas sean compatibles con el nuevo sistema, aunque puede haber fallos, lo mismo con el formato de algunas p&aacute;ginas. Me gustar&iacute;a que coment&aacute;seis que cosas &eacute;chais en falta, hay que a&ntilde;adir, qu&eacute; tal el dise&ntilde;o del blog y ese tipo de cosas. Al final sois vosotros los que vais a leerlo m&aacute;s veces que yo.</p>

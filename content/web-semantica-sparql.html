@@ -1,0 +1,186 @@
+<p>Hasta ahora hemos visto de forma bastante te&oacute;rica el funcionamiento de RDF y de RDF Schema. Hemos dicho que RDF es un modelo de datos, interoperable y sem&aacute;ntico. No obstante, hasta ahora no hemos accedido a la informaci&oacute;n all&iacute; expuesta. Por eso en este art&iacute;culo veremos <strong>SPARQL</strong>, el lenguaje de consultas de RDF; del mismo modo que el modelo relacional tiene SQL o los documentos XML tienen XQuery.</p>
+<p>SPARQL es un lenguaje de consultas frente a una base de datos RDF. Esta base de datos puede ser local o ser un servidor. Los servidores m&aacute;s conocidos son <a href="https://virtuoso.openlinksw.com/">Virtuoso</a>, <a href="https://jena.apache.org/">Apache Jena,</a> <a href="https://www.marklogic.com/">MarkLogic</a> y <a href="https://aws.amazon.com/es/neptune/">Amazon Neptune</a>. La sintaxis de SPARQL est&aacute; inspirada en <strong>Turtle</strong> y en SQL. En un origen, SPARQL solo era un lenguaje de consulta, es decir, no pod&iacute;a a&ntilde;adir, editar o borrar informaci&oacute;n. Existe una extensi&oacute;n, relativamente aceptado llamado SPARQL Update que a&ntilde;ade capacidades de edici&oacute;n a las consultas.</p>
+<p><img src="https://files.adrianistan.eu/SPARQLSurname.png" alt="" /></p>
+<p><em>Los apellidos m&aacute;s comunes en la Wikipedia, un ejemplo de consulta SPARQL</em></p>
+<h2>SELECT</h2>
+<p>La sentencia m&aacute;s importante es SELECT. La salida de SPARQL siempre es en formato tabla, pudiendo dar para una misma consulta varias filas de resultados. Cada columna es una propiedad de las que pedimos en SELECT. Para describir qu&eacute; valores de salida deben aparecer usamos variables. Las variables en SPARQL empiezan por el s&iacute;mbolo de interrogaci&oacute;n. Estas variables las usaremos m&aacute;s adelante para filtrar.</p>
+<h2>FROM</h2>
+<p>La sentencia FROM en SPARQL es opcional. Indica el o los grafos sobre los que se debe buscar. Por defecto existe un grafo activo, si no lo indicamos, se usar&aacute; este.</p>
+<h2>WHERE</h2>
+<p>La sentencia que nos permite filtrar las tripletas RDF. Su sintaxis es muy simple, simplemente escribimos tripletas con variables entre llaves. El motor SPARQL realizar&aacute; <strong>unificaci&oacute;n</strong> buscando las variables para las que todas las tripletas existen en la base de datos. Cada tripleta se separa por un punto. Podemos usar namespaces al igual que en otras partes de la web sem&aacute;ntica</p>
+<p>Con esto podemos escribir ya una consulta sencilla.</p>
+<pre><code>
+PREFIX wd: &lt;http://www.wikidata.org/entity/&gt;
+PREFIX wdt: &lt;http://www.wikidata.org/prop/direct/&gt;
+PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+
+SELECT ?city ?city_name
+WHERE {
+  ?city wdt:P31 wd:Q515 .
+  ?city wdt:P17 wd:Q29 .
+  ?city rdfs:label ?city_name .
+}
+</code></pre>
+<p>Esta consulta, <a href="https://query.wikidata.org/#PREFIX%20wd%3A%20%3Chttp%3A%2F%2Fwww.wikidata.org%2Fentity%2F%3E%0APREFIX%20wdt%3A%20%3Chttp%3A%2F%2Fwww.wikidata.org%2Fprop%2Fdirect%2F%3E%0APREFIX%20rdfs%3A%20%3Chttp%3A%2F%2Fwww.w3.org%2F2000%2F01%2Frdf-schema%23%3E%0A%0ASELECT%20%3Fcity%20%3Fcity_name%0AWHERE%20%7B%0A%20%20%3Fcity%20wdt%3AP31%20wd%3AQ515%20.%0A%20%20%3Fcity%20wdt%3AP17%20wd%3AQ29%20.%0A%20%20%3Fcity%20rdfs%3Alabel%20%3Fcity_name%20.%0A%7D">que pod&eacute;is ejecutar en Wikidata vosotros mismos</a>, nos devuelve una tabla de recursos y nombres de ciudades de Espa&ntilde;a. Las tripletas, un pel&iacute;n cr&iacute;pticas debido a la nomenclatura de Wikidata, son las siguientes:</p>
+<ol>
+<li>(CITY,esInstanciaDe,wikidata:Ciudad)</li>
+<li>(CITY,pais,wikidata:Espa&ntilde;a)</li>
+<li>(CITY,rdfs:label,CITY_NAME)</li>
+</ol>
+<p>Al ejecutar esta sentencia, el motor SPARQL busca valores para CITY y CITY_NAME para los que las tres tripletas est&eacute;n definidas.</p>
+<p><img src="https://files.adrianistan.eu/SPARQLTable.png" alt="" /></p>
+<p>Aqu&iacute; vemos el resultado de la ejecuci&oacute;n. Como vemos, todas las salidad de la foto corresponden a Madrid, el mismo recurso pero en diferentes idiomas. Eso es porque rdfs:label soporta diferentes idiomas para el valor. Afortunadamente podemos filtrar por lenguaje gracias a una carecter&iacute;stica de RDF que permite especificar el lenguaje de las tripletas (xml:lang).</p>
+<h2>FILTER</h2>
+<p>La sentencia que debemos usar es <strong>FILTER</strong>, para filtrar los resultados en base a otros:</p>
+<pre><code>
+PREFIX wd: &lt;http://www.wikidata.org/entity/&gt;
+PREFIX wdt: &lt;http://www.wikidata.org/prop/direct/&gt;
+PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+
+SELECT ?city ?city_name
+WHERE {
+  ?city wdt:P31 wd:Q515 .
+  ?city wdt:P17 wd:Q29 .
+  ?city rdfs:label ?city_name .
+  FILTER (lang(?city_name) = 'es')
+}
+</code></pre>
+<p>Los resultados ahora son &uacute;nicos ya que nos muestra solo los nombres en Espa&ntilde;ol. FILTER es muy potente, tambi&eacute;n admite<strong> expresiones booleanas</strong> (como ?edad &gt; 30) y <strong>regex</strong> para realizar una comprobaci&oacute;n con expresiones regulares de la cadena de texto.</p>
+<h2>DISTINCT</h2>
+<p>Sin embargo, puede haber valores repetidos. En ocasiones simplemente queremos los elementos diferentes, no nos importa si se repiten o no. Podemos usar <strong>DISTINCT.</strong></p>
+<p><img src="https://files.adrianistan.eu/SPARQLDistinct.png" alt="" /></p>
+<h2>COUNT, SUM, MAX, MIN, ...</h2>
+<p>Al igual que en SQL, en SPARQL podemos usar agregadores en las consultas. Esto requiere SPARQL 1.1:</p>
+<pre><code>
+PREFIX wd: &lt;http://www.wikidata.org/entity/&gt;
+PREFIX wdt: &lt;http://www.wikidata.org/prop/direct/&gt;
+PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+
+SELECT (COUNT(?city_name) AS ?n_city)
+WHERE {
+  ?city wdt:P31 wd:Q515 .
+  ?city wdt:P17 wd:Q29 .
+  ?city rdfs:label ?city_name .
+  FILTER (lang(?city_name) = 'es')
+}
+</code></pre>
+<p>&nbsp;</p>
+<h2>OPTIONAL</h2>
+<p>En SPARQL podemos definir tripletas en un WHERE que queremos que se cumplan, pero que no queremos que rechace los datos si no lo hace. Esto es normalmente usado para obtener datos que pueden existir o no. Se usa un bloque <strong>OPTIONAL</strong> dentro del WHERE.</p>
+<pre><code>
+PREFIX wd: &lt;http://www.wikidata.org/entity/&gt;
+PREFIX wdt: &lt;http://www.wikidata.org/prop/direct/&gt;
+PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+
+SELECT ?city_name ?brother_name
+WHERE {
+  ?city wdt:P31 wd:Q515 .
+  ?city wdt:P17 wd:Q29 .
+  ?city rdfs:label ?city_name .
+  OPTIONAL {
+    ?city wdt:P190 ?brother .
+    ?brother rdfs:label ?brother_name .
+    FILTER ( lang(?brother_name) = 'es') 
+  }
+  FILTER (lang(?city_name) = 'es')
+}
+</code></pre>
+<p>En este caso obtenemos tambi&eacute;n las <a href="https://es.wikipedia.org/wiki/Hermanamiento_de_ciudades">ciudades hermanas</a> de una ciudad. Sin embargo, es algo que no todas las ciudades tienen por qu&eacute; tener.</p>
+<h2>UNION</h2>
+<p>Al igual que en SQL, podemos disponer de varias condiciones diferentes, las cuales ambas son v&aacute;lidas. En SPARQL se expresa con la palabra&nbsp;<strong>UNION</strong> y dos bloques de llaves. Cada bloque es independiente del otro. Podemos decir que se ejecutan dos consultas y se juntan los resultados. Esto puede ser muy &uacute;til si tenemos datos con ontolog&iacute;as parecidas pero no iguales y queremos obtener datos de ambas de ellas a la vez.</p>
+<h2>Property Paths</h2>
+<p>Se trata de una caracter&iacute;stica que nos ahorra trabajo. Permiten describir caminos sobre el grafo, de longitud variable, de forma mucho m&aacute;s c&oacute;moda y breve. Sin entrar mucho en detalle, podemos usar la barra (/) para concatenar propiedades. Si tenemos una estructura tal que X p1 Y y Y p2 Z y solo nos interesan X y Z, podemos escribir X p1/p2 Z.</p>
+<pre><code>
+PREFIX wd: &lt;http://www.wikidata.org/entity/&gt;
+PREFIX wdt: &lt;http://www.wikidata.org/prop/direct/&gt;
+PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+
+SELECT ?city_name ?brother_name
+WHERE {
+  ?city wdt:P31 wd:Q515 .
+  ?city wdt:P17 wd:Q29 .
+  ?city rdfs:label ?city_name .
+  OPTIONAL {
+    ?city wdt:P190/rdfs:label ?brother_name .
+    FILTER (lang(?brother_name) = 'es') .
+  }
+  FILTER (lang(?city_name) = 'es')
+}
+</code></pre>
+<h2>ORDER BY</h2>
+<p>Al igual que en SQL, se puede ordenar la tabla saliente por un campo de los presentes en SELECT.</p>
+<h2>LIMIT</h2>
+<p>Podemos limitar el n&uacute;mero de resultados con LIMIT al final de la consulta.</p>
+<h2>CONSTRUCT</h2>
+<p>Si con SELECT generamos tablas, con&nbsp;<strong>CONSTRUCT</strong> podemos construir documentos RDF como salida de la consulta. Para ello usamos el lenguaje de tripletas que usamos en la cl&aacute;usula WHERE, salvo que aqu&iacute; las variables ser&aacute;n los valores de salida.</p>
+<pre><code>
+PREFIX wd: &lt;http://www.wikidata.org/entity/&gt;
+PREFIX wdt: &lt;http://www.wikidata.org/prop/direct/&gt;
+PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+
+CONSTRUCT {
+  ?city rdfs:label ?city_name .
+}
+WHERE {
+  ?city wdt:P31 wd:Q515 .
+  ?city wdt:P17 wd:Q29 .
+  ?city rdfs:label ?city_name .
+  OPTIONAL {
+    ?city wdt:P190/rdfs:label ?brother_name .
+    FILTER (lang(?brother_name) = 'es') .
+  }
+  FILTER (lang(?city_name) = 'es')
+}
+</code></pre>
+<h2>ASK</h2>
+<p>Otra opci&oacute;n adem&aacute;s de&nbsp;<strong>SELECT</strong> y&nbsp;<strong>CONSTRUCT</strong> es&nbsp;<strong>ASK</strong>. Con ASK preguntamos si un conjunto de tripletas en cuesti&oacute;n existen en la base de datos. Esto nos devuelve true o false.</p>
+<pre><code>
+PREFIX wd: &lt;http://www.wikidata.org/entity/&gt;
+PREFIX wdt: &lt;http://www.wikidata.org/prop/direct/&gt;
+PREFIX rdfs: &lt;http://www.w3.org/2000/01/rdf-schema#&gt;
+
+ASK {
+  ?city rdfs:label "Valladolid"@es .
+  ?city wdt:P31 wd:Q515 .
+  ?city wdt:P17 wd:Q29 .
+}
+</code></pre>
+<p>ASK no admite WHERE, porque en realidad ya es un WHERE. Aqu&iacute; hay un detalle sobre el soporte a idiomas de RDF. En la consulta la string es "Valladolid"@es y no "Valladolid". Esto es as&iacute; para indicar que la string es Valladolid y est&aacute; en espa&ntilde;ol. No es lo mismo "Valladolid"@fr que "Valladolid"@es, para RDF son dos valores distintos.</p>
+<h2>INSERT / DELETE</h2>
+<p>Originalmente, SPARQL no permit&iacute;a modificar los datos. Sin embargo, HP y otras empresas desarrollaron una extensi&oacute;n llamada SPARQL Update para poder hacerlo. Finalmente, fue incorporado a SPARQL 1.1. La sintaxis es&nbsp;<strong>Turtle</strong>. La primera orden es&nbsp;<strong>INSERT DATA</strong>.</p>
+<pre><code>
+PREFIX dc: &lt;http://purl.org/dc/elements/1.1/&gt;
+
+INSERT DATA{
+    &lt;http://libros.com/2001&gt; dc:title "2001: una odisea en el espacio" ;
+                                           dc:creator "Arthur C. Clarke" .
+}
+</code></pre>
+<p><strong>DELETE DATA</strong> es exactamente igual. Si queremos usar variables, tenemos con una sintaxis ligeramente diferente para&nbsp;<strong>INSERT </strong>y&nbsp;<strong>DELETE</strong>.</p>
+<pre><code>
+# DATOS ANTES
+@prefix foaf: &lt;http://xmlns.com/foaf/0.1/&gt; . 
+&lt;http://example/president25&gt; foaf:givenName "Bill" . 
+&lt;http://example/president25&gt; foaf:familyName "McKinley" . 
+&lt;http://example/president27&gt; foaf:givenName "Bill" . 
+&lt;http://example/president27&gt; foaf:familyName "Taft" . 
+&lt;http://example/president42&gt; foaf:givenName "Bill" . 
+&lt;http://example/president42&gt; foaf:familyName "Clinton" .
+
+# SPARQL
+PREFIX foaf: &lt;http://xmlns.com/foaf/0.1/&gt;
+DELETE { ?person foaf:givenName 'Bill' } 
+INSERT{ ?person foaf:givenName 'William' }
+WHERE { ?person foaf:givenName 'Bill' }
+
+# DATOS DESPU&Eacute;S
+@prefix foaf: &lt;http://xmlns.com/foaf/0.1/&gt; .
+&lt;http://example/president25&gt; foaf:givenName "William" .
+&lt;http://example/president25&gt; foaf:familyName "McKinley" .
+&lt;http://example/president27&gt; foaf:givenName "William" .
+&lt;http://example/president27&gt; foaf:familyName "Taft" .
+&lt;http://example/president42&gt; foaf:givenName "William" .
+&lt;http://example/president42&gt; foaf:familyName "Clinton" .
+</code></pre>
+<h2>Conclusi&oacute;n</h2>
+<p>Con esto queda explicado el 90% del uso de SPARQL, el lenguaje de consulta propuesto por W3C para manipular grafos RDF. Es un lenguaje potente y con bastante soporte. Idealmente, los clientes podr&iacute;an hacer las consultas directamente al servidor, supliendo en bastantes casos de uso a otras tecnolog&iacute;as como REST o GraphQL.</p>
