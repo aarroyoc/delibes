@@ -21,7 +21,8 @@ main :-
     render_tags,
     render_archive,
     copy_static,
-    % Render RSS and sitemap
+    render_rss,
+    render_sitemap,
     halt.
 
 render_posts :-
@@ -129,3 +130,71 @@ copy_single_static(StaticFile) :-
     path_segments(Origin, ["static", StaticFile]),
     path_segments(Destination, ["output", "static", StaticFile]),
     file_copy(Origin, Destination).
+
+render_rss :-
+    portray_clause(rendering_rss),
+    findall(Date-Slug,post(Slug, _, _, Date, _, public, _), Posts),
+    keysort(Posts, SortedPosts1),
+    reverse(SortedPosts1, SortedPosts),
+    length(IndexPosts, 5),
+    append(IndexPosts, _, SortedPosts),
+    maplist(\X1^X2^(X1 = _-X2), IndexPosts, IndexPostsSlugs),    
+    maplist(post_rss, IndexPostsSlugs, RenderPosts),
+    render("templates/rss.xml", ["posts"-RenderPosts], Output),
+    path_segments(Path, ["output", "rss.xml"]),
+    phrase_to_file(seq(Output), Path).    
+
+post_rss(Slug, ["slug"-Slug, "title"-Title, "content"-Content, "date_rfc822"-DateStr]) :-
+    post(Slug, Title, _, Date, html(ContentLocalPath), public, _),
+    path_segments(ContentPath, ["content", ContentLocalPath]),
+    phrase_from_file(seq(Content), ContentPath),
+    phrase(format_time("%Y-%m-%d %H:%M:%S", T), Date),
+    date_month(T),
+    phrase(format_time("%d %b %Y %H:%M:00 UT", T), DateStr).    
+    
+date_month(T) :-
+    member(m="01", T),
+    member(b="Jan", T).
+date_month(T) :-
+    member(m="02", T),
+    member(b="Feb", T).
+date_month(T) :-
+    member(m="03", T),
+    member(b="Mar", T).
+date_month(T) :-
+    member(m="04", T),
+    member(b="Apr", T).
+date_month(T) :-
+    member(m="05", T),
+    member(b="May", T).
+date_month(T) :-
+    member(m="06", T),
+    member(b="Jun", T).
+date_month(T) :-
+    member(m="07", T),
+    member(b="Jul", T).
+date_month(T) :-
+    member(m="08", T),
+    member(b="Aug", T).
+date_month(T) :-
+    member(m="09", T),
+    member(b="Sep", T).
+date_month(T) :-
+    member(m="10", T),
+    member(b="Oct", T).
+date_month(T) :-
+    member(m="11", T),
+    member(b="Nov", T).
+date_month(T) :-
+    member(m="12", T),
+    member(b="Dec", T).
+
+render_sitemap :-
+    portray_clause(rendering_sitemap),
+    findall(Slug, post(Slug, _, _, _, _, _, _), Slugs),
+    findall(Tag, (post(_, _, _, _, _, _, Tags), member(Tag, Tags)), Tags),
+    sort(Tags, TagsUnique),
+    render("templates/sitemap.xml", ["posts"-Slugs, "tags"-Tags], Output),
+    path_segments(Path, ["output", "sitemap.xml"]),
+    phrase_to_file(seq(Output), Path).    
+    

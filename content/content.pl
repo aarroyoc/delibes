@@ -6,6 +6,7 @@ author(aarroyoc, "Adrián Arroyo Calle").
 
 % Post
 % Slug (ID), title, author, date, content, status, tags
+
 post("bosque-lenguaje-programacion-microsoft", "Bosque, el nuevo lenguaje de programación de Microsoft", aarroyoc, "2019-04-24 16:12:49.419479", html("bosque-lenguaje-programacion-microsoft.html"), public, ["lenguaje","bosque","programacion","microsoft"]).
 post("introduccion-a-la-orientacion", "Introducción a la orientación", aarroyoc, "2013-12-15 00:00:00", html("introduccion-a-la-orientacion.html"), public, ["republica"]).
 post("faqs", "FAQs", aarroyoc, "2000-01-01 00:00:00", html("faqs.html"), public, ["faqs"]).
