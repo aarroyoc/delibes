@@ -194,7 +194,7 @@ render_sitemap :-
     findall(Slug, post(Slug, _, _, _, _, _, _), Slugs),
     findall(Tag, (post(_, _, _, _, _, _, Tags), member(Tag, Tags)), Tags),
     sort(Tags, TagsUnique),
-    render("templates/sitemap.xml", ["posts"-Slugs, "tags"-Tags], Output),
+    render("templates/sitemap.xml", ["posts"-Slugs, "tags"-TagsUnique], Output),
     path_segments(Path, ["output", "sitemap.xml"]),
     phrase_to_file(seq(Output), Path).    
     
