@@ -331,4 +331,4 @@ post("curva-hilbert-prolog", "Curva de Hilbert en Prolog", aarroyoc, "2024-01-30
 post("pascal-homenaje-niklaus-wirth", "Pascal. Un homenaje a Niklaus Wirth", aarroyoc, "2024-02-07 19:08:08.460529", html("pascal-homenaje-niklaus-wirth.html"), public, ["pascal","programacion","wirth","tutorial"]).
 post("nuevas-charlas-ppt-adrianistan-eu", "Nuevas charlas en ppt.adrianistan.eu", aarroyoc, "2024-06-28 16:10:03.041262", html("nuevas-charlas-ppt-adrianistan-eu.html"), public, ["prolog","programacion","kotlin","openstreetmap","charlas","strand","spark","wikipedia"]).
 post("blogs-cada-vez-mas-importantes-no-menos", "Los blogs cada vez son más importantes, no menos", aarroyoc, "2024-02-08 20:52:14.58254", html("blogs-cada-vez-mas-importantes-no-menos.html"), public, ["ensayo","blogs","chatgpt"]).
-
+post("instalando-gentoo-orangepi", "Instalando Gentoo en una Orange Pi", aarroyoc, "2024-09-17 20:26:00.00000", html("instalando-gentoo-orangepi.html"), public, ["programacion", "gentoo", "arm", "linux", "orangepi"]).
