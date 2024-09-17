@@ -1,0 +1,301 @@
+<p>En este tutorial vamos a ver como instalar Gentoo de cero en una Orange Pi PC. Aunque voy a usar una Orange Pi PC, lo cierto es que este tutorial debería valer para casi todas las placas ARM con ligeras modificaciones. Hago este tutorial porque en este tipo de placas es más díficil instalar un sistema operativo que en el típico PC con una BIOS y x86.</p>
+
+<h2>Sobre la Orange Pi PC</h2>
+<p>Antes de empezar, un poco de información sobre este mini ordenador.</p>
+<p>Se trata de un SBC (single board computer) fabricada por Orange Pi que lleva un Allwinner H3 como SoC. Este lleva un procesador quad-core ARM Cortex-A7. Entraría dentro de los ARMv7, es decir, la última generación de 32 bits. Lleva además 1 GB de RAM soldada. Dispone de una gráfica Mali que no vamos a utilizar a priori. De almacenamiento soporta tarjetas microSD y tiene un puerto Ethernet de 100Mbits.</p>
+<p>Como veis, un dispositivo bastante limitado, incluso algo obsoleto. No obstante, nos servirá de referencia para las muchas placas que hay en el mercado, incluso de otros fabricantes.</p>
+
+<div style="text-align:center">
+  <img src="https://files.adrianistan.eu/OrangePiPc.jpg">
+</div>
+
+
+<p>Una vez tengamos nuestra Orange Pi PC lista y una tarjeta microSD, podemos empezar.</p>
+
+<h2>Tarjeta microSD</h2>
+<p>Lo primero será preparar la tarjeta para que podamos escribir en ella lo que viene a continuación.</p>
+<p>Para saber el nombre de la tarjeta en el sistema, ejecutamos <i>lsblk</i>. En mi caso es /dev/sdc. Ten mucho cuidado, si te equivocas, podrías perder datos del ordenador desde el que haces esta operación</p>
+<p>Ahora vamos a hacer las particiones en la tarjeta. Para ello usaré fdisk, pero puedes usar otras herramientas si las sabes usar.</p>
+<pre><code>
+    $ fdisk /dev/sdc
+</code></pre>
+<p>Para ver las particiones actuales, usamos el comando <i>p</i>. Si existen, hay que borrarlas, con <i>d</i>.</p>
+<pre><code>
+Bienvenido a fdisk (util-linux 2.40.2).
+Los cambios solo permanecerán en la memoria, hasta que decida escribirlos.
+Tenga cuidado antes de utilizar la orden de escritura.
+
+
+Orden (m para obtener ayuda): p
+Disco /dev/sdc: 14,84 GiB, 15931539456 bytes, 31116288 sectores
+Modelo de disco: SD/MMC/MS PRO   
+Unidades: sectores de 1 * 512 = 512 bytes
+Tamaño de sector (lógico/físico): 512 bytes / 512 bytes
+Tamaño de E/S (mínimo/óptimo): 512 bytes / 512 bytes
+Tipo de etiqueta de disco: dos
+Identificador del disco: 0xa1ae4cc4
+
+Disposit.  Inicio Comienzo    Final Sectores Tamaño Id Tipo
+/dev/sdc1  *          2048   616447   614400   300M 83 Linux
+/dev/sdc2           616448  4694015  4077568   1,9G 82 Linux swap / Solaris
+/dev/sdc3          4694016 31116287 26422272  12,6G 83 Linux
+
+Orden (m para obtener ayuda): d
+Número de partición (1-3, valor predeterminado 3): 
+
+Se ha borrado la partición 3.
+
+Orden (m para obtener ayuda): d
+Número de partición (1,2, valor predeterminado 2): 
+
+Se ha borrado la partición 2.
+
+Orden (m para obtener ayuda): d
+Se ha seleccionado la partición 1
+Se ha borrado la partición 1.
+
+Orden (m para obtener ayuda): p
+Disco /dev/sdc: 14,84 GiB, 15931539456 bytes, 31116288 sectores
+Modelo de disco: SD/MMC/MS PRO   
+Unidades: sectores de 1 * 512 = 512 bytes
+Tamaño de sector (lógico/físico): 512 bytes / 512 bytes
+Tamaño de E/S (mínimo/óptimo): 512 bytes / 512 bytes
+Tipo de etiqueta de disco: dos
+Identificador del disco: 0xa1ae4cc4
+
+Orden (m para obtener ayuda): 
+</code></pre>
+<p>Ahora creamos dos particiones nuevas, una será la de boot, que formatearemos en FAT32, y otra para el resto del sistema, que llevará un sistema más típico de Linux como ext4 o btrfs. Es importante destacar que la primera partición NO debe comenzar nada más empezar, pues entonces podríamos escribir encima del sector 16. Es por ello que debemos empezar la primera partición con espacio de sobra para dejar el sector 16 libre y espacio de sobra para el U-Boot. Usaremos 32768.</p>
+
+<pre><code>
+    Orden (m para obtener ayuda): n
+
+Tipo de partición
+   p   primaria (0 primaria(s), 0 extendida(s), 4 libre(s))
+   e   extendida (contenedor para particiones lógicas)
+Seleccionar (valor predeterminado p): p
+
+Número de partición (1-4, valor predeterminado 1): 
+
+Primer sector (2048-31116287, valor predeterminado 2048): 32768
+
+Último sector, +/-sectores o +/-tamaño{K,M,G,T,P} (32768-31116287, valor predeterminado 31116287): +512M
+
+
+Crea una nueva partición 1 de tipo 'Linux' y de tamaño 512 MiB.
+
+Orden (m para obtener ayuda): p
+
+Disco /dev/sdc: 14,84 GiB, 15931539456 bytes, 31116288 sectores
+Modelo de disco: SD/MMC/MS PRO   
+Unidades: sectores de 1 * 512 = 512 bytes
+Tamaño de sector (lógico/físico): 512 bytes / 512 bytes
+Tamaño de E/S (mínimo/óptimo): 512 bytes / 512 bytes
+Tipo de etiqueta de disco: dos
+Identificador del disco: 0xa1ae4cc4
+
+Disposit.  Inicio Comienzo   Final Sectores Tamaño Id Tipo
+/dev/sdc1            32768 1081343  1048576   512M 83 Linux
+
+Orden (m para obtener ayuda): n
+
+Tipo de partición
+   p   primaria (1 primaria(s), 0 extendida(s), 3 libre(s))
+   e   extendida (contenedor para particiones lógicas)
+Seleccionar (valor predeterminado p): 
+
+
+Se está utilizando la respuesta predeterminada p.
+Número de partición (2-4, valor predeterminado 2): 
+
+Primer sector (2048-31116287, valor predeterminado 2048): 1081343
+
+
+El sector 1081343 ya está asignado.
+Primer sector (1081344-31116287, valor predeterminado 1081344): 
+
+Último sector, +/-sectores o +/-tamaño{K,M,G,T,P} (1081344-31116287, valor predeterminado 31116287): 
+
+
+Crea una nueva partición 2 de tipo 'Linux' y de tamaño 14,3 GiB.
+
+Orden (m para obtener ayuda): p
+
+Disco /dev/sdc: 14,84 GiB, 15931539456 bytes, 31116288 sectores
+Modelo de disco: SD/MMC/MS PRO   
+Unidades: sectores de 1 * 512 = 512 bytes
+Tamaño de sector (lógico/físico): 512 bytes / 512 bytes
+Tamaño de E/S (mínimo/óptimo): 512 bytes / 512 bytes
+Tipo de etiqueta de disco: dos
+Identificador del disco: 0xa1ae4cc4
+
+Disposit.  Inicio Comienzo    Final Sectores Tamaño Id Tipo
+/dev/sdc1            32768  1081343  1048576   512M 83 Linux
+/dev/sdc2          1081344 31116287 30034944  14,3G 83 Linux
+
+Orden (m para obtener ayuda): t
+
+Número de partición (1,2, valor predeterminado 2): 1
+
+Código hexadecimal o alias (escriba L para ver todos): 0b
+
+
+Se ha cambiado el tipo de la partición 'Linux' a 'W95 FAT32'.
+
+Orden (m para obtener ayuda): p
+
+Disco /dev/sdc: 14,84 GiB, 15931539456 bytes, 31116288 sectores
+Modelo de disco: SD/MMC/MS PRO   
+Unidades: sectores de 1 * 512 = 512 bytes
+Tamaño de sector (lógico/físico): 512 bytes / 512 bytes
+Tamaño de E/S (mínimo/óptimo): 512 bytes / 512 bytes
+Tipo de etiqueta de disco: dos
+Identificador del disco: 0xa1ae4cc4
+
+Disposit.  Inicio Comienzo    Final Sectores Tamaño Id Tipo
+/dev/sdc1            32768  1081343  1048576   512M  b W95 FAT32
+/dev/sdc2          1081344 31116287 30034944  14,3G 83 Linux
+</code></pre>
+
+<p>Nótese como para la segunda partición, tomamos como sector de inicio el sector siguiente al sector de finalización de la primera partición, y de allí hasta el final.</p>
+
+<p>También cambiamos el tipo de la primera partición a W95 FAT32</p>
+<p>Finalmente guardamos con <i>w</i></p>
+
+<h2>U-Boot</h2>
+<p>¿Cómo funciona el arranque en ARM? No está estandarizado, cada SoC arranca de una forma. En este caso estamos ante un Allwinner H3 (la familia conocida como Sunxi). Podemos encontrar la información centralizada sobre este chip en la wiki de <a href="https://linux-sunxi.org/H3">Linux Sunxi</a>. No obstante y por resumir, el H3 se dirige al sector 16 (8KiB) de la tarjeta SD para lanzar el SPL. El SPL, carga a su vez <a href="https://docs.u-boot.org/en/latest/board/allwinner/sunxi.html">U-Boot</a>, un bootloader software libre que existe en el mundo ARM. U-Boot ya es capaz de entender las particiones y buscar en una partición datos de configuración para arrancar el kernel de Linux. El kernel de Linux, carga sus drivers de sistemas de archivos, red, etc... hasta que finalmente el sistema ya está disponible para ser usado.</p>
+
+<p>Así pues, el primer paso será compilar una versión de U-Boot para la Orange Pi PC. Afortunadamente, este SBC ya está incluido en el código principal de U-Boot y solo hará falta compilarlo seleccionando el parámetro adecuado</p>
+
+<p>Necesitaremos tener instalado GCC para ARMv7 (arm-none-eabi se llama en Arch Linux a la configuración correcta).</p>
+
+<pre><code>
+    $ git clone https://source.denx.de/u-boot/u-boot.git
+    $ make orangepi_pc_defconfig
+    $ (opcional) make menuconfig
+    $ CROSS_COMPILE=arm-none-eabi- make
+</code></pre>
+
+<p>Finalmente, si todo va bien, tendremos un fichero <i>u-boot-sunxi-with-spl.bin</i> disponible. Este fichero hay que grabarlo en el sector 16 de la tarjeta microSD.</p>
+
+<p>Ya podemos guardar U-Boot en la tarjeta. Recordemos, sector 16. En fdisk ya hemos visto que los sectores son de 512 bytes. Así que 16*512 nos daría 8192 bytes, 8 KiB</p>
+<p>Podemos usar dd para copiar U-Boot con el SPL</p>
+<pre><code>
+    $ dd if=u-boot/u-boot-sunxi-with-spl.bin of=/dev/sdc bs=512 seek=16
+</code></pre>
+
+<h2>Conseguir un kernel Linux</h2>
+<p>Ahora necesitamos un kernel Linux compatible con el SBC. Podríamos compilar uno de cero, aunque es posible que nos faltasen cosas, ya que puede que no todos los drivers estén oficialmente integrados en Linux (lo que se dice, estar en <i>mainline</i>).</p>
+<p>Otra opción, es simplemente copiar el kernel de uno que ya esté compilado. Podemos tomar las imágenes que proporciona el fabricante, usar el kernel de Armbian, ...</p>
+<p>En este caso voy a coger la imagen del fabricante, un Debian Buster de 2021 con kernel Linux 5.4.65</p>
+<p>Lo primero es analizar la imagen que nos hemos descargado. Usaremos fdisk.</p>
+<pre><code>
+    $ fdisk -l Orangepipc_2.0.8_debian_buster_server_linux5.4.65.img
+Disco Orangepipc_2.0.8_debian_buster_server_linux5.4.65.img: 1,32 GiB, 1413480448 bytes, 2760704 sectores
+Unidades: sectores de 1 * 512 = 512 bytes
+Tamaño de sector (lógico/físico): 512 bytes / 512 bytes
+Tamaño de E/S (mínimo/óptimo): 512 bytes / 512 bytes
+Tipo de etiqueta de disco: dos
+Identificador del disco: 0x77476802
+
+Disposit.                                              Inicio Comienzo   Final Sectores Tamaño Id Tipo
+Orangepipc_2.0.8_debian_buster_server_linux5.4.65.img1            8192 2760703  2752512   1,3G 83 Linux
+</code></pre>
+<p>Vemos que los sectores son de 512 bytes también y que hay una partición y empieza en el 8192.</p>
+<p>Creamos carpetas para montar a la vez la tarjeta SD y la imagen que hemos descargado. Calculamos el offset de la imagen descargada y la montamos.</p>
+<pre><code>
+    $ mkdir /mnt/sd
+    $ mkdir /mnt/img
+    $ python -c "print(8192 * 512)"
+    $ mount -o loop,offset=4194304 Orangepipc_2.0.8_debian_buster_server_linux5.4.65.img /mnt/img
+</code></pre>
+
+<p>También formateamos las particiones de la tarjeta SD y las montamos</p>
+<pre><code>
+    $ mkfs.vfat /dev/sdc1
+    $ mkfs.ext4 /dev/sdc2
+    $ mount /dev/sdc2 /mnt/sd
+    $ mkdir /mnt/sd/boot
+    $ mount /dev/sdc1 /mnt/sd/boot
+</code></pre>
+
+<p>Necesitaremos 2 ficheros clave, el kernel en sí y el initramfs para el proceso de arranque. Además necesitaremos una carpeta para los DTB.</p>
+
+<p>En el caso de esta imagen son:</p>
+<pre><code>
+    $ cp vmlinuz-5.4.65-sunxi /mnt/sd/boot/
+    $ cp uInitrd-5.4.65-sunxi /mnt/sd/boot/
+    $ cp -r dtb-5.4.65-sunxi /mnt/sd/boot/
+</code></pre>
+<p>Estos ficheros debemos indicárselos a U-Boot a través de extlinux.</p>
+<p>El fichero deberá estar en /mnt/sd/boot/extlinux/extlinux.conf.</p>
+<pre><code>
+TIMEOUT 10
+PROMPT 1
+DEFAULT linux
+
+LABEL linux
+MENU LABEL Linux
+KERNEL /boot/vmlinuz-5.4.65-sunxi
+INITRD /boot/uInitrd-5.4.65-sunxi
+FDTDIR /boot/dtb-5.4.65-sunxi
+APPEND modules=loop,squashfs,sd-mod,usb-storage root=/dev/mmcblk0p2
+</code></pre>
+<p>También deberemos copiar los módulos del kernel que están en /lib/modules</p>
+<pre><code>
+    $ mkdir /mnt/sd/usr/lib
+    $ cp -a /mnt/img/lib/modules /mnt/sd/usr/lib
+</code></pre>
+
+<h2>Instalando Gentoo</h2>
+<p>Ahora debemos descargar el stage file de Gentoo. Una compatible, en mi caso: ARM7va | Hard FP | openrc es la seleccionada.</p>
+<p>Una vez descargado, lo descomprimimos sobre la tarjeta SD</p>
+<pre><code>
+    $ tar xfa stage3-armv7a_hardfp-openrc-20240911T235104Z.tar.xz -C /mnt/sd
+</code></pre>
+<p>Ahora editamos el fichero <i>/mnt/sd/etc/fstab</i></p>
+<pre><code>
+/dev/mmcblk0p1          /boot           vfat            umask=033       1 2
+/dev/mmcblk0p2          /               ext4            defaults        0 1</code></pre>    
+<p>Y ajustamos la contraseña de root</p>
+<pre><code>
+    $ sed -i "s|root:\*|root:$(openssl passwd -1)|" /mnt/sd/etc/shadow
+</code></pre>
+
+<p>Además modificamos el fichero <i>/mnt/sd/etc/portage/make.conf</i> con flags adecuadas para este SBC</p>
+<pre><code>
+COMMON_FLAGS="-O2 -pipe -march=armv7ve -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -mtune=cortex-a7"
+CFLAGS="${COMMON_FLAGS}"
+CXXFLAGS="${COMMON_FLAGS}"
+FCFLAGS="${COMMON_FLAGS}"
+FFLAGS="${COMMON_FLAGS}"
+MAKEOPTS="-j4"
+</code></pre>    
+
+<h2>Conexión por UART</h2>
+<p>Finalmente para terminar de configurar el sistema (y poder detectar errores) conectamos la Orange Pi a nuestro ordenador mediante un sistema UART-USB. Los pines de UART en la Orange Pi están marcados, pero recuerda que los cables van así: GND-GND, TX-RX y RX-TX.</p>
+<p>Usando minicom podemos conectarnos mediante:</p>
+<pre><code>
+    $ minicom --device /dev/ttyACM0
+</code></pre>
+<p>Si vamos a comunicarnos por UART, es conveniente modificar la tasa de baudios para que coincida con la de U-Boot. Hay que ir a <i>/mnt/sd/etc/inittab</i> y modificamos <code>s0:12345:respawn:/sbin/agetty -L 9600 ttyS0 vt100</code> por <code>s0:12345:respawn:/sbin/agetty -L 115200 ttyS0 vt100</code></p>
+
+<h2>SSH</h2>
+<p>Gentoo viene con OpenSSH por defecto, pero no está habilitado. Una vez accedamos al sistema podemos activar el acceso por SSH con:</p>
+<pre><code>
+    $ rc-update add sshd default
+    $ rc-service sshd start
+</code></pre>
+<p>Puede ser buena idea crear antes un usuario no root para acceder.</p>
+<pre><code>
+    $ useradd -m USER
+</code></pre>
+<p>Y ya podríamos conectarnos. Como siempre, si queremos ver cuáles con las IPs de los dispositivos de la red podemos usar nmap desde otro equipo. Puede que para que la red funcione bien tengamos que actualizar la fecha del sistema. Podemos usar date para eso:</p>
+<pre><code>
+    $ nmap -sP 192.168.1.1/24 # en el otro equipo
+    $ date 091719002024 # 17 de septiembre, 19:00, 2024
+</code></pre>
+
+<div style="text-align:center">
+  <img src="https://files.adrianistan.eu/GentooNeofetchOrangePi.png">
+</div>
