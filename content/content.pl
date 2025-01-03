@@ -335,4 +335,4 @@ post("instalando-gentoo-orangepi", "Instalando Gentoo en una Orange Pi", aarroyo
 post("analizando-estadisticas-web-bajo-costo", "Analizando estadísticas web con bajo costo", aarroyoc, "2024-11-25 22:11:00.00000", html("analizando-estadisticas-web-bajo-coste.html"), public, ["programacion", "tutorial", "web", "python", "streamlit", "parquet", "azure"]).
 post("videojuegos-2024", "Videojuegos de 2024", aarroyoc, "2024-12-24 00:02:00.00000", html("videojuegos-2024.html"), public, ["critica", "recapitulacion", "videojuegos"]).
 post("feliz-navidad-2024", "Feliz Navidad 2024", aarroyoc, "2024-12-25 22:08:00.00000", html("feliz-navidad-2024.html"), public, ["felicitacion", "navidad"]).
-post("que-paso-2024", "¿Qué pasó en 2024?", aarroyoc, "2025-01-03 18:20:00.00000", html("que-paso-2024.html"), public, ["personal", "trabajo"]).
+post("que-paso-en-2024", "¿Qué pasó en 2024?", aarroyoc, "2025-01-03 18:20:00.00000", html("que-paso-en-2024.html"), public, ["personal", "trabajo"]).
