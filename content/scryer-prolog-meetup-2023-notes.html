@@ -122,7 +122,9 @@
 <div style="text-align:center">
 <img width="400" src="https://files.adrianistan.eu/IMG_20231109_143333.jpg">
 </div>
-<p>It shows that a simple syntactic change like replacing H0 with 0 in the head would make different results, because unification in Prolog III, unlike in IV, doesn't support all datatypes.</p>
+<p><s>It shows that a simple syntactic change like replacing H0 with 0 in the head would make different results, because unification in Prolog III, unlike in IV, doesn't support all datatypes.</s></p>
+<p>It shows that a simple syntatic change like replacing H0 with 0 in the head would make different results, because unification in the head will treat the fractions and integers as different things (different structures) while
+  inside a solver like clp(q), it would treat them equal if the arithmethic value is the same. For example, 0 = 0/1 (syntatic unification) will fail while {0 = 0/1} (constraint solver) will succeed. (Thanks Guy for the clarification)</p>
 
 <p>Prolog IV worked with several types. All of them can be thought as a tree, but they're handled differently. There's a preunification table for types.</p>
 
