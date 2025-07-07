@@ -338,3 +338,4 @@ post("feliz-navidad-2024", "Feliz Navidad 2024", aarroyoc, "2024-12-25 22:08:00.
 post("que-paso-en-2024", "¿Qué pasó en 2024?", aarroyoc, "2025-01-03 18:20:00.00000", html("que-paso-en-2024.html"), public, ["personal", "trabajo"]).
 post("entrevista-tecnolocuras", "Entrevista tecnolocuras.com", aarroyoc, "2025-03-06 23:07:00.00000", html("entrevista-tecnolocuras.html"), public, ["blog", "entrevista", "personal"]).
 post("365-dias-de-chino-con-duolingo", "365 días de Chino con Duolingo", aarroyoc, "2025-04-25 20:35:00.00000", html("365-dias-de-chino-con-duolingo.html"), public, ["idiomas", "chino", "personal"]).
+post("paralelismo-para-lelos", "Paralelismo para lelos", aarroyoc, "2025-07-07 22:27:00.00000", html("paralelismo-para-lelos.html"), public, ["programacion", "rust", "paralelismo"]).
