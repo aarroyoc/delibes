@@ -37,9 +37,18 @@ Aunque no se pida visado para estancias inferiores a 90 días, hay que rellenar 
 
 Una vez te han puesto el sello es recomendable comprar una tarjeta EasyCard. La EasyCard es una tarjeta muy útil en Taiwan. Es una tarjeta prepago anónima que te sirve para pagar en algunos comercios, pero lo más interesante es que sirve para trenes, metro, bicicletas y autobuses por todo el país. Me dan a elegir el diseño entre varios modelos. Elijo el oso de la luna bebiendo bubble tea con el Taipei 101 de fondo. ¡Todo muy taiwanés! El oso de la luna u oso negro de Taiwan es un especie de oso endémica de la isla. El bubble tea es una bebida que incorpora té y leche con bolitas negras de tapioca. Es un invento de los años 80 en Taiwan, concretamente en Taichung, y recientemente ha llegado a Europa. Por otro lado el Taipei 101 es un rascacielos de 508 metros de altura, que fue el edificio más alto del mundo hasta la construcción del Burj Khalifa en Dubai.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-easycard.jpg">
+</div>
+
+
 También es recomendable sacar dinero en efectivo. Fui con varias tarjetas, entre ellas una que no cobraba comisión al sacar en cajero: Revolut. Funcionó perfectamente en el aeropuerto. En Taiwán se paga bastante en efectivo, sobre todo en tiendas pequeñas. El segundo método de pago más común es LINE Pay, que funciona con la aplicación de LINE. Una app de mensajería muy popular en Japón y Taiwán. También se puede pagar con EasyCard como he mencionado antes. Y por último, las tarjetas de VISA o MasterCard pueden funcionar aunque no verás muchos carteles de ellas.
 
 ## El voluntariado
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-cartel.jpg">
+</div>
 
 El voluntariado lo organizaba VYA, una organización de Taiwán. Nuestro anfitrión era Mr. Li, un señor que tenía una academia en Wuqi. Su mujer Sophia y sus hijos le ayudaban a llevar la academia. Además gestionaba el centro comunitario de Wuqi. Tuvimos una monitora llamada Josephine, más o menos de mi edad, con buen nivel de inglés. Posteriormente tuvimos un monitor llamado Hans, un profesor de primaria, mucho más caótico y con peor nivel de inglés.
 
@@ -69,21 +78,78 @@ El último día, tras una sección de feedback y con toda la maleta hecha me dir
 
 En Tainan hay varios monumentos. En primer lugar está el distrito de Anping. Este distrito es donde nace literalmente Taiwán. La isla de Taiwán o de Formosa, nombre que le dieron los portugueses estaba habitada pero no por chinos sino por aborígenes. Tribus originarias de la isla que habían tenido poco contacto con el exterior. En el siglo XVIII, España y Holanda intentan establecer bases en la isla para comerciar con ellos. La de Holanda se ubica en el actual Anping y se llama Fuerte Zelandia. A la zona la llama Taoian.  No obstante, los chinos liderados por Koxinga son conscientes de estos movimientos y eventualmente se lanzarán a conquistar la isla, expulsando a los europeos, que por otro lado no estaban demasiado establecidos.
 
-Existen restos arqueológicos del Fuerte Zelandia original, aunque lo más visible es una reconstrucción japonesa posterior. Allí también hay algunas calles estrechas originales de la ciudad holandesa. Es típico en esta zona tener leones con una espada en la boca en las puertas de las casas. Cerca se ubica un destructor de la marina de Taiwán que es visitable. Quizá lo más sorprendente de este destructor, vendido por EEUU, es que se encuentra decorado con estatuas y dibujos de series de anime. Por lo que se ve, van rotando. Además durante la visita se pueden ir recogiendo los sellos de la serie que toque en cada momento.
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-zelandia.jpg">
+</div>
+
+Existen restos arqueológicos del Fuerte Zelandia original, aunque lo más visible es una reconstrucción japonesa posterior. Allí también hay algunas calles estrechas originales de la ciudad holandesa. Es típico en esta zona tener leones con una espada en la boca en las puertas de las casas. Mi visita fue muy interesante ya que el guía, un señor mayor, nada más verme quiso que me quedase en su grupo, a pesar de que su nivel de inglés no era muy bueno. Pero creo que le hacía ilusión poderle explicarle cosas a alguien de fuera.
+
+Cerca se ubica un destructor de la marina de Taiwán que es visitable. Quizá lo más sorprendente de este destructor, vendido por EEUU, es que se encuentra decorado con estatuas y dibujos de series de anime. Por lo que se ve, van rotando. Además durante la visita se pueden ir recogiendo los sellos de la serie que toque en cada momento.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-destructor.jpg">
+</div>
 
 También cerca de Fuerte Zelandia hay un gran templo de Matsu.
 
 Yéndonos a la zona actualmente más habitada, distritos centro y oeste, podemos encontrar muchas templos. Quizá uno de los más interesantes es el templo de Confucio, el primero que se abrió en Taiwán. Estos templos eran una especie de escuelas de las enseñanzas de Confucio. En este además, todos los emperadores Qing y posteriormente los presidentes de la República de China han depositado sus respetos con sendos postes.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-confucio.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-confucio2.jpg">
+</div>
+
 Cerca se ubica el santuario de Koxinga, un templo dedicado a este pirata que trajo a la etnia han a Taiwán.
 
 Otros templos interesantes son el templo taoísta de Tiantan Tiangong, el templo de Beiji, el Sacrificial Rites Martial Temple, el templo de Matsu y los templos de Avalokitesvara y Sacrificial Rites Xingji Temple (uno al lado del otro).
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-taoismo.jpg">
+</div>
+
 Aunque lo mejor es dejarse llevar, sin rumbo fijo por la ciudad entrando por las callejuelas. Así fue como descubrí la fiesta de los muertos, un día paseando sin rumbo demasiado fijo. Empecé a ver calles y avenidas llenas de ofrendas de todo tipo (juguetes, comida, cerveza, dinero falso, ...), rezos, multitud de conciertos en paralelo, fuegos artificiales y más. Fue una experiencia tan sorprendente que no quería irme de allí hasta que no acabase todo. Y tuve que volver al albergue de memoria.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda2.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda3.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda4.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda5.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda6.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda7.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda8.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-ofrenda9.jpg">
+</div>
+
 
 ## Kaohsiung - 高雄
 
 Esta ciudad está un poco más al sur y es más grande y moderna. Fui y volví en el día en tren y la verdad es que fue un día muy malo. Estuve mucho tiempo parado sin hacer nada por la lluvia. No tiene muchos monumentos. Existe una estación de metro con una vidriera impresionante y un lago sobre el que han construido pagodas  (la del tigre y el dragón), un buda gigante, etc Aunque es todo bastante moderno.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-metro.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-pagoda.jpg">
+</div>
 
 ## Taipei - 臺北
 
@@ -91,17 +157,39 @@ Taipei es la capital, aunque no es una ciudad excesivamente grande. De hecho no 
 
 En Taipei hay varios templos interesantes: el de Longshan, el de Dalongdong, el de Confucio y el de Xingtian por mencionar unos. El de Confucio no es tan interesante a nivel histórico como el de Tainan pero tiene muy buenas explicaciones de las enseñanzas de Confucio, con secciones dedicadas a la caligrafía, la matemática (¿sabías que ya ellos conocían el que nosotros llamamos teorema de Pitágoras?), montar a carro, ...
 
-Cerca del río están los antiguos muelles de Dadaocheng, un sitio chulo para ver la puesta de sol. Allí quedé con Claire y su amiga Leila. Dos chicas taiwanesas que conocí durante el voluntariado y que casualmente pasaban por Taipei ese mismo día.
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-taipei.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-confucio3.jpg">
+</div>
+
+Cerca del río están los antiguos muelles de Dadaocheng, un sitio chulo para ver la puesta de sol. Allí estuve cenando con Claire y Leila.
 
 Otros monumentos más políticos serían el mausoleo a Chiang Kai Sek y el memorial a Sun Yat Sen. Cerca de este último se ubica el Taipei 101, rascacielos que ya he comentado.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-taipei2.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-taipei3.jpg">
+</div>
+
 En el apartado museos, Taipei tiene los más importantes. El Museo Nacional del Palacio es un emblema de la cultura china. La República de China llevó allí multitud de tesoros para que la República Popular de China no se quedara con ellos. Podemos ver los calderos de bronce, que son algunos de los primeros sitios donde vemos escritura china. Esculturas de jade, mobiliario de la dinastía Qing. Durante mi visita había una exposición dedicada al Go y a otros juegos de mesa chinos sumamente interesante. También visité el museo ferroviario.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-museo.jpg">
+</div>
 
 En Taipei existen también muchos mercados callejeros y calles gremiales (llegué a pasar por una calle que todo era gente vendiendo aves, ya fuesen patos, gallinas o cotorras) pero caminar por Taipei no es muy cómodo, ya no solo por el clima sino que los pasos de cebra son muy lentos. Existen incluso centros comerciales subterráneos como el Taipei City Mall, que es muy interesante si te gusta el mundo de los videojuegos. Cuando llegué allí me sorprendió ver la cantidad de anuncios de videojuegos que había, muchos de ellos no los conocía por ser japoneses y no tan populares en Europa.
 
 ## Transporte
 
 El medio de transporte más popular en Taiwán es la motocicleta. La usan para todo. De hecho en los mercadillos de fruta y verdura tradicionales la gente suele ir en moto y ya si van a comprar se bajan de la moto. Puede parecer peligroso y de primeras sorprende la cantidad de gente que vas a ver pasar un moto al ponerse un semáforo en verde pero lo cierto es que no conducen mal y son bastante respetuosos con las normas.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-market.jpg">
+</div>
 
 También hay bastantes coches, aunque ciertamente es un artículo más de lujo. Las marcas más comunes son japonesas, coreanas, taiwanesas y alemanas. Toyota, Lexus, Mitsubishi, Subaru, Hyundai, Luxgen, CMC, Audi, BMW, Mercedes y Porsche. Lo cierto es que mucha gente que tiene coche tiene un buen coche ya que en esta cultura tener un coche lujoso es importante.
 
@@ -112,6 +200,10 @@ Las ciudades de Taipei, Taichung, Taoyuan y Kaohsiung tienen metro. El metro de 
 El. metro de Taoyuan es básicamente un acceso al aeropuerto y prácticamente todo el rato va sobre viaducto en el exterior. Es impresionante lo alto que se eleva el metro pasando sobre cruces de autovías y con tramos adentrándose por las montañas.
 
 Para desplazamientos de larga distancia se puede usar el tren de TRA o el tren de alta velocidad (HSR). El tren de TRA cubre buena parte de la isla y de hecho es posible dar la vuelta entera. Es ideal si quieres llegar al centro de las ciudades. Hay trenes más rápidos y más lentos, dependiendo de las paradas que hagan, aunque ninguno supera los 120km/h. Estos trenes tienen una ancho de via especial, de 1067 mm y existen trenes con reserva y sin reserva. Hay que tener cuidado, ya que en mi caso intenté entrar en uno con reserva sin tener la reserva y no pude entrar. El precio es similar a trayectos parecidos en España.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-railway.jpg">
+</div>
 
 Por otro lado el HSR es un tren basado en el Shinkansen japonés que llega a los 300 km/h. Solo opera en el lado oeste de la isla y en muchas ciudades las estaciones están ubicadas lejos del centro. Aunque estuve tentado, no llegué a coger este tren que era más caro y te dejaba en las afueras. Pero realmente es una buena opción si tienes poco tiempo. Sale un tren cada 10 minutos aproximadamente del norte al sur de la isla y viceversa.
 
@@ -130,6 +222,10 @@ El centro estaba muy cerca de la academia, a una manzana de distancia. Pero casi
 En general el ocio no es muy distinto al que pueda tener una persona aquí. Comentaba con unas chicas que habían estado viendo la película de F1 y como se habían informado antes de verla ya que el gran circo no es tan popular allí. El deporte más popular es el beisbol y podías ver a gente mayor viendo partidos por la TV así como a los jugadores promocionando cosas (y las animadoras también).
 
 Existen salones recreativos con máquinas bastante modernas y bastante variedad de juegos. Muchos de ellos son japoneses pero traducidos al chino.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-arcade.jpg">
+</div>
 
 En general la cultura japonesa impregna mucho del ocio. Leen mangas, ven animes, y hay mucho merchandising de franquicias japonesas como Shin Chan, Hello Kitty, mofusand, ...
 
@@ -157,15 +253,46 @@ Josephine, que había estudiado sociología, estaba ahora estudiando informátic
 
 Un día decidimos ir a unos senderos cercanos a Taichung, los Dakeng trails 9 y 10. Nada más empezar hay puestos de comerciantes que venden frutas, verduras pero también ropa y material de senderismo. Lo cierto es que había muchísima gente por el sendero y durante el primer kilómetro no dejaba de haber puestos por todas partes. Según ibas subiendo los puestos desaparecían. Los senderos estaban asfaltados y eran accesibles. Es un bosque denso, con enormes bambús por todas partes y vistas sobre la gran ciudad y el resto del bosque que quitaban el aliento.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-bosque1.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-bosque2.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-bosque3.jpg">
+</div>
+
 Otro día acudimos a los Gaomei Wetlands a ver la puesta de sol. Es un sitio popular para ir y hacerse fotos cerca del mar. Este fue el único momento en el que toqué el mar en todo mi viaje a Taiwán. Allí la cultura de playa no es como en Europa. Interesante ver como los molinos de viento se han integrado en el paisaje.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-wetlands.jpg">
+</div>
 
 ## La gastronomía
 
 Empecemos por lo fácil, lo que no me gustó. No me gustó el stinky tofu, un tipo de tofu frito que huele fatal y tampoco sabe mucho mejor. A los niños tampoco les suele gustar y con el tiempo le van desarrollando el gusto.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-bento.jpg">
+</div>
+
 Las comidas típicas serían las famosas cajas de arroz con acompañamiento, los fideos y las sopas. También existe una gran variedad de productos de cerdo. Llegué a ver torreznos, oreja de cerdo y morcilla. También Taiwán al ser una isla tiene una gran variedad de mariscos: calamares, mejillones, ostras, almejas, navajas, ... El pollo frito o los dumplings también son populares. Pero la variedad es inmensa y te puedes sorprender con cosas como los huevos cocidos negros (huevos sumergidos en salsa de soja múltiples veces).
 
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-torrezno.jpg">
+</div>
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-nightmarket.jpg">
+</div>
+
 En Taiwán son muy populares los night market o mercados nocturnos. Durante ciertas noches en lugares específicos se juntan un montón de puestos callejeros con comida muy variada. Desde patatas dulces hasta helados de alubia, existe una gran variedad. También suele haber tiendas normales abiertas en esas zonas, incluso a altas horas de la noche. Es común también que en estos night market haya máquinas de meter dinero para intentar conseguir premios. Muy populares las del gancho, donde puedes encontrar casi cualquier cosa: incluso detergente para intentar coger con el gancho.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-nightmarket2.jpg">
+</div>
 
 En general la comida es bastante barata y se puede comer, sin grandes lujos, por el equivalente a 4€. Se puede comer en uno de los muchos restaurantes que hay por la calle. No se suele pedir bebida al comer. Pero es relativamente fácil encontrar agua, ya que allí muchos sitios tienen agua templada y agua hirviendo gratis. En los templos y a veces por la calle encontraremos máquinas de estas. En esos mismos templos vamos a poder ir al baño de forma gratuita. Además de ser sitios donde podremos tirar la basura.
 
@@ -183,6 +310,10 @@ Aunque sin duda yendo por las calles es más común encontrarse sitios de Bubble
 
 Existe una gran variedad de snacks y refrescos. Recomiendo encarecidamente pasar por una tienda grande y observar la cantidad de snacks más allá de las patatas Lays que uno se puede encontrar. Desde gusanitos sabor mango, caramelos ácidos, pieles fritas de pescado, tentáculos de maíz sabor calamar, carne picante, ...
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-snacks.jpg">
+</div>
+
 ## La religión
 
 La religión en Taiwán es bastante interesante. Es una mezcla de diversas creencias y supersticiones.
@@ -191,7 +322,28 @@ Podemos empezar por el budismo taiwanés. Se trata de una rama del budismo indep
 
 Un día vino gente de esta organización al centro comuntario. Primero hicieron media hora de estiramientos siguiendo un vídeo. En ese vídeo toda la gente vestida de forma impoluta realizaba los movimientos mientras sonaba de fondo un rezo. Luego les ponían un vídeo donde la maestra Cheng Yen comentaba una historia de Buda, que era explicada con dibujos animados. Finalmente hicieron manualidades con las personas mayores.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-tzuchi.jpg">
+</div>
+
 Los templos budistas no obstante son independientes y cada uno se organiza a su manera. También existen templos taoístas y la religión popular que sería la mera adoración de ciertos dioses. En Taiwán, Matsu es muy popular. Es una deidad que ayuda a los marineros y siempre se la representa rodeada de un diablillo que ve desde lejos y un diablillo que oye desde lejos. Al ser la población mayoritaria de Taiwán descendientes de emigrantes chinos que llegaron en barco.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-tainan2.jpg">
+</div>
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-matsu2.jpg">
+</div>
+
+Todos los templos tienen una guía de en qué orden hay que rezar. Normalmente supondrá coger incienso y llevarlo por varios sitios, para finalmente depositarlo en un inciensario frente al altar más importante. También se pueden realizar ofrendas o tirar las piedras adivinatorias. Las ofrendas de dinero se hacen con un dinero falso, amarillo pero sellado. Este dinero se lanza al horno que todo templo tiene que tener. De esa forma puede llegar a sus allegados.
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-matsu.jpg">
+</div>
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-fortune.jpg">
+</div>
 
 ## El clima
 
