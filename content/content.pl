@@ -341,3 +341,4 @@ post("365-dias-de-chino-con-duolingo", "365 días de Chino con Duolingo", aarroy
 post("paralelismo-para-lelos", "Paralelismo para lelos", aarroyoc, "2025-07-07 22:27:00.00000", html("paralelismo-para-lelos.html"), public, ["programacion", "rust", "paralelismo"]).
 post("paralelismo-para-lelos-2", "Paralelismo para lelos parte 2", aarroyoc, "2025-08-12 22:17:00.00000", html("paralelismo-para-lelos-2.html"), public, ["programacion", "rust", "paralelismo"]).
 post("paralelismo-para-lelos-3", "Paralelismo para lelos parte 3: usando la GPU con WGPU", aarroyoc, "2025-08-28 20:10:00.00000", html("paralelismo-para-lelos-3.html"), public, ["programacion", "rust", "paralelismo", "gpu"]).
+post("comentario-de-un-viaje-a-taiwan", "Comentario de un viaje a Taiwán", aarroyoc, "2025-09-03 18:04:00.00000", html("comentario-viaje-taiwan.html"), public, ["viaje", "taiwan", "idiomas", "chino", "personal"]).

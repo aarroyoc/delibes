@@ -2,6 +2,10 @@
 
 Este año he estado de vacaciones en Taiwán en un voluntariado en Taichung. Ha sido un viaje muy fructífero y por ello me gustaría dejar algunos comentarios al respecto.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-te.jpg">
+</div>
+
 ## ¿Por qué fui a Taiwán?
 
 Todo empezó en marzo de 2025 ya que en ese mes suelen salir las solicitudes de campos de trabajo internacionales. Hace dos años yo ya había estado en uno, concretamente en Tende, una pequeña localidad francesa en los Alpes situada cerca del Parque Nacional de Mercantour y muy cerquita de Italia y de Niza y Mónaco. Se trataba de una mina de plata, explotada desde la Edad Media hasta casi la Segunda Guerra Mundial. En un paisaje idílico, rodeados de árboles enormes y marmotas, todos los días nos sumergíamos a las profundidades de la montaña para mejorar el interior de la mina y hacerla visitable para turistas.
@@ -56,13 +60,29 @@ Me acompañaban tres chicas: Martina, Celeste y Ha, de Mallorca, Aguascalientes 
 
 ¿Qué hacíamos? Casi todos los días antes de comer, ayudábamos a empaquetar la comida del centro comunitario. En el centro comunitario había una cocina y señoras mayores (algunas muy mayores) se dedicaban a cocinar. La comida luego se empaquetaba y se repartía. La comida solían ser cajas de cartón, la mitad de arroz y la otra mitad de cosas con sabor: pollo frito, salchichas, tortilla, espinacas, cacahuetes, tofu, higos, etc El día que venía la Fundación Tzu Chi, fundación budista, era vegetariano. También solía haber sopa.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-comida2.jpg">
+</div>
+
 Luego ya cada día era variado. Preparamos una actividad donde enseñábamos cosas de nuestros países y la hicimos para varios grupos de niños de la academia. Un día también la hicimos por la mañana para los señores mayores.
 
 Otro día acompañamos a los mayores mientras hacían sus actividades de estiramientos y bailes diarios y otro día con las manualidades que trajo la fundación Tzu Chi para ellos.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-clase.jpg">
+</div>
+
 Otro día preparamos comida tradicional de nuestros países (no faltó la tortilla de patata). Y un día hicimos unas charlas en pequeños grupos para ver si los niños se animaban a hablar en inglés con nosotros.
 
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-comida.jpg">
+</div>
+
 A veces teníamos actividades que eran interesantes para nosotros pero donde no hacíamos mucho: como la visita al museo agrícola, visitar una graduación de guardería, visitar otro grupo de voluntarios, ver el centro comercial, ...
+
+<div style="text-align:center;">
+  <img src="https://files.adrianistan.eu/taiwan-calle.jpg">
+</div>
 
 Yo muchas veces disfrutaba más los ratos de espera en la academia en la que los niños estaban esperando a que les recogiesen sus padres y podía hablar un poco con ellos.
 
