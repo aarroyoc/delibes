@@ -1,0 +1,86 @@
+<p>Cuando hablamos de Linux en el escritorio a todos nos vienen a la mente nombres como GNOME o KDE. Estos dos escritorios son probablemente los más populares e implementan mucha tecnología de forma interna. Otros escritorios menos populares pero también relativamente conocidos podrían ser XFCE, MATE, Cinnamon, LXDE, LXQt. Sin embargo, en este post vamos a descubrir algunos escritorios y window managers menos conocidos.</p>
+
+<h2>Diferencia entre escritorio y window manager</h2>
+<p>Como en este post voy a hablar de ambas cosas, conviene tener claras las diferencias. Un Window Manager es un software que nos provee de control para mostrar y manipular ventanas. Nada más. Un escritorio en cambio es un conjunto completo, con aplicaciones para controlar nuestro ordenador de forma gráfica (un gestor de ficheros, un editor de texto, paneles de configuración, una terminal, ... y por supuesto un window manager).</p>
+
+<h2>NsCDE</h2>
+<p><a href="https://github.com/NsCDE/NsCDE">NsCDE</a> es una reimplementación del escritorio CDE basado en el window manager FVWM. CDE fue el escritorio estándar de UNIX en los 90. En los 90 la mayoría de sistemas UNIX eran comerciales pero unos cuantos fabricantes, bajo el paraguas de The Open Group, crearon CDE, un escritorio basado en Motif (librería gráfica también de The Open Group) y X. Así, se conviertió en el escritorio de AIX, HP-UX, Solaris, Tru64, UnixWare, UXP/DS y Digital UNIX. También fue el escritorio de OpenVMS, un sistema no UNIX también relativamente popular (y del que Windows NT bebe muchas cosas). Por su parte, RedHat Linux fue el único sistema Linux que llegó a tener CDE en su momento.</p>
+
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/CDETru64.png">
+</div>
+
+<p>En esta foto se puede ver un sistema Tru64 ejecutando CDE en 2025.</p> 
+
+<p>Ya en 2012, CDE y Motif fueron liberados como software libre pero para ese momento el mundo Linux ya había desarrollado sus propias tecnologías independientes y más avanzadas que Motif y CDE, como podían ser GTK, Qt y los escritorios GNOME y KDE. De hecho KDE es un juego de palabras con CDE. Sin embargo, siempre he pensado que hubiese estado bien que los sistemas Linux pudieran haber tenido un framework gráfico común durante un tiempo, ya que un problema comparado con otros sistemas es que en este aspecto Linux está fragmentado.</p>
+
+<p>NsCDE no parte del código liberado de CDE, sino que es una implementación que busca imitar el diseño y funcionalidad sobre FVWM.</p>
+
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/NsCDE.png">
+</div>
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/NsCDE2.png">
+</div>
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/NsCDE3.png">
+</div>
+
+<h2>MaXX Interactive Desktop</h2>
+<p><a href="https://docs.maxxinteractive.com/">MaXX Interactive Desktop</a> es un escritorio basado en el IRIX Interactive Desktop de IRIX. IRIX fue un sistema operativo UNIX propiedad de SGI desarrollado para procesadores MIPS.</p>
+<p>Se trató de uno de los primeros escritorios completos que se ofrecían en el mundo UNIX. Usaba las librerías Motif y se ejecutaba sobre X.</p>
+<p>MaXX empezó como un proyecto de antiguos empleados de SGI que querían recuperar este escritorio en Linux.</p>
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/MaXXDesktop.png">
+</div>
+
+<h2>WindowMaker</h2>
+<p><a href="https://www.windowmaker.org/">Window Maker</a> es un window manager inspirado en el escritorio de NeXTSTEP. Está preparado especialmente para ejecutar aplicaciones del proyecto GNUSTEP , la implementación libre del framework OPENSTEP para desarrollar aplicaciones gráficas en Objective-C.</p>
+<p>Al tratarse de un Window Manager es muy básico por defecto, pero podemos añadirle las aplicaciones de GNUSTEP para conseguir un escritorio bastante funcional. Esas aplicaciones en WindowMaker se ven nativas.</p>
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/WindowMaker.png">
+</div>
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/GNUSTEP.png">
+</div>
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/GWorkspace.png">
+</div>
+
+<p>WindowMaker está implementado sobre las X. Existe un proyecto llamado <a href="https://github.com/phkaeser/wlmaker">wlmaker</a> que intenta hacer lo mismo pero usando Wayland.</p>
+
+<h2>Sway</h2>
+<p><a href="https://swaywm.org">Sway</a> es una adaptación de i3, uno de los window manager más populares del mundo de las X a Wayland. Sway es junto con Hyprland y Niri uno de los window managers más populares del mundo Wayland. Se trata de un tiling window manager. Es decir, las ventanas no se superponen una encima de la otra sino que siempre se les asigna huecos. Estos window managers funcionan muy bien para ser controlados por teclado.</p>
+
+<p>Una de sus grandes contribuciones es la librería wlroots, la cuál usan muchos window managers para implementar Wayland. GNOME y KDE tienen sus propias implementaciones de window manager pero no eran usables fuera de sus escritorios. wlroots permite crear escritorios y window managers sin tener que reimplementar Wayland de cero. Otro proyecto similar es Smithay, el cuál usa Niri y otros window managers escritos en Rust.</p>
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/Sway.png">
+</div>
+
+<h2>Enlightenment</h2>
+<p><a href="https://www.enlightenment.org/">Enlightenment</a> es uno de los escritorios más veteranos de Linux. Sin embargo nunca ha gozado de gran popularidad. Desarrolló sus propias librerías gráficas, EFL, las cuáles se han usado principalmente en sistemas embebidos debido a su menor consumo respecto a GTK y Qt.</p>
+
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/Enlightenment.png">
+</div>
+
+<h2>IceWM</h2>
+<p><a href="https://ice-wm.org/">IceWM</a> es un window manager muy ligero y relativamente familiar para la gente que viene de Windows. Funciona sobre las X. Dispone de una gran cantidad de temas.</p>
+
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/IceWM.png">
+</div>
+
+<h2>Hyprland</h2>
+<p><a href="https://hypr.land/">Hyprland</a> es otro tiling window manager para Wayland. Mientras que Sway es más minimalista, Hyprland dispone de gran variedad de opciones y personalizaciones.</p>
+
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/Hyprland.png">
+</div>
+
+<h2>Niri</h2>
+<p><a href="https://github.com/YaLTeR/niri">Niri</a> es uno de mis window managers favoritos. Es un window manager para Wayland, usa Smithay y es un scrollable tiling window manager. Quiere decir que todas las apps se encuentran en una tira infinita de izquierda a derecha. Es uno de los window managers más amigables para alguien que no tenga experiencia con ellos.</p>
+
+<div style="text-align: center">
+  <img width="600" src="https://files.adrianistan.eu/Niri.png">
+</div>
