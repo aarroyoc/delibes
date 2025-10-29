@@ -148,46 +148,37 @@ post_rss(Slug, ["slug"-Slug, "title"-Title, "content"-Content, "date_rfc822"-Dat
     post(Slug, Title, _, Date, html(ContentLocalPath), public, _),
     path_segments(ContentPath, ["content", ContentLocalPath]),
     phrase_from_file(seq(Content), ContentPath),
+    portray_clause(Date),
     phrase(format_time("%Y-%m-%d %H:%M:%S", T), Date),
+    portray_clause(T),
     date_month(T),
-    phrase(format_time("%d %b %Y %H:%M:00 UT", T), DateStr).    
+    portray_clause(T),
+    phrase(format_time("%d %b %Y %H:%M:00 UTC", T), DateStr).    
     
-date_month(T) :-
-    member(m="01", T),
+date_month([_,m="01"|T]) :-
     member(b="Jan", T).
-date_month(T) :-
-    member(m="02", T),
+date_month([_,m="02"|T]) :-
     member(b="Feb", T).
-date_month(T) :-
-    member(m="03", T),
+date_month([_,m="03"|T]) :-
     member(b="Mar", T).
-date_month(T) :-
-    member(m="04", T),
+date_month([_,m="04"|T]) :-
     member(b="Apr", T).
-date_month(T) :-
-    member(m="05", T),
+date_month([_,m="05"|T]) :-
     member(b="May", T).
-date_month(T) :-
-    member(m="06", T),
+date_month([_,m="06"|T]) :-
     member(b="Jun", T).
-date_month(T) :-
-    member(m="07", T),
+date_month([_,m="07"|T]) :-
     member(b="Jul", T).
-date_month(T) :-
-    member(m="08", T),
+date_month([_,m="08"|T]) :-
     member(b="Aug", T).
-date_month(T) :-
-    member(m="09", T),
+date_month([_,m="09"|T]) :-
     member(b="Sep", T).
-date_month(T) :-
-    member(m="10", T),
+date_month([_,m="10"|T]) :-
     member(b="Oct", T).
-date_month(T) :-
-    member(m="11", T),
+date_month([_,m="11"|T]) :-
     member(b="Nov", T).
-date_month(T) :-
-    member(m="12", T),
-    member(b="Dec", T).
+date_month([_,m="12"|T]) :-
+    member(b="Dec", T).           
 
 render_sitemap :-
     portray_clause(rendering_sitemap),
