@@ -1,0 +1,32 @@
+<p>Existen diversas formas de usar Emacs desde un dispositivo con sistema operativo Android. Creo que una forma es la ideal, pero voy a comentar todas por si acaso a ti te viene bien.</p>
+
+<p>La primera es instalar Emacs nativo desde F-Droid o desde desde <a href="https://ftp.gnu.org/gnu/emacs/android/">el FTP de GNU Emacs</a>. Son equivalentes. Este Emacs es gráfico, permite mostrar imágenes por ejemplo pero no puede interactuar con el sistema ya que se encuentra aislado del resto de apps y del sistema.</p>
+
+<p>Otra opción es instalar Termux, un entorno que nos permite tener una terminal y un entorno muy parecidos al Linux tradicional, y desde allí instalar Emacs con su herramienta pkg.<code>pkg install emacs</code>. Esta opción nos permite tener un Emacs que es capaz de interactuar con su entorno Termux, es decir, podremos ejecutar git, compiladores, etc Pero es la versión de terminal, la cuál aunque funcional, no es la más completa de Emacs.</p>
+
+<div style="text-align:center:">
+  <img src="https://files.adrianistan.eu/emacs-termux.jpg" width="400">
+  <br>
+  <img src="https://files.adrianistan.eu/emacs-termux-2.jpg" width="600">
+</div>
+
+<p>Aquí existiría otra opción que es instalar un entorno de X11 sobre Termux y ejecutar el Emacs gráfico allí. Esto en teoría funciona aunque no lo he probado porque es un setup un poco complejo.</p>
+
+<p>Finalmente la mejor opción en mi opinión es instalar unas versiones especiales de Termux y de Emacs nativo de Android que comparten IDs y comparten sandbox. Por tanto ese Emacs nativo podrá acceder a los comandos y ficheros de Termux. Pero hay que seguir unos pasos para que esto funcione. Lo más importante es que tanto el APK como Emacs estén firmados con la misma clave. Pero por defecto no lo están.</p>
+
+<p>Los pasos son los siguientes: descargamos una versión actualizada de Termux de su GitHub. Por ejemplo, esta: https://github.com/termux/termux-app/releases/download/v0.119.0-beta.3/termux-app_v0.119.0-beta.3+apt-android-7-github-debug_arm64-v8a.apk. Descargamos la clave de firma de Emacs de aquí: https://github.com/emacs-mirror/emacs/tree/master/java/emacs.keystore. Refirmamos el APK con este comando: <code> apksigner sign --v2-signing-enabled --ks emacs.keystore -debuggable-apk-permitted --ks-pass pass:emacs1 termux-app_v0.119.0-beta.3+apt-android-7-github-debug_arm64-v8a.apk</code> y pasamos al APK a nuestro móvil/tablet y lo instalamos. No abrimos Termux todavía.</p>
+
+<p>A continuación instalamos Emacs del FTP de GNU Emacs, por ejemplo este: https://ftp.gnu.org/gnu/emacs/android/termux/emacs-30.2-29-arm64-v8a.apk. Abrimos Termux y ejecutamos: <code>pkg update && pkg upgrade</code>. Esto nos servirá para actualizar los paquetes dentro de Termux. Una vez acabado podríamos ya instalar programas que querramos usar conjuntamente con Emacs como Git, GCC, SBCL, OpenJDK, SWI Prolog, etc</p>
+
+<p>Abrimos Emacs y abrimos el fichero <code>.emacs.d/early-init.el</code> (no existirá). Le agregamos las siguientes líneas:</p>
+<pre><code>
+(setenv "PATH" (format "%s:%s" "/data/data/com.termux/files/usr/bin"
+		       (getenv "PATH")))
+(push "/data/data/com.termux/files/usr/bin" exec-path)
+</code></pre>
+<p>Reiniciamos Emacs y, ¡tachán! Ya tenemos nuestro Emacs en Androig nativo y gráfico y con acceso a herramientas de Termux como Git. A partir de aquí ya podemos empezar a personalizar nuestro Emacs con paquetes, temas, etc, ... Las diferencias con Emacs de ordenador ya deberían ser mínimas</p>
+
+<div style="text-align:center:">
+  <img src="https://files.adrianistan.eu/emacs-android.jpg" width="600">
+</div>
+
