@@ -1,0 +1,136 @@
+<p>Siendo N un número natural y X * Y = N, decimos que X e Y son divisores de N. Por ejemplo, si N = 15, X = 3 e Y = 5, podemos decir que 3 y 5 son divisores de 15. Como la multiplicación es conmutativa, da igual a qué número nos refiramos como X y a cual como Y. Existen un tipo de números que solo tienen dos divisores, que son 1 y el propio número, los cuales todos tienen. A estos números se los conoce como primos y han sido de gran interés en las matemáticas.</p>
+
+<h2>¿Cómo saber si un número es primo?</h2>
+<p>Por la definición sabemos que un número es primo si no tiene otros divisores aparte del 1 y él mismo. Entonces podemos buscar entre los números mayores que 1 y menores que el propio número. Si alguno de esos números intermedios es divisor, ya no sería primo. Obviamente este divisor que encontremos lo deberá ser junto a otro, pero con encontrar uno nos vale. No obstante este detalle es importante para una optimización posterior.</p>
+
+<p>Para ver si un posible X es divisor de N, podemos tratar de dividir N entre X, si la división es entera, el cociente será el otro divisor y el resto tendrá que ser 0. Es el mecanismo obvio y más habitual, sin embargo no quiero dejar de mencionar que la división ha sido históricamente una operación aritmética muy lenta e incluso no soportada en ciertas CPUs. La alternativa es montar un bucle que, partiendo de X, vaya probando todos los múltiplos de X (es decir Mn = X + Mn-1) hasta que lleguemos a N (es divisor) o nos pasemos (no es divisor).</p>
+
+<pre><code>
+// en Rust
+fn is_prime(n: i64) -&gt; bool {
+    for x in 2..n {
+        if n % x == 0 {
+            return false;
+        }
+    }
+    true
+}
+</code></pre>
+
+<p>Este código, aunque funcional, es ineficiente. Y la razón es que los divisores van en parejas, pero solo necesitamos encontrar uno. Uno de los divisores será más pequeño y el otro más grande y ambos son intercambiables. Como el resultado debe ser el mismo, si encontramos otra pareja de divisores dondel pequeño es más grande, el grande equivalente tiene que ser más pequeño. Así hasta que llegamos a un punto donde ambos divisores son el mismo número, es decir X = Y y X * X = N. A partir de ese momento veríamos las mismas combinaciones de parejas de divisores pero intercambiadas. Justamene ese punto donde X * X = N es donde tenemos que dejar de buscar. Podemos buscar a partir de 1 hasta ese punto. Y ese punto es justamente la raíz cuadradada de N.</p>
+
+<p>La raíz cuadrada no es una operación simple, pero solo hay que hacerla una vez. Solo nos interesa la raíz entera y hasta ese número deberemos comprobar.</p>
+
+<h2>Criba de Eratóstenes</h2>
+<p>Este algoritmo funciona bastante bien, es correcto pero imaginémonos que en lugar de querer saber si un número es primo o no, queremos comprobar unos cuantos números. Este algoritmo nos valdría, podríamos ir número a número en un bucle... Pero si os dais cuenta, estaríamos calculando muchas veces lo mismo. En este caso podemos adoptar otro enfoque. En lugar de ir comprobando si algo es primo, vamos a ir anotando todos los números que sabemos que no son primos, de forma iterativa.</p>
+
+<p>La idea es simple. Empezamos con una tabla de números ordenados y contiguos a validar empezando desde el 2. Vamos a ir cogiendo los números de la tabla sin marcar y vamos a ir marcando en la tabla sus múltiplos. La idea es que si llegamos a un número y no ha sido marcado es porque no tenía ningún divisor antes, si no ya hubiese sido marcado, y como está ordenado, ya no va a haber divisores mayores que él.</p>
+
+<p>Por ejemplo, empezamos con el 2, no estaba marcado, por tanto es primo, marcamos todos sus múltiplos en la tabla (4, 6, 8, 10, ...) y vamos al siguiente sin marcar. El 3 no está marcado, por tanto ya es automáticamente primo y marcamos sus múltiplos (6, 9, 12, ...). El 4 ya no es primo porque está marcado, el 5 no lo está, así que es otro primo.</p>
+
+<p>Este algoritmo se conoce como la criba de Eratóstenes y ya se conocía en la antigua Grecia. Además de generar un listado de todos los primos en un untervalo, y no solo comprobar uno, este método no usa no raíces ni divisiones.</p>
+
+<p>Lo que sí es interesante es como implementar esta tabla. Una forma es implementar un vector de booleanos, cada posición indica un número pero con un pequeño offset de 2 posiciones para esquivar el 0 y el 1. Así pues la posición 0 del vector corresponde al número 2. El vector se inicializa sin marcar y cuando se encuentra un número sin marcar se añade a otro vector y se recorren todos los múltiplos del primo marcándolos.</p>
+
+<pre><code>
+fn sieve() {
+    let max = 100;
+    let mut nums: Vec&lt;bool&gt; = vec![false; max - 2];
+    let mut primes: Vec&lt;i64&gt; = Vec::new();
+    
+    for n in 2..max {
+        if nums[n-2] == false {
+            primes.push(n as i64);
+            
+            for m in (n..max).step_by(n) {
+                nums[m-2] = true;
+            }
+        }
+    }
+    dbg!(primes);
+}
+</code></pre>
+<p>Con este código obtenemos el listado de los primos hasta 100</p>
+<pre><code>
+primes = [
+    2,
+    3,
+    5,
+    7,
+    11,
+    13,
+    17,
+    19,
+    23,
+    29,
+    31,
+    37,
+    41,
+    43,
+    47,
+    53,
+    59,
+    61,
+    67,
+    71,
+    73,
+    79,
+    83,
+    89,
+    97,
+]
+</code></pre>
+<p>Sin embargo esta no es la única forma en que podríamos abordar este problema. Este método aunque es eficiente, puede no ser el idóneo en lenguajes funcionales, ya que requiere mutabilidad. En ese caso, deberemos ir filtrando elementos de la lista según vayamos avanzando y no podremos aprovecharnos del indexado de los vectores. Pero hay que tener en cuenta que en muchos lenguajes funcionales no tienen vectores sino listas.</p>
+<p>Por ejemplo, en Prolog</p>
+<pre><code>
+:- use_module(library(ordsets)).
+:- use_module(library(clpz)).
+
+sieve(Max, Primes) :-
+    range(2, Max, 1, Range),
+    sieve_(Range, Primes, Max).
+
+sieve_([], [], _).
+sieve_([P|Ts], [P|Ps], Max) :-
+    range(P, Max, P, Ms),
+    ord_subtract(Ts, Ms, TsFiltered),
+    sieve_(TsFiltered, Ps, Max).
+    
+
+range(M, Max, _, []) :- M #>= Max.
+range(N, Max, Step, [N|Xs]) :-
+    N #< Max,
+    N1 #= N + Step,
+    range(N1, Max, Step, Xs).
+</code></pre>
+<p>El resultado es el esperado</p>
+<pre><code>
+aarroyoc@esgueva ~> scryer-prolog sieve.pl
+?- sieve(100, X).
+   X = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,...|...]
+   X = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97]
+;  ... .
+?- 
+</code></pre>    
+<p>Por último, volvamos al código en Rust. Si os dais cuenta, estamos usando un vector para almacenar booleanos, es decir, valores que pueden ser true o false, 1 bit. Sin embargo, al ser Vec un tipo genérico, para almacenar bool estamos usando un byte entero, es decir, 8 bits. De ellos solo estamos usando uno, dejando los otro 7 sin usar. Estamos usando 8 veces más memoria de la que necesitamos.</p>
+
+<p>Existen librerías como <a href="https://docs.rs/bitvec/">bitvec</a> que se adaptan perfectamente a nuestro caso de uso, dejándonos operar con una estructura de datos muy similar a Vec de bool pero optimizada para usar todos los bits. El código modificado es bastante similar:</p>
+<pre><code>
+use bitvec::prelude::*;
+
+fn sieve_bitvec(max: usize) -&gt; Vec&lt;i64&gt; {
+    let mut nums = bitvec![0; max - 2];
+    let mut primes: Vec&lt;i64&gt; = Vec::new();
+    
+    for n in 2..max {
+        if nums[n-2] == false {
+            primes.push(n as i64);
+            
+            for m in (n..max).step_by(n) {
+                nums.set(m-2, true);
+            }
+        }
+    }
+    primes
+}
+</code></pre>

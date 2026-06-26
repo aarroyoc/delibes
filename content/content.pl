@@ -344,3 +344,4 @@ post("paralelismo-para-lelos-3", "Paralelismo para lelos parte 3: usando la GPU 
 post("comentario-de-un-viaje-a-taiwan", "Comentario de un viaje a Taiwán", aarroyoc, "2025-09-03 18:04:00.00000", html("comentario-viaje-taiwan.html"), public, ["viaje", "taiwan", "idiomas", "chino", "personal"]).
 post("escritorios-menos-conocidos-linux", "Escritorios menos conocidos en Linux", aarroyoc, "2025-10-12 20:13:00.00000", html("escritorios-menos-conocidos-linux.html"), public, ["linux"]).
 post("emacs-en-android", "Emacs en Android", aarroyoc, "2026-02-01 11:35:00.00000", html("instalar-emacs-android.html"), public, ["android", "emacs"]).
+post("criba-eratostenes", "Criba de Eratóstenes", aarroyoc, "2026-06-26 17:18:00.00000", html("criba-eratostenes.html"), public, ["programacion", "rust", "prolog", "algoritmia", "matematicas"]).
